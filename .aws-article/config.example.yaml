@@ -1,19 +1,22 @@
-# 公众号运营配置示例
-# 复制为 config.yaml 后按需修改；或首次由 main 引导生成。
-# 路径：项目 .aws-article/ 或用户 ~/.aws-article/
+# 公众号运营配置
+# 复制为 config.yaml 后按需修改，或首次使用时由 main skill 引导生成。
+# 路径：项目 .aws-article/config.yaml 或用户 ~/.aws-article/config.yaml
 
+# ── 账号与定位 ──
 account_type: 科技
 target_reader: ""
 tone: 轻松
 update_frequency: 周更
 default_author: ""
 
+# ── 选题与标题 ──
 topic_direction: ""
 title_style: 干货型
 title_max_length: 25
 summary_length: "80-150"
 forbidden_title_phrases: []
 
+# ── 写作 ──
 article_style: 口语化
 paragraph_preference: 短段为主
 heading_density: 每节必有小标题
@@ -21,8 +24,10 @@ closing_block: ""
 forbidden_words: []
 original_attribution: ""
 
+# ── 排版 ──
 default_format_preset: ""
 
+# ── 图片与素材 ──
 cover_aspect: "2.35:1"
 cover_style: 简约
 image_density: 每节一图
@@ -32,6 +37,7 @@ assets_root: imgs/
 header_image: ""
 footer_image: ""
 
+# ── 审稿 ──
 review_required:
   - 敏感词
   - 错别字
@@ -40,6 +46,7 @@ review_required:
 custom_sensitive_words: []
 review_output_format: 分块详细
 
+# ── 路径 ──
 posts_root: posts/
 drafts_root: drafts/
 published_root: posts/published/

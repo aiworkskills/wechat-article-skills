@@ -1,27 +1,77 @@
 ---
 name: aws-wechat-article-writing
-description: Writes or rewrites long-form WeChat official account articles with structure, tone, and closing blocks. Use when the user asks to "写正文", "改写", "结构", "开头结尾", "公众号风格", or to turn an outline into a full draft.
+description: 为微信公众号写作或改写长文，包含结构、调性、开头结尾和文末引导。当用户提到「写正文」「改写」「公众号风格」「结构」「开头结尾」或需要将提纲变成完整文章时使用。
+version: 0.1.0
+metadata:
+  openclaw:
+    homepage: https://github.com/aiworkskills/wechat-article-skills#aws-wechat-article-writing
 ---
 
 # 长文写作
 
-按选题/提纲或用户提供的正文，写出或改写为带结构的公众号长文（标题、摘要、小标题、段落、引用、文末引导）。配置约定见 aws-wechat-article-main 的 references。
+按选题/提纲或用户提供的素材，写出或改写为公众号长文。
 
-## 步骤
+## 工作流
 
-1. **读配置**：文章风格、段落长度、小标题密度、金句/案例频率、文末引导模板、禁用词（见 config-schema）。  
-2. **确定输入**：topics 的选题/标题/摘要，或用户直接给的提纲/正文。  
-3. **写作或改写**：  
-   - 输出完整结构：标题、摘要、小标题、段落、列表、引用、文末固定区块。  
-   - 开头吸睛，可含金句或案例；语气与配置的调性一致；避免使用配置中的禁用词。  
-4. **原创/转载**：按配置的原创/转载标注习惯处理文末署名。
+```
+写稿进度：
+- [ ] 第1步：读取配置
+- [ ] 第2步：确定输入
+- [ ] 第3步：写作或改写
+- [ ] 第4步：产出完整正文
+```
 
-## 输出
+### 第1步：读取配置
 
-- 完整正文稿（Markdown），可直接交给 **aws-wechat-article-review**（写稿完成后即审稿），通过后再交给 **aws-wechat-article-formatting**、**aws-wechat-article-images**。  
-- 或改写稿、结构提纲（若用户仅要提纲）。
+从 `config.yaml` 读取：`article_style`、`tone`、`paragraph_preference`、`heading_density`、`closing_block`、`forbidden_words`、`original_attribution`。
 
-## 输入来源
+### 第2步：确定输入
 
-- 可选：aws-wechat-article-topics 的选题列表、标题多候选、摘要多候选。  
-- 或用户直接提供的素材、提纲、已有正文。
+输入来源（任选其一）：
+- aws-wechat-article-topics 的选题/标题/摘要
+- 用户直接提供的提纲、素材或已有正文
+- 用户口述的主题
+
+### 第3步：写作或改写
+
+按文章结构模板写作，详见：[references/structure-template.md](references/structure-template.md)
+
+**写作要求**：
+- 开头 2-3 句必须吸睛：可用提问、场景、数据或金句切入
+- 语气与配置的 `tone` 一致
+- 段落长度遵循 `paragraph_preference`
+- 小标题密度遵循 `heading_density`
+- 避免使用 `forbidden_words` 中的词
+- 文末按 `closing_block` 和 `original_attribution` 处理
+
+### 第4步：产出完整正文
+
+输出为 Markdown 格式的完整正文，包含标题、摘要、正文、文末区块。
+
+## 输出格式
+
+```markdown
+# [文章标题]
+
+> [摘要，80-150字]
+
+## [小标题一]
+
+[正文段落……]
+
+## [小标题二]
+
+[正文段落……]
+
+……
+
+## 写在最后
+
+[结尾段落：总结 + 金句或行动号召]
+
+---
+
+[文末引导语：如关注提示、往期推荐等]
+```
+
+产出后即交给 **aws-wechat-article-review** 审稿，通过后再排版配图。

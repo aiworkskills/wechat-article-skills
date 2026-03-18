@@ -1,36 +1,76 @@
 ---
 name: aws-wechat-article-topics
-description: Produces topic ideas, multiple title candidates, and summary candidates for WeChat official account articles. Use when the user asks for "选题", "起标题", "摘要", "爆款", "排期", or needs a content calendar.
+description: 为微信公众号产出选题列表、标题多候选和摘要多候选，可选内容排期。当用户提到「选题」「起标题」「摘要」「排期」「爆款」「内容日历」或需要文章选题时使用。
+version: 0.1.0
+metadata:
+  openclaw:
+    homepage: https://github.com/aiworkskills/wechat-article-skills#aws-wechat-article-topics
 ---
 
 # 选题与标题
 
-产出选题列表、标题多候选、摘要多候选；可选排期（本周/本月选题 + 建议发布时间）。配置约定见 aws-wechat-article-main 的 references。
+产出选题列表、标题多候选、摘要多候选；可选排期。
 
-## 步骤
+## 工作流
 
-1. **读配置**：账号类型、选题方向/禁区、标题风格、摘要长度、禁用标题套路（见 config-schema）。  
-2. **产出选题列表**：按用户当次需求（如「5 个选题」「本周排期」）生成，可结合热点/常青/系列。  
-3. **标题多候选**：每个选题给出 3–5 个标题，风格可区分（悬念型、干货型、数字型、反问型、故事型等）。  
-4. **摘要多候选**：每个选题或选定标题给出 1–3 个摘要，控制在配置的摘要长度范围内。  
-5. 若有**排期**需求：产出「本周/本月选题 + 建议发布时间」。
+```
+选题进度：
+- [ ] 第1步：读取配置
+- [ ] 第2步：产出选题列表
+- [ ] 第3步：标题多候选
+- [ ] 第4步：摘要多候选
+- [ ] 第5步：排期（可选）
+```
+
+### 第1步：读取配置
+
+从 `config.yaml` 读取：`account_type`、`target_reader`、`tone`、`topic_direction`、`title_style`、`title_max_length`、`summary_length`、`forbidden_title_phrases`。
+
+无配置时触发首次引导（见 aws-wechat-article-main）。
+
+### 第2步：产出选题列表
+
+按用户需求（如「5 个选题」「本周排期」）生成选题，可结合：
+- **热点型**：当下热门话题
+- **常青型**：长期有价值的内容
+- **系列型**：可连载的主题
+
+### 第3步：标题多候选
+
+每个选题给出 3–5 个标题候选，按不同风格区分。
+
+标题风格详见：[references/title-presets.md](references/title-presets.md)
+
+### 第4步：摘要多候选
+
+每个选题或选定标题给出 2–3 个摘要候选，字数控制在配置的 `summary_length` 范围内。
+
+### 第5步：排期（可选）
+
+若用户需要排期，产出「本周/本月选题 + 建议发布时间」。
 
 ## 输出格式
 
-- 选题列表：标题式一行一个，可带一句话说明。  
-- 标题候选：明确标出 3–5 个，便于 writing 或用户选用。  
-- 摘要候选：1–3 个，字数符合配置。  
+```markdown
+## 选题列表
 
-便于下游 **aws-wechat-article-writing** 或用户直接选用。
+### 选题 1：[选题名称]
+> 一句话说明选题角度与目标读者痛点
 
-## 标题风格预设（可选）
+**标题候选：**
+1. 【干货型】为什么 90% 的人学不会 XXX？因为忽略了这 3 点
+2. 【悬念型】我用了这个方法后，XXX 效率翻了 3 倍
+3. 【数字型】5 个立刻能用的 XXX 技巧，第 3 个最实用
+4. 【反问型】你还在用老方法做 XXX？难怪效果差
 
-| 风格 | 特点 |
-|------|------|
-| 悬念型 | 制造信息差或认知冲突 |
-| 干货型 | 直接给结论、承诺价值 |
-| 数字型 | 用数字增强可信度 |
-| 反问型 | 用问句引发思考 |
-| 故事型 | 场景或故事感 |
+**摘要候选：**
+1. 很多人在 XXX 上踩过坑，本文总结了 3 个核心方法……（86字）
+2. 从入门到上手，一篇讲透 XXX 的底层逻辑……（92字）
 
-禁用套路示例：浅谈、万字长文、建议收藏、震惊等（以配置为准）。
+---
+
+### 选题 2：[选题名称]
+...
+```
+
+产出后交给 **aws-wechat-article-writing** 或由用户选用。

@@ -1,28 +1,54 @@
 ---
 name: aws-wechat-article-review
-description: Reviews WeChat article drafts for compliance, sensitive words, and pre-publish checks; outputs a fixed-format checklist. Use when the user asks for "审稿", "合规", "敏感词", "发布前检查", or after writing is done.
+description: 审核微信公众号文章草稿，检查合规、敏感词、错别字和链接，输出固定格式的审稿清单。当用户提到「审稿」「合规」「敏感词」「检查」或写稿完成后使用。
+version: 0.1.0
+metadata:
+  openclaw:
+    homepage: https://github.com/aiworkskills/wechat-article-skills#aws-wechat-article-review
 ---
 
 # 审稿与合规
 
-**时机**：**写稿完成后即应执行**（早于排版与配图），先审内容与合规，通过后再做排版、配图；发布前可再做一次终审（可选）。
+**时机**：写稿完成后立即执行，通过后再排版配图；发布前可再做一次终审。
 
-## 步骤
+## 工作流
 
-1. **读配置**：必检项、自定义敏感词/禁用词表、审稿输出格式（见 aws-wechat-article-main 的 config-schema）。  
-2. **检查**：对标题、摘要、正文、图、链接做检查（敏感词、错别字、链接有效性、原创标注等；事实与出处按配置的核查级别）。  
-3. **输出**：固定格式的审稿结果（如「标题/摘要/正文/图」分块 + 修改建议列表），可当 brief 用。
+```
+审稿进度：
+- [ ] 第1步：读取配置
+- [ ] 第2步：逐项检查
+- [ ] 第3步：输出审稿结果
+```
 
-## 在流程中的位置
+### 第1步：读取配置
 
-- **writing** 产出正文后即可调用；通过后再进入 **formatting**、**images**。  
-- 发布前可再次调用做终审。
+从 `config.yaml` 读取：`review_required`、`custom_sensitive_words`、`forbidden_words`、`review_output_format`。
 
-## References
+### 第2步：逐项检查
 
-- [references/checklist.md](references/checklist.md)：发布前检查项。  
-- [references/output-format.md](references/output-format.md)：审稿输出模板。
+对标题、摘要、正文、图、链接执行检查：
+
+| 检查项 | 检查内容 |
+|--------|---------|
+| 敏感词 | 配置中的 `custom_sensitive_words` + 通用敏感词 |
+| 禁用词 | 配置中的 `forbidden_words` |
+| 错别字 | 常见错别字、用词不当 |
+| 标题 | 长度、是否含禁用套路、与正文一致性 |
+| 摘要 | 长度、信息量、与正文一致性 |
+| 链接 | 外链有效性 |
+| 原创标注 | 是否按配置的 `original_attribution` 处理 |
+
+详细检查清单：[references/checklist.md](references/checklist.md)
+
+### 第3步：输出审稿结果
+
+按配置的 `review_output_format` 选择输出格式：
+
+- **分块详细**：按标题/摘要/正文/图/链接分块，逐项列出结论和修改建议
+- **简要清单**：仅列出通过/未通过项和必须修改项
+
+输出模板：[references/output-format.md](references/output-format.md)
 
 ## 产出
 
-审稿清单与修改建议，格式统一，便于协作与交给 **aws-wechat-article-publish**。
+审稿清单与修改建议 → 交给用户确认 → 通过后进入 **aws-wechat-article-formatting** 和 **aws-wechat-article-images**。

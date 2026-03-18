@@ -1,29 +1,43 @@
-# 微信公众号自动运营 Skills（源码）
+# 微信公众号自动运营 Skills
 
-本目录为 7 个子 skill 的**源代码**，与实施计划一致。
+7 个子 skill 组成的公众号内容全流程工具链，运行在 Cursor / OpenClaw 上。
+
+## 流程
+
+```
+选题 → 写稿 → 审稿 → 排版 → 配图 → 发布
+```
 
 ## 子 skill 列表
 
-| 目录 | 职责 |
-|------|------|
-| aws-wechat-article-main | 总览与路由、配置与首次引导 |
-| aws-wechat-article-topics | 选题与标题、摘要多候选、排期 |
-| aws-wechat-article-writing | 长文写作与改写 |
-| aws-wechat-article-formatting | 排版（从预设直接读取） |
-| aws-wechat-article-images | 贴图（素材库 / OpenAI 生成 / HTML 导出） |
-| aws-wechat-article-review | 审稿与合规（写稿后即做） |
-| aws-wechat-article-publish | 发布前检查与提交指引 |
+| 目录 | 职责 | 说明 |
+|------|------|------|
+| aws-wechat-article-main | 总览与路由 | 管理全流程，支持一条龙/单步/贴图模式 |
+| aws-wechat-article-topics | 选题与标题 | 选题列表、标题候选、摘要候选、排期 |
+| aws-wechat-article-writing | 长文写作 | 按结构模板写作或改写 |
+| aws-wechat-article-review | 审稿与合规 | 敏感词、错别字、链接、合规检查 |
+| aws-wechat-article-formatting | 排版 | 从预设读取规则，格式化输出 |
+| aws-wechat-article-images | 配图 | 封面与正文配图，自动分析风格 |
+| aws-wechat-article-publish | 发布 | 发布前检查与提交指引 |
 
-## 流程顺序
+## 安装
 
-选题 → 写稿 → **审稿** → 排版 → 配图 → 发布。
+**一键安装（项目级）**：
 
-## 在 Cursor 中使用
+```bash
+bash scripts/install-skills.sh
+```
 
-**一键安装（项目级）**：在项目根目录执行  
-`bash scripts/install-skills.sh`  
-会将本目录下 7 个子 skill 安装到 `.cursor/skills/`，供 Cursor 加载。
+将 7 个子 skill 安装到 `.cursor/skills/`，供 Cursor 加载。
 
-或手动复制到 **项目级** `.cursor/skills/` 或 **用户级** `~/.cursor/skills/`。每个 skill 独立一个文件夹，文件夹名与 SKILL.md 中的 `name` 一致。
+或手动复制到 `.cursor/skills/`（项目级）或 `~/.cursor/skills/`（用户级）。
 
-**配置**：项目 `.aws-article/` 或用户 `~/.aws-article/`。示例见 `.aws-article/config.example.yaml`，复制为 `config.yaml` 后按需修改，或由 main 首次引导生成。
+## 配置
+
+所有 skill 共享一份配置文件。
+
+1. 复制示例：`cp .aws-article/config.example.yaml .aws-article/config.yaml`
+2. 按需编辑 `config.yaml`
+3. 或首次使用时由 main skill 引导生成
+
+配置路径优先级：项目 `.aws-article/config.yaml` → 用户 `~/.aws-article/config.yaml`。
