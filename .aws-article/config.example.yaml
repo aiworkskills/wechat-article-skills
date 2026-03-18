@@ -25,12 +25,12 @@ forbidden_words: []
 original_attribution: ""
 
 # ── 写作模型（第三方 LLM）──
+# 支持任何 OpenAI 兼容端点（官方、中转、自建均可）
 # 写作规范另见 .aws-article/writing-spec.md（从 writing-spec.example.md 复制）
 writing_model:
-  provider: deepseek
-  model: deepseek-chat
+  base_url: "https://api.deepseek.com"
   api_key: ""
-  base_url: ""
+  model: "deepseek-chat"
   temperature: 0.7
   max_tokens: 4000
 

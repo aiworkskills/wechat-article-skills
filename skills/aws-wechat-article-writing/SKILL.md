@@ -115,18 +115,27 @@ python {baseDir}/scripts/write.py continue article.md
 - 提出修改意见 → 按意见修改后重新展示
 - 「重写」→ 用不同角度或模型重新生成
 
-## 支持的模型
+## 模型配置
 
-| Provider | 默认模型 | 端点 |
-|----------|---------|------|
-| `deepseek` | deepseek-chat | api.deepseek.com |
-| `openai` | gpt-4o | api.openai.com |
-| `zhipu` | glm-4-flash | open.bigmodel.cn |
-| `qwen` | qwen-plus | dashscope.aliyuncs.com |
-| `moonshot` | moonshot-v1-8k | api.moonshot.cn |
-| `custom` | 自定义 | 自定义 base_url |
+支持任何 OpenAI 兼容端点（官方、中转、自建均可），在 `config.yaml` 中配置三个必填项：
 
-所有 provider 使用 OpenAI 兼容格式（Chat Completions API）。
+```yaml
+writing_model:
+  base_url: "https://api.deepseek.com"   # API 端点
+  api_key: ""                             # API Key
+  model: "deepseek-chat"                  # 模型名
+```
+
+常用端点参考：
+
+| 服务 | base_url | 模型示例 |
+|------|----------|---------|
+| DeepSeek | `https://api.deepseek.com` | deepseek-chat |
+| OpenAI | `https://api.openai.com` | gpt-4o |
+| 智谱 | `https://open.bigmodel.cn/api/paas` | glm-4-flash |
+| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode` | qwen-plus |
+| Moonshot | `https://api.moonshot.cn` | moonshot-v1-8k |
+| 中转/代理 | 你的中转地址 | 按中转服务支持的模型 |
 
 ## 输出格式
 

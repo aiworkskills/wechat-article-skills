@@ -22,32 +22,6 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-# ── 预置模型端点 ─────────────────────────────────────────────
-
-PROVIDERS = {
-    "deepseek": {
-        "base_url": "https://api.deepseek.com",
-        "default_model": "deepseek-chat",
-    },
-    "openai": {
-        "base_url": "https://api.openai.com",
-        "default_model": "gpt-4o",
-    },
-    "zhipu": {
-        "base_url": "https://open.bigmodel.cn/api/paas",
-        "default_model": "glm-4-flash",
-    },
-    "qwen": {
-        "base_url": "https://dashscope.aliyuncs.com/compatible-mode",
-        "default_model": "qwen-plus",
-    },
-    "moonshot": {
-        "base_url": "https://api.moonshot.cn",
-        "default_model": "moonshot-v1-8k",
-    },
-}
-
-
 def _err(msg: str):
     print(f"❌ {msg}", file=sys.stderr)
     sys.exit(1)
@@ -83,23 +57,19 @@ def _load_config() -> dict:
 def _get_model_config(cfg: dict) -> dict:
     """从 config 中提取模型配置。"""
     mc = cfg.get("writing_model", {})
-    provider = mc.get("provider", "deepseek")
-    preset = PROVIDERS.get(provider, {})
 
-    base_url = mc.get("base_url") or preset.get("base_url", "")
-    model = mc.get("model") or preset.get("default_model", "")
+    base_url = mc.get("base_url", "")
+    model = mc.get("model", "")
     api_key = mc.get("api_key", "")
 
-    if not api_key:
+    if not base_url or not api_key or not model:
         _err(
-            f"config.yaml 中缺少 writing_model.api_key\n"
-            f"请添加：\n"
-            f"  writing_model:\n"
-            f"    provider: {provider}\n"
-            f"    api_key: 你的APIKey"
+            "config.yaml 中 writing_model 配置不完整，需要三个必填项：\n"
+            "  writing_model:\n"
+            "    base_url: https://api.deepseek.com  # 任何 OpenAI 兼容端点\n"
+            "    api_key: 你的APIKey\n"
+            "    model: deepseek-chat                 # 模型名"
         )
-    if not base_url:
-        _err(f"未知 provider: {provider}，请设置 writing_model.base_url")
 
     return {
         "base_url": base_url.rstrip("/"),

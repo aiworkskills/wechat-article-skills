@@ -29,10 +29,9 @@ original_attribution: ""    # 原创/转载标注习惯
 
 # ── 写作模型（第三方 LLM）──
 writing_model:
-  provider: deepseek         # deepseek、openai、zhipu、qwen、moonshot、custom
-  model: deepseek-chat       # 具体模型名，留空则用 provider 默认
+  base_url: ""               # API 端点（任何 OpenAI 兼容接口，含中转/代理）
   api_key: ""                # API Key
-  base_url: ""               # 自定义端点（仅 custom 时必填，其他 provider 自动填充）
+  model: ""                  # 模型名
   temperature: 0.7
   max_tokens: 4000
 
