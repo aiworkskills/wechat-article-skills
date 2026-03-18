@@ -1,0 +1,10 @@
+# 本地配置（含可能敏感信息）
+.aws-article/config.yaml
+
+# Cursor 项目本地配置
+.cursor
+
+# 系统与编辑器
+.DS_Store
+*.log
+
