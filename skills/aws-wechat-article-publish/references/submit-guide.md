@@ -1,6 +1,63 @@
 # 提交到公众号后台
 
-## 手动方式
+## 方式一：API 提交（推荐）
+
+使用 `scripts/publish.py` 脚本，通过微信公众号 API 完成发布。
+
+### 前置准备
+
+1. 设置环境变量：
+   ```bash
+   export WECHAT_APPID=你的AppID
+   export WECHAT_APPSECRET=你的AppSecret
+   ```
+
+2. 在公众平台「开发 → 基本配置」中将服务器 IP 加入白名单
+
+3. 准备文章目录：
+   ```
+   article/
+   ├── article.yaml    # 标题、作者、摘要等元信息
+   ├── content.html    # 排版后的正文 HTML
+   ├── cover.jpg       # 封面图
+   └── images/         # 正文内图片
+   ```
+
+### 一键发布
+
+```bash
+# 创建草稿（不发布，可在后台预览）
+python scripts/publish.py full article/
+
+# 创建草稿并立即发布
+python scripts/publish.py full article/ --publish
+```
+
+### 分步操作
+
+```bash
+# 获取 token
+python scripts/publish.py token
+
+# 上传封面图
+python scripts/publish.py upload-thumb cover.jpg
+
+# 上传正文图片
+python scripts/publish.py upload-content-image images/img1.png
+
+# 创建草稿（需要先准备好 article.yaml）
+python scripts/publish.py create-draft article.yaml
+
+# 发布
+python scripts/publish.py publish <media_id>
+
+# 查询状态
+python scripts/publish.py status <publish_id>
+```
+
+接口详情与错误码：[api-reference.md](api-reference.md)
+
+## 方式二：手动提交
 
 1. 登录微信公众平台（mp.weixin.qq.com）
 2. 进入「素材管理」或「草稿箱」→ 新建图文消息
@@ -10,10 +67,3 @@
 6. 逐一上传正文内图片并插入对应位置
 7. 设置评论权限（开启/仅粉丝可评）
 8. 保存为草稿或直接群发
-
-## API 方式（预留）
-
-若后续实现通过微信公众平台 API 提交，在本文件中补充：
-- 调用方式与接口地址
-- 所需环境变量与权限
-- 与本 skill 的衔接方式（如传入文件路径、返回 media_id）

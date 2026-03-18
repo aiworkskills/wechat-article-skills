@@ -46,6 +46,12 @@ review_required:
 custom_sensitive_words: []
 review_output_format: 分块详细
 
+# ── 发布 ──
+publish_method: api
+need_open_comment: 1
+only_fans_can_comment: 0
+# 安全提示：WECHAT_APPID 和 WECHAT_APPSECRET 通过环境变量设置，不要写在此文件中
+
 # ── 路径 ──
 posts_root: posts/
 drafts_root: drafts/

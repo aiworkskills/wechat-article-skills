@@ -49,11 +49,18 @@ review_required:             # 必检项列表
 custom_sensitive_words: []   # 自定义敏感词
 review_output_format: 分块详细  # 简要清单、分块详细
 
+# ── 发布 ──
+publish_method: api            # api、manual
+need_open_comment: 1           # 开启评论：0=否 1=是
+only_fans_can_comment: 0       # 仅粉丝可评：0=否 1=是
+
 # ── 路径 ──
 posts_root: posts/
 drafts_root: drafts/
 published_root: posts/published/
 ```
+
+> **安全提示**：`WECHAT_APPID` 和 `WECHAT_APPSECRET` 不应写入 config.yaml，请通过环境变量设置。
 
 ## 说明
 

@@ -4,6 +4,10 @@
 # Cursor 项目本地配置
 .cursor
 
+# Python
+__pycache__/
+*.pyc
+
 # 系统与编辑器
 .DS_Store
 *.log
