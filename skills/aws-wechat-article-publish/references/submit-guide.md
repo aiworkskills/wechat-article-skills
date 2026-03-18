@@ -27,32 +27,32 @@
 
 ```bash
 # 创建草稿（不发布，可在后台预览）
-python scripts/publish.py full article/
+python shared/scripts/publish.py full article/
 
 # 创建草稿并立即发布
-python scripts/publish.py full article/ --publish
+python shared/scripts/publish.py full article/ --publish
 ```
 
 ### 分步操作
 
 ```bash
 # 获取 token
-python scripts/publish.py token
+python shared/scripts/publish.py token
 
 # 上传封面图
-python scripts/publish.py upload-thumb cover.jpg
+python shared/scripts/publish.py upload-thumb cover.jpg
 
 # 上传正文图片
-python scripts/publish.py upload-content-image images/img1.png
+python shared/scripts/publish.py upload-content-image images/img1.png
 
 # 创建草稿（需要先准备好 article.yaml）
-python scripts/publish.py create-draft article.yaml
+python shared/scripts/publish.py create-draft article.yaml
 
 # 发布
-python scripts/publish.py publish <media_id>
+python shared/scripts/publish.py publish <media_id>
 
 # 查询状态
-python scripts/publish.py status <publish_id>
+python shared/scripts/publish.py status <publish_id>
 ```
 
 接口详情与错误码：[api-reference.md](api-reference.md)

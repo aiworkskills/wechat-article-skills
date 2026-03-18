@@ -1,7 +1,7 @@
 ---
 name: aws-wechat-article-publish
 description: 将文章通过微信公众号 API 发布，支持上传图片、创建草稿、发布和状态查询。也提供手动提交指引。当用户提到「发布」「提交」「群发」「上传到公众号」或需要发布文章时使用。
-version: 0.2.0
+version: 0.3.0
 metadata:
   openclaw:
     homepage: https://github.com/aiworkskills/wechat-article-skills#aws-wechat-article-publish
@@ -13,11 +13,13 @@ metadata:
 
 ## 脚本目录
 
-**Agent 执行**：确定本 SKILL.md 所在目录为 `{baseDir}`，脚本路径为 `{baseDir}/scripts/publish.py`。
+发布脚本位于共享目录，供 publish 和 sticker 共用。
+
+**Agent 执行**：确定本 SKILL.md 所在目录为 `{baseDir}`，脚本路径为 `{baseDir}/../shared/scripts/publish.py`。
 
 | 脚本 | 用途 |
 |------|------|
-| `scripts/publish.py` | 微信公众号 API 发布工具 |
+| `shared/scripts/publish.py` | 微信公众号 API 发布工具 |
 
 ## 前置条件
 
@@ -77,7 +79,7 @@ only_fans_can_comment: 0         # 仅粉丝可评：0=否 1=是
 **一键全流程**（推荐）：
 
 ```bash
-python {baseDir}/scripts/publish.py full article/
+python {baseDir}/../shared/scripts/publish.py full article/
 ```
 
 脚本自动执行：上传封面图 → 上传正文图片并替换路径 → 创建草稿。
@@ -86,14 +88,14 @@ python {baseDir}/scripts/publish.py full article/
 
 ```bash
 # 1. 上传封面图，获取 thumb_media_id
-python {baseDir}/scripts/publish.py upload-thumb article/cover.jpg
+python {baseDir}/../shared/scripts/publish.py upload-thumb article/cover.jpg
 
 # 2. 上传正文图片，获取 URL
-python {baseDir}/scripts/publish.py upload-content-image article/images/img1.png
+python {baseDir}/../shared/scripts/publish.py upload-content-image article/images/img1.png
 
 # 3. 手动替换 content.html 中的图片路径为上传后的 URL
 # 4. 创建草稿
-python {baseDir}/scripts/publish.py create-draft article/article.yaml
+python {baseDir}/../shared/scripts/publish.py create-draft article/article.yaml
 ```
 
 ### 第4步：确认并发布
@@ -102,16 +104,16 @@ python {baseDir}/scripts/publish.py create-draft article/article.yaml
 
 ```bash
 # 发布草稿
-python {baseDir}/scripts/publish.py publish <media_id>
+python {baseDir}/../shared/scripts/publish.py publish <media_id>
 
 # 查询发布状态
-python {baseDir}/scripts/publish.py status <publish_id>
+python {baseDir}/../shared/scripts/publish.py status <publish_id>
 ```
 
 或一键全流程直接发布：
 
 ```bash
-python {baseDir}/scripts/publish.py full article/ --publish
+python {baseDir}/../shared/scripts/publish.py full article/ --publish
 ```
 
 ### 第5步：归档
