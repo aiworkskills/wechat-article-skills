@@ -27,7 +27,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-API_BASE = "https://api.weixin.qq.com/cgi-bin"
+DEFAULT_API_BASE = "https://api.weixin.qq.com/cgi-bin"
+API_BASE = DEFAULT_API_BASE  # 运行时从 config 覆盖
 
 
 def _err(msg: str):
@@ -423,7 +424,23 @@ def _get_credentials(account_alias: str = None) -> tuple[str, str]:
 
 _cli_account: str | None = None
 
+def _init_api_base():
+    """从 config 加载自定义 API 基础地址（用于固定 IP 转发代理）。"""
+    global API_BASE
+    try:
+        cfg = _load_config()
+    except SystemExit:
+        return
+    # 单账号：wechat_api_base
+    # 多账号：当前账号的 api_base
+    acc = _resolve_account(cfg, _cli_account) if _cli_account or cfg.get("wechat_accounts") else {}
+    api_base = acc.get("api_base", "") or cfg.get("wechat_api_base", "")
+    if api_base:
+        API_BASE = api_base.rstrip("/")
+        _info(f"API 端点: {API_BASE}")
+
 def _get_token() -> str:
+    _init_api_base()
     appid, appsecret = _get_credentials(_cli_account)
     return get_access_token(appid, appsecret)
 

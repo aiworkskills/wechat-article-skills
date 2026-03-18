@@ -65,6 +65,7 @@ image_model:
 # ── 发布（单账号）──
 wechat_appid: ""
 wechat_appsecret: ""
+wechat_api_base: ""            # 转发代理地址（解决固定 IP 限制），留空用官方地址
 publish_method: api
 need_open_comment: 1
 only_fans_can_comment: 0

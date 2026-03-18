@@ -66,6 +66,7 @@ image_model:
 # ── 发布（单账号）──
 wechat_appid: ""               # 公众号 AppID
 wechat_appsecret: ""           # 公众号 AppSecret
+wechat_api_base: ""            # API 转发地址（留空则用官方 api.weixin.qq.com）
 publish_method: api            # api、manual
 need_open_comment: 1           # 开启评论：0=否 1=是
 only_fans_can_comment: 0       # 仅粉丝可评：0=否 1=是
@@ -81,6 +82,7 @@ only_fans_can_comment: 0       # 仅粉丝可评：0=否 1=是
 #     alias: sub
 #     appid: ""
 #     appsecret: ""
+#     api_base: ""          # 每个账号可单独配转发地址
 
 # ── 路径 ──
 drafts_root: drafts/               # 进行中的文章
