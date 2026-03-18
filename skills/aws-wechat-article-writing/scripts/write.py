@@ -191,6 +191,14 @@ def build_system_prompt(cfg: dict, writing_spec: str, structure_template: str) -
     parts.append("- 段落短小，适合手机阅读")
     parts.append("- 不要输出任何解释性文字，只输出文章本身")
 
+    parts.append("\n## 配图标记\n")
+    parts.append("在需要配图的位置插入标记，格式：`![类型：描述](placeholder)`")
+    parts.append("类型包括：封面、信息图、氛围、流程图、对比、实证")
+    parts.append("- 封面标记放在标题之前")
+    parts.append("- 描述要写清画面内容和意图")
+    parts.append("- 信息图需包含具体数据点或维度")
+    parts.append("- 实证类注明需用户提供")
+
     return "\n".join(parts)
 
 

@@ -1,7 +1,7 @@
 ---
 name: aws-wechat-article-images
-description: 为微信公众号文章生成封面图和正文配图，根据内容自动选择配图策略，支持多套风格预设。当用户提到「封面」「配图」「多图推送」「贴图」「图片规格」「生成图片」或需要文章配图时使用。
-version: 0.1.0
+description: 为微信公众号文章生成配图，采用 Type×Style 二维体系。读取 writing 阶段的配图标记，按类型和风格生成图片。当用户提到「封面」「配图」「多图推送」「贴图」「生成图片」或需要文章配图时使用。
+version: 0.3.0
 metadata:
   openclaw:
     homepage: https://github.com/aiworkskills/wechat-article-skills#aws-wechat-article-images
@@ -9,90 +9,153 @@ metadata:
 
 # 配图
 
-为公众号文章生成封面图与正文配图。根据文章内容自动分析并决定配图策略。
+读取文章中的配图标记，按 Type × Style 二维体系生成图片。
+
+## Type × Style 二维体系
+
+| 维度 | 控制 | 说明 |
+|------|------|------|
+| **Type（类型）** | 信息结构 | 决定画面的构成方式 |
+| **Style（风格）** | 视觉美学 | 决定画面的视觉风格 |
+
+两个维度自由组合，如：`信息图 × 蓝图风`、`氛围 × 水彩风`。
+
+### Type 类型
+
+| 类型 | 最佳用途 | 对应 writing 标记 |
+|------|---------|------------------|
+| `信息图` | 数据、指标、技术概念 | `![信息图：...]` |
+| `氛围` | 叙事、情感、场景 | `![氛围：...]` |
+| `流程图` | 步骤、工作流 | `![流程图：...]` |
+| `对比` | 并列比较、选择 | `![对比：...]` |
+| `框架` | 模型、架构、体系 | `![框架：...]` |
+| `封面` | 文章封面图 | `![封面：...]` |
+
+### Style 风格
+
+核心风格（快速选择）：
+
+| 风格 | 适用场景 |
+|------|---------|
+| `扁平矢量` | 知识科普、教程、科技 |
+| `简约线条` | 通用、知识分享 |
+| `蓝图` | AI、前沿科技、系统设计 |
+| `手绘` | 轻松、个人成长 |
+| `水彩` | 生活、情感、文艺 |
+| `海报` | 观点、评论、文化 |
+
+完整风格库与 Type × Style 兼容矩阵：[references/styles.md](references/styles.md)
+
+### 风格预设
+
+按文章类型一键选择 Type + Style 组合：[references/style-presets.md](references/style-presets.md)
 
 ## 工作流
 
 ```
 配图进度：
-- [ ] 第1步：读取配置
-- [ ] 第2步：分析内容
-- [ ] 第3步：确定配图方案
-- [ ] 第4步：生成图片
-- [ ] 第5步：产出配图结果
+- [ ] 第1步：读取配置与文章
+- [ ] 第2步：解析配图标记
+- [ ] 第3步：确定风格 ⚠️
+- [ ] 第4步：生成配图方案（outline）
+- [ ] 第5步：展示方案并等待确认 ⛔
+- [ ] 第6步：生成图片
+- [ ] 第7步：插入文章
 ```
 
-### 第1步：读取配置
+### 第1步：读取配置与文章
 
-从 `config.yaml` 读取：`cover_aspect`、`cover_style`、`image_density`、`caption_style`、`multi_image_count`、`assets_root`、`header_image`、`footer_image`。
+从 `config.yaml` 读取：`cover_aspect`、`cover_style`、`image_density`、`caption_style`、`assets_root`、`header_image`、`footer_image`。
 
-### 第2步：分析内容
+读取 writing 产出的文章（含配图标记）。
 
-分析文章的标题、摘要、正文，提取：
-- 主题与关键词
-- 情绪与调性
-- 适合的视觉风格
+### 第2步：解析配图标记
 
-### 第3步：确定配图方案
+提取文章中所有 `![类型：描述](placeholder)` 标记，解析出：
+- 位置（在哪个段落之后）
+- 类型（封面/信息图/氛围/流程图/对比/实证）
+- 描述（画面内容和意图）
 
-根据内容分析，自动决定：
+对于 `实证` 类型：提示用户提供素材，或从 `assets_root` 搜索。
 
-| 决策项 | 说明 |
-|--------|------|
-| 封面风格 | 根据文章调性选择风格预设 |
-| 封面比例 | 按配置 `cover_aspect` |
-| 正文配图数量 | 按配置 `image_density` |
-| 配图位置 | 按正文结构建议插图位置 |
+### 第3步：确定风格 ⚠️
 
-自动选择规则：[references/auto-selection.md](references/auto-selection.md)
+**风格确定顺序**（首个命中即用）：
+1. 用户当次指定
+2. config 中的 `cover_style`（作为默认风格基调）
+3. 根据文章内容自动推荐 → 询问用户确认
 
-将方案展示给用户确认，用户可调整后继续。
+自动推荐规则：[references/auto-selection.md](references/auto-selection.md)
 
-### 第4步：生成图片
+**全文使用统一风格**，保持视觉一致性。封面可用相同风格的变体。
 
-按确定的方案调用图片生成能力，生成封面图与正文配图。
+### 第4步：生成配图方案
 
-生成时读取对应风格预设的 prompt 模板：`references/presets/<预设名>.md`
-
-### 第5步：产出配图结果
-
-输出：
-- 封面图（路径或生成结果）
-- 正文配图列表（位置 + 图片 + 图注）
-- 多图推送时：图序、每张配文、尺寸规格
-
-## 输出格式
+为每张图生成方案：
 
 ```markdown
 ## 配图方案
 
-### 封面
-- 风格：简约科技
-- 比例：2.35:1（900×383）
-- 描述：[封面内容描述]
+### 图1：封面
+- 类型：封面
+- 风格：扁平矢量
+- 比例：2.35:1
+- 描述：[来自标记的描述]
+- Prompt 要点：[结构化 prompt 摘要]
 
-### 正文配图
-| 位置 | 描述 | 图注 |
-|------|------|------|
-| 小标题一之后 | [图片内容描述] | 图：XXX |
-| 小标题三之后 | [图片内容描述] | 图：XXX |
+### 图2：信息图
+- 类型：信息图
+- 风格：扁平矢量
+- 位置：小标题一之后
+- 描述：[来自标记的描述]
+- Prompt 要点：[结构化 prompt 摘要]
 
-### 品牌元素
-- 头图：[路径或「无」]
-- 尾图：[路径或「无」]
+### 图3：实证
+- 类型：实证
+- 位置：小标题二之后
+- ⚠️ 需用户提供截图
 ```
 
-## 风格预设
+Prompt 构建模板：[references/prompt-construction.md](references/prompt-construction.md)
 
-预设文件存放在 `references/presets/`，每个预设包含用于生成图片的 prompt 模板和参数。
+### 第5步：展示方案并等待确认 ⛔
 
-| 预设 | 风格 | 适用场景 |
-|------|------|---------|
-| default | 简约扁平 | 科技、互联网、通用 |
-| *更多预设持续添加中* | | |
+展示配图方案，等待用户：
+- 「确认」→ 开始生成
+- 修改某张图的描述或风格 → 更新方案
+- 提供实证类素材
 
-预设文件格式说明：[references/presets/README.md](references/presets/README.md)
+### 第6步：生成图片
 
-## 图片规格
+按方案逐张生成：
+- 封面/氛围/对比：调用图片生成能力，使用结构化 prompt
+- 信息图/流程图/框架：生成 HTML → 导出为图片（或使用生成能力）
+- 实证：使用用户提供的素材
 
-详见：[references/specs.md](references/specs.md)
+图片规格：[references/specs.md](references/specs.md)
+
+### 第7步：插入文章
+
+将 `![类型：描述](placeholder)` 替换为实际图片路径：
+
+```markdown
+![描述](imgs/01-cover-title.png)
+```
+
+输出目录：`{article-dir}/imgs/`
+
+## 多图推送模式
+
+多图推送时跳过文章标记解析，直接按 `multi_image_count` 生成图序：
+- 每张：主题 + 配文 + 风格统一
+- 统一比例和风格
+
+## References
+
+| 文件 | 内容 |
+|------|------|
+| [references/styles.md](references/styles.md) | 风格库与 Type×Style 兼容矩阵 |
+| [references/style-presets.md](references/style-presets.md) | 按文章类型的预设组合 |
+| [references/prompt-construction.md](references/prompt-construction.md) | 各 Type 的 prompt 构建模板 |
+| [references/auto-selection.md](references/auto-selection.md) | 内容信号→自动推荐 |
+| [references/specs.md](references/specs.md) | 图片尺寸与格式规格 |
