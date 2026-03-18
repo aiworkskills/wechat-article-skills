@@ -92,7 +92,13 @@ Prompt 构建：[shared/image-styles/prompt-construction.md](../shared/image-sty
 
 ### 第6步：生成图片
 
-按方案逐张生成，保存到文章目录的 `imgs/`：
+使用共享图片生成脚本逐张生成：
+
+```bash
+python {baseDir}/../shared/scripts/image-gen.py batch imgs/prompts/ -o imgs/
+```
+
+保存到文章目录的 `imgs/`：
 
 ```
 imgs/

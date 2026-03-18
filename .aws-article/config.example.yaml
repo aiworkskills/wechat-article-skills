@@ -54,13 +54,33 @@ review_required:
 custom_sensitive_words: []
 review_output_format: 分块详细
 
-# ── 发布 ──
+# ── 图片生成模型 ──
+image_model:
+  base_url: ""
+  api_key: ""
+  model: ""
+  default_size: "1024x1024"
+  default_quality: "standard"
+
+# ── 发布（单账号）──
 wechat_appid: ""
 wechat_appsecret: ""
 publish_method: api
 need_open_comment: 1
 only_fans_can_comment: 0
-# 安全提示：config.yaml 已在 .gitignore 中，AppSecret 不会被提交
+
+# ── 发布（多账号，与上方单账号二选一）──
+# wechat_accounts:
+#   - name: 主号
+#     alias: main
+#     default: true
+#     appid: ""
+#     appsecret: ""
+#   - name: 副号
+#     alias: sub
+#     appid: ""
+#     appsecret: ""
+# 安全提示：config.yaml 已在 .gitignore 中，凭证不会被提交
 
 # ── 路径 ──
 drafts_root: drafts/

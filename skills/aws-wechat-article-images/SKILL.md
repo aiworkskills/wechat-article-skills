@@ -88,7 +88,17 @@ Type × Style 体系为所有图片生成 skill 共用，详见共享资源：
 
 ### 第6步：生成图片
 
-按方案逐张生成。图片规格：[references/specs.md](references/specs.md)
+使用共享图片生成脚本：
+
+```bash
+# 单张生成
+python {baseDir}/../shared/scripts/image-gen.py generate imgs/prompts/00-cover.md -o imgs/00-cover.png
+
+# 批量生成
+python {baseDir}/../shared/scripts/image-gen.py batch imgs/prompts/ -o imgs/
+```
+
+图片规格：[references/specs.md](references/specs.md)
 
 ### 第7步：插入文章
 

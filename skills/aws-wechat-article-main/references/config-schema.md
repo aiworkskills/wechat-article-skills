@@ -55,12 +55,32 @@ review_required:             # 必检项列表
 custom_sensitive_words: []   # 自定义敏感词
 review_output_format: 分块详细  # 简要清单、分块详细
 
-# ── 发布 ──
+# ── 图片生成模型 ──
+image_model:
+  base_url: ""               # API 端点（任何 OpenAI 兼容的图片生成接口）
+  api_key: ""                # API Key
+  model: ""                  # 模型名（如 dall-e-3、flux 等）
+  default_size: "1024x1024"  # 默认尺寸
+  default_quality: "standard" # standard / hd
+
+# ── 发布（单账号）──
 wechat_appid: ""               # 公众号 AppID
 wechat_appsecret: ""           # 公众号 AppSecret
 publish_method: api            # api、manual
 need_open_comment: 1           # 开启评论：0=否 1=是
 only_fans_can_comment: 0       # 仅粉丝可评：0=否 1=是
+
+# ── 发布（多账号，与上方单账号二选一）──
+# wechat_accounts:
+#   - name: 主号
+#     alias: main
+#     default: true
+#     appid: ""
+#     appsecret: ""
+#   - name: 副号
+#     alias: sub
+#     appid: ""
+#     appsecret: ""
 
 # ── 路径 ──
 drafts_root: drafts/               # 进行中的文章

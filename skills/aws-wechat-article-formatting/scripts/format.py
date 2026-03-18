@@ -162,6 +162,32 @@ def _build_styles(theme: dict, overrides: dict = None) -> dict:
     return resolved
 
 
+# ── Markdown 预格式化 ─────────────────────────────────────────
+
+def _preformat_markdown(text: str) -> str:
+    """预格式化 Markdown：修复中文排版常见问题。"""
+
+    # 中英文之间加空格
+    text = re.sub(r'([\u4e00-\u9fff])([A-Za-z0-9])', r'\1 \2', text)
+    text = re.sub(r'([A-Za-z0-9])([\u4e00-\u9fff])', r'\1 \2', text)
+
+    # 中文与数字之间加空格
+    text = re.sub(r'([\u4e00-\u9fff])(\d)', r'\1 \2', text)
+    text = re.sub(r'(\d)([\u4e00-\u9fff])', r'\1 \2', text)
+
+    # ASCII 引号 → 中文引号（简单启发式）
+    text = re.sub(r'"([^"]*?)"', r'「\1」', text)
+
+    # 连续多个空行 → 最多两个
+    text = re.sub(r'\n{3,}', '\n\n', text)
+
+    # 修复加粗标记中的空格问题（** 内侧不应有空格）
+    text = re.sub(r'\*\*\s+', '**', text)
+    text = re.sub(r'\s+\*\*', '**', text)
+
+    return text
+
+
 # ── Markdown → HTML ──────────────────────────────────────────
 
 def _md_to_html(md_text: str, styles: dict) -> str:
@@ -349,6 +375,7 @@ def main():
     parser.add_argument("--color", help="覆盖主色（如 #0F4C81）")
     parser.add_argument("--font-size", help="覆盖字号（如 16px）")
     parser.add_argument("-o", "--output", help="输出路径（默认同名 .html）")
+    parser.add_argument("--no-preformat", action="store_true", help="跳过 Markdown 预格式化")
     parser.add_argument("--list-themes", action="store_true", help="列出可用主题")
 
     args = parser.parse_args()
@@ -370,6 +397,11 @@ def main():
         _err(f"文件不存在: {input_path}")
 
     md_text = input_path.read_text(encoding="utf-8")
+
+    if not args.no_preformat:
+        md_text = _preformat_markdown(md_text)
+        _info("Markdown 预格式化完成（中英文间距、引号、空行）")
+
     theme = _load_theme(args.theme)
 
     overrides = {}

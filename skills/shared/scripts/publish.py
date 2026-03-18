@@ -57,10 +57,59 @@ def get_access_token(appid: str, appsecret: str) -> str:
     return data["access_token"]
 
 
+# ── 图片压缩 ────────────────────────────────────────────────
+
+def _compress_image(image_path: str, max_bytes: int, for_content: bool = False) -> str:
+    """压缩图片到指定大小以内，返回压缩后的路径（可能是临时文件）。
+
+    封面/永久素材：max 10MB
+    正文图片：max 1MB
+    """
+    path = Path(image_path)
+    size = path.stat().st_size
+    if size <= max_bytes:
+        return image_path
+
+    _info(f"图片 {path.name} ({size/1024:.0f}KB) 超过限制 ({max_bytes/1024:.0f}KB)，压缩中...")
+
+    try:
+        from PIL import Image
+    except ImportError:
+        _info("未安装 Pillow，跳过压缩（pip install Pillow）")
+        return image_path
+
+    img = Image.open(path)
+    if img.mode == "RGBA":
+        img = img.convert("RGB")
+
+    compressed_path = path.parent / f"{path.stem}_compressed.jpg"
+
+    quality = 85
+    while quality >= 20:
+        img.save(compressed_path, "JPEG", quality=quality, optimize=True)
+        if compressed_path.stat().st_size <= max_bytes:
+            new_size = compressed_path.stat().st_size
+            _ok(f"压缩完成: {new_size/1024:.0f}KB (quality={quality})")
+            return str(compressed_path)
+        quality -= 10
+
+    max_dim = 1920 if not for_content else 1080
+    img.thumbnail((max_dim, max_dim), Image.LANCZOS)
+    img.save(compressed_path, "JPEG", quality=60, optimize=True)
+    new_size = compressed_path.stat().st_size
+    _ok(f"压缩+缩放完成: {new_size/1024:.0f}KB")
+    return str(compressed_path)
+
+
+THUMB_MAX_BYTES = 10 * 1024 * 1024    # 封面 10MB
+CONTENT_MAX_BYTES = 1 * 1024 * 1024   # 正文 1MB
+
+
 # ── 上传图片 ────────────────────────────────────────────────
 
 def upload_thumb(token: str, image_path: str) -> dict:
-    """上传封面图为永久素材，返回 {media_id, url}。"""
+    """上传封面图为永久素材，返回 {media_id, url}。自动压缩到 10MB 以内。"""
+    image_path = _compress_image(image_path, THUMB_MAX_BYTES)
     url = f"{API_BASE}/material/add_material?access_token={token}&type=image"
     data = _upload_file(url, image_path, field_name="media")
     if "media_id" not in data:
@@ -69,7 +118,8 @@ def upload_thumb(token: str, image_path: str) -> dict:
 
 
 def upload_content_image(token: str, image_path: str) -> str:
-    """上传正文内图片，返回可在正文中使用的 URL。"""
+    """上传正文内图片，返回可在正文中使用的 URL。自动压缩到 1MB 以内。"""
+    image_path = _compress_image(image_path, CONTENT_MAX_BYTES, for_content=True)
     url = f"{API_BASE}/media/uploadimg?access_token={token}"
     data = _upload_file(url, image_path, field_name="media")
     if "url" not in data:
@@ -295,25 +345,86 @@ def _load_config() -> dict:
     )
 
 
-def _get_credentials() -> tuple[str, str]:
-    """从 config.yaml 读取 wechat_appid 和 wechat_appsecret。"""
+def _resolve_account(cfg: dict, account_alias: str = None) -> dict:
+    """解析账号凭证，支持多账号。
+
+    config.yaml 单账号格式：
+        wechat_appid: xxx
+        wechat_appsecret: xxx
+
+    config.yaml 多账号格式：
+        wechat_accounts:
+          - name: 主号
+            alias: main
+            default: true
+            appid: xxx
+            appsecret: xxx
+          - name: 副号
+            alias: sub
+            appid: xxx
+            appsecret: xxx
+    """
+    accounts = cfg.get("wechat_accounts", [])
+
+    if not accounts:
+        appid = cfg.get("wechat_appid", "")
+        appsecret = cfg.get("wechat_appsecret", "")
+        if not appid or not appsecret:
+            _err(
+                "config.yaml 中缺少微信凭证。\n"
+                "单账号：\n"
+                "  wechat_appid: 你的AppID\n"
+                "  wechat_appsecret: 你的AppSecret\n"
+                "多账号：\n"
+                "  wechat_accounts:\n"
+                "    - name: 账号名\n"
+                "      alias: main\n"
+                "      appid: xxx\n"
+                "      appsecret: xxx"
+            )
+        return {"name": "default", "appid": appid, "appsecret": appsecret}
+
+    if account_alias:
+        for acc in accounts:
+            if acc.get("alias") == account_alias or acc.get("name") == account_alias:
+                _info(f"使用账号: {acc.get('name', account_alias)}")
+                return acc
+        _err(f"未找到账号 '{account_alias}'，可用：{', '.join(a.get('alias', a.get('name', '?')) for a in accounts)}")
+
+    if len(accounts) == 1:
+        _info(f"使用账号: {accounts[0].get('name', '默认')}")
+        return accounts[0]
+
+    for acc in accounts:
+        if acc.get("default"):
+            _info(f"使用默认账号: {acc.get('name', '默认')}")
+            return acc
+
+    _info("多个账号可用，请用 --account 指定：")
+    for acc in accounts:
+        alias = acc.get("alias", "")
+        name = acc.get("name", "")
+        print(f"  --account {alias}  ({name})")
+    _err("请指定账号")
+
+
+def _get_credentials(account_alias: str = None) -> tuple[str, str]:
+    """获取凭证。"""
     cfg = _load_config()
-    appid = cfg.get("wechat_appid", "")
-    appsecret = cfg.get("wechat_appsecret", "")
+    acc = _resolve_account(cfg, account_alias)
+    appid = acc.get("appid", acc.get("wechat_appid", ""))
+    appsecret = acc.get("appsecret", acc.get("wechat_appsecret", ""))
     if not appid or not appsecret:
-        _err(
-            "config.yaml 中缺少 wechat_appid 或 wechat_appsecret\n"
-            "请在 config.yaml 中添加：\n"
-            "  wechat_appid: 你的AppID\n"
-            "  wechat_appsecret: 你的AppSecret"
-        )
+        _err(f"账号 '{acc.get('name', '?')}' 缺少 appid 或 appsecret")
     return appid, appsecret
 
 
 # ── CLI ─────────────────────────────────────────────────────
 
+_cli_account: str | None = None
+
 def _get_token() -> str:
-    appid, appsecret = _get_credentials()
+    appid, appsecret = _get_credentials(_cli_account)
     return get_access_token(appid, appsecret)
 
 
@@ -323,14 +434,15 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
+    parser.add_argument("--account", help="指定账号（多账号时使用 alias 或 name）")
     sub = parser.add_subparsers(dest="command", help="子命令")
 
     sub.add_parser("token", help="获取 access_token")
 
-    p_thumb = sub.add_parser("upload-thumb", help="上传封面图（永久素材）")
+    p_thumb = sub.add_parser("upload-thumb", help="上传封面图（永久素材，自动压缩）")
     p_thumb.add_argument("image", help="图片路径")
 
-    p_img = sub.add_parser("upload-content-image", help="上传正文图片")
+    p_img = sub.add_parser("upload-content-image", help="上传正文图片（自动压缩）")
     p_img.add_argument("image", help="图片路径")
 
     p_draft = sub.add_parser("create-draft", help="从 YAML 创建草稿")
@@ -346,11 +458,34 @@ def main():
     p_full.add_argument("article_dir", help="文章目录路径")
     p_full.add_argument("--publish", action="store_true", help="创建草稿后立即发布")
 
+    sub.add_parser("accounts", help="列出配置的账号")
+    sub.add_parser("check", help="检查发布环境")
+
     args = parser.parse_args()
 
     if not args.command:
         parser.print_help()
         sys.exit(0)
+
+    global _cli_account
+    _cli_account = args.account
+
+    if args.command == "accounts":
+        cfg = _load_config()
+        accounts = cfg.get("wechat_accounts", [])
+        if not accounts:
+            appid = cfg.get("wechat_appid", "")
+            print(f"单账号模式: appid={appid[:8]}..." if appid else "未配置账号")
+        else:
+            print(f"已配置 {len(accounts)} 个账号：")
+            for acc in accounts:
+                default_mark = " ⭐" if acc.get("default") else ""
+                print(f"  {acc.get('alias', '?')} ({acc.get('name', '?')}){default_mark}")
+        return
+
+    if args.command == "check":
+        _run_checks()
+        return
 
     if args.command == "token":
         token = _get_token()
@@ -391,6 +526,92 @@ def main():
     elif args.command == "full":
         token = _get_token()
         full_publish(token, args.article_dir, do_publish=args.publish)
+
+
+def _run_checks():
+    """检查发布环境。"""
+    print("=== 发布环境检查 ===\n")
+    issues = []
+
+    # 1. config.yaml
+    try:
+        cfg = _load_config()
+        _ok("config.yaml 找到")
+    except SystemExit:
+        print("❌ config.yaml 未找到")
+        issues.append("创建 .aws-article/config.yaml")
+        cfg = {}
+
+    # 2. 微信凭证
+    appid = cfg.get("wechat_appid", "")
+    accounts = cfg.get("wechat_accounts", [])
+    if accounts:
+        _ok(f"多账号配置: {len(accounts)} 个账号")
+        for acc in accounts:
+            aid = acc.get("appid", "")
+            asecret = acc.get("appsecret", "")
+            name = acc.get("name", acc.get("alias", "?"))
+            if aid and asecret:
+                _ok(f"  {name}: 凭证已配置")
+            else:
+                print(f"  ❌ {name}: 缺少 appid 或 appsecret")
+                issues.append(f"补充账号 {name} 的凭证")
+    elif appid:
+        appsecret = cfg.get("wechat_appsecret", "")
+        if appsecret:
+            _ok("微信凭证已配置")
+        else:
+            print("❌ 缺少 wechat_appsecret")
+            issues.append("在 config.yaml 中添加 wechat_appsecret")
+    else:
+        print("⚠️  未配置微信凭证（如不需要 API 发布可忽略）")
+
+    # 3. API 连通性（如有凭证）
+    if appid and cfg.get("wechat_appsecret"):
+        try:
+            token = get_access_token(appid, cfg["wechat_appsecret"])
+            _ok(f"API 连通正常 (token: {token[:16]}...)")
+        except Exception as e:
+            print(f"❌ API 连通失败: {e}")
+            issues.append("检查 appid/appsecret 是否正确，IP 是否在白名单中")
+
+    # 4. Python yaml
+    try:
+        import yaml
+        _ok("PyYAML 已安装")
+    except ImportError:
+        print("❌ PyYAML 未安装")
+        issues.append("pip install pyyaml")
+
+    # 5. Pillow（图片压缩）
+    try:
+        from PIL import Image
+        _ok("Pillow 已安装（图片压缩可用）")
+    except ImportError:
+        print("⚠️  Pillow 未安装（图片压缩不可用，大图上传可能失败）")
+        issues.append("建议安装: pip install Pillow")
+
+    # 6. 图片模型配置
+    img_model = cfg.get("image_model", {})
+    if img_model.get("api_key"):
+        _ok(f"图片生成模型已配置: {img_model.get('model', '?')}")
+    else:
+        print("⚠️  图片生成模型未配置（如不需要 AI 生图可忽略）")
+
+    # 7. 写作模型配置
+    write_model = cfg.get("writing_model", {})
+    if write_model.get("api_key"):
+        _ok(f"写作模型已配置: {write_model.get('model', '?')}")
+    else:
+        print("⚠️  写作模型未配置（如不需要第三方模型写稿可忽略）")
+
+    print("\n=== 检查完成 ===")
+    if issues:
+        print(f"\n需要处理的问题（{len(issues)} 个）：")
+        for i, issue in enumerate(issues, 1):
+            print(f"  {i}. {issue}")
+    else:
+        _ok("所有检查通过，可以发布！")
 
 
 if __name__ == "__main__":
