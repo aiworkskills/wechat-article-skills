@@ -38,15 +38,13 @@ writing_model:
 # ── 排版 ──
 default_format_preset: ""   # 默认排版预设名，空则每次询问
 
-# ── 图片与素材 ──
+# ── 图片 ──
 cover_aspect: "2.35:1"      # 封面比例：2.35:1、16:9、1:1
 cover_style: 简约            # 封面风格：简约、插画、实拍、品牌模板
 image_density: 每节一图      # 配图密度
 caption_style: 有图注        # 有图注、无图注
 multi_image_count: 6         # 多图推送张数偏好
-assets_root: imgs/           # 素材根目录
-header_image: ""             # 品牌头图路径
-footer_image: ""             # 品牌尾图路径
+# 素材（封面、品牌头尾图等）统一放在 .aws-article/assets/ 下
 
 # ── 审稿 ──
 review_required:             # 必检项列表
@@ -81,9 +79,10 @@ series_root: series/               # 系列规划
 ├── config.yaml                  # 配置
 ├── writing-spec.md              # 写作规范
 ├── presets/                     # 用户自定义预设
-│   ├── formatting/              #   排版预设
+│   ├── formatting/              #   排版主题（YAML）
 │   ├── image-styles/            #   配图风格
-│   └── title-styles/            #   标题风格
+│   ├── title-styles/            #   标题风格
+│   └── review-rules.yaml        #   自定义审稿规则
 ├── assets/                      # 素材库
 │   ├── brand/                   #   品牌元素（头图、尾图）
 │   ├── covers/                  #   封面图素材

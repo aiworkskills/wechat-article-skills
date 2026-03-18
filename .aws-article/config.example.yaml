@@ -37,12 +37,13 @@ writing_model:
 # ── 排版 ──
 default_format_preset: ""
 
-# ── 图片与素材 ──
+# ── 图片 ──
 cover_aspect: "2.35:1"
 cover_style: 简约
 image_density: 每节一图
 caption_style: 有图注
 multi_image_count: 6
+# 素材（封面、品牌头尾图等）放在 .aws-article/assets/ 下
 
 # ── 审稿 ──
 review_required:
