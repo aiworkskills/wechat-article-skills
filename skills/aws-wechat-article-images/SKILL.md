@@ -1,6 +1,6 @@
 ---
 name: aws-wechat-article-images
-description: 为微信公众号文章生成配图，采用 Type×Style 二维体系。读取 writing 阶段的配图标记，按类型和风格生成图片。当用户提到「封面」「配图」「生成图片」或需要文章配图时使用。
+description: 为公众号文章生成封面图和正文配图，根据文章内容自动匹配风格。当用户提到「封面」「配图」「插图」「生成图片」「给文章加图」「做个封面」「文章插图」「配个图」时使用。
 version: 0.4.0
 metadata:
   openclaw:

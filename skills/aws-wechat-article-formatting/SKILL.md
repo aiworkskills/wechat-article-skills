@@ -1,6 +1,6 @@
 ---
 name: aws-wechat-article-formatting
-description: 将公众号文章从 Markdown 转换为微信兼容的 HTML（所有样式 inline），支持多套主题和自定义配色。当用户提到「排版」「版式」「字号」「段落」「样式」「转 HTML」或需要格式化文章时使用。
+description: 给公众号文章排版，转换为可直接粘贴到微信后台的格式，支持多套主题。当用户提到「排版」「版式」「美化」「格式化」「字号」「段落样式」「换个主题」「转 HTML」「弄好看点」「调整格式」时使用。
 version: 0.3.0
 metadata:
   openclaw:
