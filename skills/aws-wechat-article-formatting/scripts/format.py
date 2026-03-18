@@ -253,11 +253,17 @@ def _md_to_html(md_text: str, styles: dict) -> str:
         img_match = re.match(r'^!\[(.+?)\]\((.+?)\)$', stripped)
         if img_match:
             flush_paragraph()
-            alt = html_mod.escape(img_match.group(1))
+            alt = img_match.group(1)
             src = img_match.group(2)
+
+            # 封面图不进正文 HTML（通过 API 单独上传）
+            if alt.startswith("封面"):
+                continue
+
+            alt_escaped = html_mod.escape(alt)
             html_parts.append(
                 f'<p style="text-align:center; margin:1.5em 0;">'
-                f'<img src="{src}" alt="{alt}" style="max-width:100%; border-radius:4px;" />'
+                f'<img src="{src}" alt="{alt_escaped}" style="max-width:100%; border-radius:4px;" />'
                 f'</p>'
             )
             if "：" in alt:
