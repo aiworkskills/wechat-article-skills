@@ -11,6 +11,17 @@ metadata:
 
 管理微信公众号内容全流程，路由到对应子 skill。
 
+## 配置检查 ⛔ BLOCKING
+
+**任何操作之前，必须先检查 config.yaml 是否存在**：
+
+```bash
+test -f .aws-article/config.yaml || test -f "$HOME/.aws-article/config.yaml"
+```
+
+- ✅ 存在 → 读取配置，继续
+- ⛔ 不存在 → **立即进入首次引导**，完成后才能继续。详见 [references/first-time-setup.md](references/first-time-setup.md)
+
 ## 流程
 
 ```

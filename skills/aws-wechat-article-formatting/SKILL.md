@@ -32,8 +32,11 @@ metadata:
 
 ## 工作流
 
+**⛔ 先检查 config.yaml 是否存在**，不存在则进入首次引导（见 [aws-wechat-article-main/references/first-time-setup.md](../aws-wechat-article-main/references/first-time-setup.md)）。
+
 ```
 排版进度：
+- [ ] 第0步：检查配置 ⛔
 - [ ] 第1步：确定主题
 - [ ] 第2步：转换
 - [ ] 第3步：输出 HTML

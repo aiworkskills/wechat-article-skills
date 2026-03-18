@@ -21,9 +21,13 @@ metadata:
 |------|------|
 | `shared/scripts/publish.py` | 微信公众号 API 发布工具 |
 
-## 前置条件
+## 前置条件 ⛔
 
-在 `config.yaml` 中填写公众号凭证：
+**先检查 config.yaml**：`test -f .aws-article/config.yaml || test -f "$HOME/.aws-article/config.yaml"`
+
+⛔ 不存在 → 立即进入首次引导（见 [aws-wechat-article-main/references/first-time-setup.md](../aws-wechat-article-main/references/first-time-setup.md)），**不继续执行**。
+
+✅ 存在 → 检查公众号凭证。在 `config.yaml` 中填写：
 
 ```yaml
 wechat_appid: "你的AppID"

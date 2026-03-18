@@ -59,9 +59,13 @@ Type × Style 体系为所有图片生成 skill 共用，详见共享资源：
 - [ ] 第7步：插入文章
 ```
 
-### 第1步：读取配置与文章
+### 第1步：读取配置与文章 ⛔
 
-从 `config.yaml` 读取：`cover_aspect`、`cover_style`、`image_density`、`caption_style`。
+**先检查 config.yaml**：`test -f .aws-article/config.yaml || test -f "$HOME/.aws-article/config.yaml"`
+
+⛔ 不存在 → 立即进入首次引导（见 [aws-wechat-article-main/references/first-time-setup.md](../aws-wechat-article-main/references/first-time-setup.md)），**不继续执行**。
+
+✅ 存在 → 从 `config.yaml` 读取：`cover_aspect`、`cover_style`、`image_density`、`caption_style`。
 
 读取文章目录下的 `article.md`（含配图标记）。
 

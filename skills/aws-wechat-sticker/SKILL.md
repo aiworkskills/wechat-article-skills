@@ -34,9 +34,13 @@ metadata:
 - [ ] 第8步：发布
 ```
 
-### 第1步：读取配置
+### 第1步：读取配置 ⛔
 
-从 `config.yaml` 读取：`cover_aspect`、`cover_style`、`multi_image_count`、`tone`、`target_reader`。
+**先检查 config.yaml**：`test -f .aws-article/config.yaml || test -f "$HOME/.aws-article/config.yaml"`
+
+⛔ 不存在 → 立即进入首次引导（见 [aws-wechat-article-main/references/first-time-setup.md](../aws-wechat-article-main/references/first-time-setup.md)），**不继续执行**。
+
+✅ 存在 → 从 `config.yaml` 读取：`cover_aspect`、`cover_style`、`multi_image_count`、`tone`、`target_reader`。
 
 ### 第2步：确定选题
 

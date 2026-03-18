@@ -34,13 +34,13 @@ metadata:
 - [ ] 第6步：输出选题卡片
 ```
 
-### 第1步：识别模式与读取配置
+### 第1步：识别模式与读取配置 ⛔
 
-从用户输入判断 A/B/C/D 模式。
+**先检查 config.yaml**：`test -f .aws-article/config.yaml || test -f "$HOME/.aws-article/config.yaml"`
 
-从 `config.yaml` 读取：`account_type`、`target_reader`、`tone`、`topic_direction`、`title_style`、`title_max_length`、`summary_length`、`forbidden_title_phrases`。
+⛔ 不存在 → 立即进入首次引导（见 [aws-wechat-article-main/references/first-time-setup.md](../aws-wechat-article-main/references/first-time-setup.md)），**不继续执行**。
 
-无配置时触发首次引导（见 aws-wechat-article-main）。
+✅ 存在 → 从用户输入判断 A/B/C/D 模式，读取 `config.yaml`：`account_type`、`target_reader`、`tone`、`topic_direction`、`title_style`、`title_max_length`、`summary_length`、`forbidden_title_phrases`。
 
 ### 第2步：调研
 

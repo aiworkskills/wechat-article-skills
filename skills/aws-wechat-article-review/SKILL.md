@@ -31,9 +31,13 @@ metadata:
 - [ ] 第5步：确认通过 → 保存定稿
 ```
 
-### 第1步：读取配置与写作规范
+### 第1步：读取配置与写作规范 ⛔
 
-从 `config.yaml` 读取：`review_required`、`custom_sensitive_words`、`forbidden_words`、`review_output_format`、`title_max_length`、`summary_length`、`forbidden_title_phrases`、`original_attribution`。
+**先检查 config.yaml**：`test -f .aws-article/config.yaml || test -f "$HOME/.aws-article/config.yaml"`
+
+⛔ 不存在 → 立即进入首次引导（见 [aws-wechat-article-main/references/first-time-setup.md](../aws-wechat-article-main/references/first-time-setup.md)），**不继续执行**。
+
+✅ 存在 → 从 `config.yaml` 读取：`review_required`、`custom_sensitive_words`、`forbidden_words`、`review_output_format`、`title_max_length`、`summary_length`、`forbidden_title_phrases`、`original_attribution`。
 
 加载写作规范：`.aws-article/writing-spec.md`（如有）。
 
