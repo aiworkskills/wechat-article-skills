@@ -1,0 +1,13 @@
+name: 经典蓝
+description: 左边框小标题，底部分割线大标题，适合科技、干货、通用
+
+variables:
+  primary-color: "#0F4C81"
+
+styles:
+  h1: "text-align:center; font-size:22px; font-weight:bold; border-bottom:1px solid {primary-color}; padding-bottom:12px; margin-bottom:24px;"
+  h2: "font-size:18px; font-weight:bold; border-left:3px solid {primary-color}; padding-left:10px; margin-top:2em; margin-bottom:1em;"
+  h3: "font-size:16px; font-weight:bold; color:{primary-color}; margin-top:1.5em; margin-bottom:0.8em;"
+  blockquote: "border-left:3px solid {primary-color}; background:{bg-light}; padding:12px 16px; margin:1em 0; color:{text-light};"
+  hr: "border:none; border-top:1px dashed #CCCCCC; width:60%; margin:2em auto;"
+  strong-color: "{primary-color}"

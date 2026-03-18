@@ -1,0 +1,13 @@
+name: 极简黑
+description: 底线小标题，最少装饰，适合极简主义、学术
+
+variables:
+  primary-color: "#333333"
+
+styles:
+  h1: "font-size:22px; font-weight:bold; margin-bottom:24px;"
+  h2: "font-size:18px; font-weight:bold; margin-top:2em; margin-bottom:1em; padding-bottom:6px; border-bottom:1px solid {border-color};"
+  h3: "font-size:16px; font-weight:bold; margin-top:1.5em; margin-bottom:0.8em;"
+  blockquote: "border-left:3px solid #DDDDDD; padding:8px 16px; margin:1em 0; color:{text-muted};"
+  hr: "border:none; border-top:1px solid #EEEEEE; margin:2em 0;"
+  strong-color: "#000000"
