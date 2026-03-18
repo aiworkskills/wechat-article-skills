@@ -170,6 +170,38 @@ def get_publish_status(token: str, publish_id: str) -> dict:
     return _api_post_json(url, {"publish_id": publish_id})
 
 
+# ── 往期文章 ────────────────────────────────────────────────
+
+def get_published_articles(token: str, offset: int = 0, count: int = 10,
+                           no_content: bool = True) -> dict:
+    """获取已发布的文章列表。
+
+    Args:
+        offset: 偏移位置，0 = 从最新开始
+        count: 返回数量，1-20
+        no_content: True = 不返回正文（省流量）
+    """
+    url = f"{API_BASE}/freepublish/batchget?access_token={token}"
+    body = {"offset": offset, "count": count, "no_content": 1 if no_content else 0}
+    return _api_post_json(url, body)
+
+
+def list_recent_articles(token: str, count: int = 10) -> list[dict]:
+    """获取最近发布的文章，返回 [{title, url, update_time}]。"""
+    result = get_published_articles(token, offset=0, count=count)
+    articles = []
+    for item in result.get("item", []):
+        content = item.get("content", {})
+        for art in content.get("news_item", []):
+            articles.append({
+                "title": art.get("title", ""),
+                "url": art.get("url", ""),
+                "digest": art.get("digest", ""),
+                "update_time": item.get("update_time", ""),
+            })
+    return articles
+
+
 # ── 全流程 ──────────────────────────────────────────────────
 
 def full_publish(token: str, article_dir: str, do_publish: bool = False):
@@ -478,6 +510,9 @@ def main():
     sub.add_parser("accounts", help="列出配置的账号")
     sub.add_parser("check", help="检查发布环境")
 
+    p_recent = sub.add_parser("recent-articles", help="获取最近发布的文章")
+    p_recent.add_argument("-n", "--count", type=int, default=5, help="数量（默认5）")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -502,6 +537,19 @@ def main():
 
     if args.command == "check":
         _run_checks()
+        return
+
+    if args.command == "recent-articles":
+        token = _get_token()
+        articles = list_recent_articles(token, count=args.count)
+        if not articles:
+            _info("暂无已发布文章")
+        else:
+            print(f"最近 {len(articles)} 篇已发布文章：\n")
+            for i, art in enumerate(articles, 1):
+                print(f"  {i}. {art['title']}")
+                print(f"     {art['url']}")
+                print()
         return
 
     if args.command == "token":

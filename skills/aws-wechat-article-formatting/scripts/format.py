@@ -132,6 +132,73 @@ def _list_themes() -> list[dict]:
     return themes
 
 
+# ── 嵌入元素 ─────────────────────────────────────────────────
+
+def _load_embeds_config() -> dict:
+    """从 config.yaml 加载嵌入元素配置。"""
+    import yaml
+    candidates = [
+        Path(".aws-article/config.yaml"),
+        Path.home() / ".aws-article" / "config.yaml",
+    ]
+    for p in candidates:
+        if p.exists():
+            with open(p, encoding="utf-8") as f:
+                cfg = yaml.safe_load(f) or {}
+            return cfg.get("embeds", {})
+    return {}
+
+
+def _resolve_embeds(html_text: str, embeds: dict) -> str:
+    """替换 {embed:type:name} 标记为对应 HTML。"""
+    profiles = {p["name"]: p for p in embeds.get("profiles", [])}
+    miniprograms = {m["name"]: m for m in embeds.get("miniprograms", [])}
+
+    def _replace_embed(match):
+        embed_type = match.group(1)
+        embed_name = match.group(2)
+
+        if embed_type == "profile":
+            p = profiles.get(embed_name)
+            if p:
+                alias = p.get("alias", "")
+                return (
+                    f'<mpprofile class="js_uneditable custom_select_card mp_profile_iframe" '
+                    f'data-pluginname="mpprofile" data-alias="{alias}" '
+                    f'data-from="0"></mpprofile>'
+                )
+            return f'<!-- 未找到公众号名片配置: {embed_name} -->'
+
+        if embed_type == "miniprogram":
+            m = miniprograms.get(embed_name)
+            if m:
+                appid = m.get("appid", "")
+                path = m.get("path", "pages/index/index")
+                title = m.get("title", embed_name)
+                image = m.get("image", "")
+                return (
+                    f'<mp-miniprogram '
+                    f'data-miniprogram-appid="{appid}" '
+                    f'data-miniprogram-path="{path}" '
+                    f'data-miniprogram-title="{title}" '
+                    f'data-miniprogram-imageurl="{image}">'
+                    f'</mp-miniprogram>'
+                )
+            return f'<!-- 未找到小程序配置: {embed_name} -->'
+
+        if embed_type == "link":
+            manual = embeds.get("related_articles", {}).get("manual", [])
+            for lnk in manual:
+                if lnk.get("name") == embed_name:
+                    url = lnk.get("url", "")
+                    return f'<a href="{url}">{embed_name}</a>'
+            return f'<!-- 未找到链接配置: {embed_name} -->'
+
+        return match.group(0)
+
+    return re.sub(r'\{embed:(\w+):(.+?)\}', _replace_embed, html_text)
+
+
 # ── 样式构建 ─────────────────────────────────────────────────
 
 def _resolve_vars(template: str, variables: dict) -> str:
@@ -419,6 +486,12 @@ def main():
     _info(f"主题: {args.theme}")
     styles = _build_styles(theme, overrides)
     body_html = _md_to_html(md_text, styles)
+
+    embeds = _load_embeds_config()
+    if embeds:
+        body_html = _resolve_embeds(body_html, embeds)
+        _info("嵌入元素已替换（名片/小程序/链接）")
+
     full_html = _wrap_document(body_html, styles)
 
     output_path = Path(args.output) if args.output else input_path.with_suffix(".html")

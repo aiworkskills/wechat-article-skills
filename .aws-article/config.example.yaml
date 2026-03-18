@@ -83,6 +83,22 @@ only_fans_can_comment: 0
 #     appsecret: ""
 # 安全提示：config.yaml 已在 .gitignore 中，凭证不会被提交
 
+# ── 嵌入元素 ──
+# 文章中可用 {embed:profile:名称}、{embed:miniprogram:名称} 引用
+embeds:
+  profiles:
+    - name: ""
+      alias: ""
+  miniprograms:
+    - name: ""
+      appid: ""
+      path: "pages/index/index"
+      title: ""
+  related_articles:
+    strategy: auto
+    auto_count: 3
+    manual: []
+
 # ── 路径 ──
 drafts_root: drafts/
 published_root: posts/published/

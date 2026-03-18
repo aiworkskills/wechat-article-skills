@@ -84,6 +84,22 @@ only_fans_can_comment: 0       # 仅粉丝可评：0=否 1=是
 #     appsecret: ""
 #     api_base: ""          # 每个账号可单独配转发地址
 
+# ── 嵌入元素 ──
+embeds:
+  profiles:                      # 公众号名片
+    - name: ""                   # 显示名
+      alias: ""                  # 微信号（如 gh_xxxxxxxxx）
+  miniprograms:                  # 关联小程序
+    - name: ""
+      appid: ""                  # 小程序 AppID
+      path: "pages/index/index"  # 默认路径
+      title: ""                  # 卡片标题
+      image: ""                  # 卡片图片 URL
+  related_articles:              # 往期文章推荐
+    strategy: auto               # auto = API 自动获取 / manual = 仅手动
+    auto_count: 3                # 自动推荐最近 N 篇
+    manual: []                   # 手动置顶的文章 [{name, url}]
+
 # ── 路径 ──
 drafts_root: drafts/               # 进行中的文章
 published_root: posts/published/   # 已发布的文章
