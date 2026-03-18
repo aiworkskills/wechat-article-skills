@@ -44,7 +44,16 @@ metadata:
 
 ### 第3步：写作
 
-按结构模板写作：[references/structure-template.md](references/structure-template.md)
+**文章结构**：按优先级加载结构预设：
+1. 用户指定（「用清单体结构」）
+2. config `default_structure`
+3. `.aws-article/presets/structures/` 下的文件
+4. 内置默认：[references/structure-template.md](references/structure-template.md)
+
+**文末区块**：按优先级加载：
+1. `.aws-article/presets/closing-blocks/` 下 config `default_closing_block` 指定的文件
+2. config 中的 `closing_block` 字符串
+3. 无则不加
 
 写作时在需要图的位置插入配图标记 `![类型：描述](placeholder)`，详见结构模板中的「配图标记」章节。
 

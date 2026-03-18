@@ -68,7 +68,12 @@ metadata:
 
 为每个选题生成完整的「选题卡片」：标题候选（3-5 个，混合风格）、切入角度、大纲预览、工作量评估、摘要候选。
 
-标题风格：[references/title-presets.md](references/title-presets.md)
+**标题风格**：按优先级加载：
+1. 用户指定（「用反问型」）
+2. config `default_title_style`
+3. `.aws-article/presets/title-styles/` 下的自定义风格
+4. 内置默认：[references/title-presets.md](references/title-presets.md)
+
 输出模板：[references/output-format.md](references/output-format.md)
 
 ### 第5步：展示并等待用户选择 ⛔

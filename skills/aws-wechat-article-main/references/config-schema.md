@@ -35,8 +35,15 @@ writing_model:
   temperature: 0.7
   max_tokens: 4000
 
-# ── 排版 ──
-default_format_preset: ""   # 默认排版预设名，空则每次询问
+# ── 预设默认值 ──
+# 各类型预设放在 .aws-article/presets/{类型}/ 下，文件名 = 预设名
+# 以下指定各类型的默认预设（留空则每次询问或用内置 fallback）
+default_structure: ""        # 文章结构预设名（presets/structures/）
+default_closing_block: ""    # 文末区块预设名（presets/closing-blocks/）
+default_title_style: ""      # 标题风格预设名（presets/title-styles/）
+default_format_preset: ""    # 排版主题预设名（presets/formatting/）
+default_image_style: ""      # 配图风格预设名（presets/image-styles/）
+default_sticker_style: ""    # 贴图风格预设名（presets/sticker-styles/）
 
 # ── 图片 ──
 cover_aspect: "2.35:1"      # 封面比例：2.35:1、16:9、1:1

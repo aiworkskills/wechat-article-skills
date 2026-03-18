@@ -45,9 +45,13 @@ Type（画面构成）× Style（视觉风格）自由组合。
 
 ### 第3步：确定风格
 
-用户指定 > config `cover_style` > 自动推荐。全文统一风格。
+**风格加载优先级**：
+1. 用户指定（「用水彩风」）
+2. config `default_image_style`
+3. `.aws-article/presets/image-styles/` 下的自定义风格
+4. 内置风格库：[shared/image-styles/styles.md](../shared/image-styles/styles.md)
 
-自动推荐规则：[shared/image-styles/auto-selection.md](../shared/image-styles/auto-selection.md)
+全文统一风格。自动推荐规则：[shared/image-styles/auto-selection.md](../shared/image-styles/auto-selection.md)
 
 ### 第4步：生成配图方案
 
