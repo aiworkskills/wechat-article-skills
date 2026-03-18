@@ -72,7 +72,7 @@ metadata:
 1. 用户指定（「用反问型」）
 2. config `default_title_style`
 3. `.aws-article/presets/title-styles/` 下的自定义风格
-4. 内置默认：[references/title-presets.md](references/title-presets.md)
+4. **fallback**：内置 5 种风格（悬念/干货/数字/反问/故事）混合生成，详见 [references/title-presets.md](references/title-presets.md)
 
 输出模板：[references/output-format.md](references/output-format.md)
 

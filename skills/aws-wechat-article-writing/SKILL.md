@@ -53,7 +53,7 @@ metadata:
 **文末区块**：按优先级加载：
 1. `.aws-article/presets/closing-blocks/` 下 config `default_closing_block` 指定的文件
 2. config 中的 `closing_block` 字符串
-3. 无则不加
+3. **fallback**：使用内置默认文末（分割线 + 一句关注引导）：`---\n觉得有用？点个关注，持续获取优质内容。`
 
 写作时在需要图的位置插入配图标记 `![类型：描述](placeholder)`，详见结构模板中的「配图标记」章节。
 

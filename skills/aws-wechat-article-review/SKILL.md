@@ -38,6 +38,8 @@ metadata:
 
 ✅ 存在 → 读取 config + `.aws-article/writing-spec.md`（如有）+ `.aws-article/presets/review-rules.yaml`（如有）。
 
+**fallback**：无写作规范时跳过规范检查项；无自定义审稿规则时仅执行内置检查清单 [references/checklist.md](references/checklist.md)。
+
 ### 第2步：逐项检查
 
 按模式执行不同检查项，详见：[references/checklist.md](references/checklist.md)

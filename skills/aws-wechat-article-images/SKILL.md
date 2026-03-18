@@ -49,9 +49,9 @@ Type（画面构成）× Style（视觉风格）自由组合。
 1. 用户指定（「用水彩风」）
 2. config `default_image_style`
 3. `.aws-article/presets/image-styles/` 下的自定义风格
-4. 内置风格库：[shared/image-styles/styles.md](../shared/image-styles/styles.md)
+4. **fallback**：根据文章内容和 config `tone` 自动推荐内置风格（规则见 [auto-selection.md](../shared/image-styles/auto-selection.md)），默认「扁平矢量」
 
-全文统一风格。自动推荐规则：[shared/image-styles/auto-selection.md](../shared/image-styles/auto-selection.md)
+全文统一风格。完整风格库：[shared/image-styles/styles.md](../shared/image-styles/styles.md)
 
 ### 第4步：生成配图方案
 

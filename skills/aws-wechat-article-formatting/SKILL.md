@@ -45,9 +45,10 @@ metadata:
 ### 第1步：确定主题
 
 主题解析顺序（首个命中即用）：
-1. 用户当次指定（如「用 grace 主题」「用优雅风」）
+1. 用户当次指定（「用 grace 主题」）
 2. config `default_format_preset`
-3. 若以上均无 → 列出主题供用户选择
+3. `.aws-article/presets/formatting/` 下的自定义主题
+4. **fallback**：使用内置 `default`（经典蓝）主题。如有多套可用主题则列出供用户选择。
 
 ### 第2步：转换
 
