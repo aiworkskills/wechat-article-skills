@@ -1,19 +1,22 @@
-# 公众号运营配置示例
-# 复制为 config.yaml 后按需修改；或首次由 main 引导生成。
-# 路径：项目 .aws-article/ 或用户 ~/.aws-article/
+# 公众号运营配置
+# 复制为 config.yaml 后按需修改，或首次使用时由 main skill 引导生成。
+# 路径：项目 .aws-article/config.yaml 或用户 ~/.aws-article/config.yaml
 
+# ── 账号与定位 ──
 account_type: 科技
 target_reader: ""
 tone: 轻松
 update_frequency: 周更
 default_author: ""
 
+# ── 选题与标题 ──
 topic_direction: ""
 title_style: 干货型
 title_max_length: 25
 summary_length: "80-150"
 forbidden_title_phrases: []
 
+# ── 写作 ──
 article_style: 口语化
 paragraph_preference: 短段为主
 heading_density: 每节必有小标题
@@ -21,17 +24,28 @@ closing_block: ""
 forbidden_words: []
 original_attribution: ""
 
+# ── 写作模型（第三方 LLM）──
+# 支持任何 OpenAI 兼容端点（官方、中转、自建均可）
+# 写作规范另见 .aws-article/writing-spec.md（从 writing-spec.example.md 复制）
+writing_model:
+  base_url: "https://api.deepseek.com"
+  api_key: ""
+  model: "deepseek-chat"
+  temperature: 0.7
+  max_tokens: 4000
+
+# ── 排版 ──
 default_format_preset: ""
 
+# ── 图片 ──
 cover_aspect: "2.35:1"
 cover_style: 简约
 image_density: 每节一图
 caption_style: 有图注
 multi_image_count: 6
-assets_root: imgs/
-header_image: ""
-footer_image: ""
+# 素材（封面、品牌头尾图等）放在 .aws-article/assets/ 下
 
+# ── 审稿 ──
 review_required:
   - 敏感词
   - 错别字
@@ -40,6 +54,36 @@ review_required:
 custom_sensitive_words: []
 review_output_format: 分块详细
 
-posts_root: posts/
+# ── 图片生成模型 ──
+image_model:
+  base_url: ""
+  api_key: ""
+  model: ""
+  default_size: "1024x1024"
+  default_quality: "standard"
+
+# ── 发布（单账号）──
+wechat_appid: ""
+wechat_appsecret: ""
+publish_method: api
+need_open_comment: 1
+only_fans_can_comment: 0
+
+# ── 发布（多账号，与上方单账号二选一）──
+# wechat_accounts:
+#   - name: 主号
+#     alias: main
+#     default: true
+#     appid: ""
+#     appsecret: ""
+#   - name: 副号
+#     alias: sub
+#     appid: ""
+#     appsecret: ""
+# 安全提示：config.yaml 已在 .gitignore 中，凭证不会被提交
+
+# ── 路径 ──
 drafts_root: drafts/
 published_root: posts/published/
+series_root: series/
+# 素材和预设统一放在 .aws-article/ 下，详见 .aws-article/README.md

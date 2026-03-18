@@ -1,33 +1,119 @@
 ---
 name: aws-wechat-article-images
-description: Provides cover and in-article images via asset library, OpenAI image generation with prompt presets, or local HTML-to-image export. Use when the user asks for "封面", "配图", "多图推送", "贴图", "图片规格", "素材库", "生成图片", or "导出图片".
+description: 为微信公众号文章生成配图，采用 Type×Style 二维体系。读取 writing 阶段的配图标记，按类型和风格生成图片。当用户提到「封面」「配图」「生成图片」或需要文章配图时使用。
+version: 0.4.0
+metadata:
+  openclaw:
+    homepage: https://github.com/aiworkskills/wechat-article-skills#aws-wechat-article-images
 ---
 
-# 贴图与素材
+# 配图
 
-配图支持**三种方式**，按场景或用户选择其一或组合使用。配置见 aws-wechat-article-main 的 references。
+读取文章中的配图标记，按 Type × Style 二维体系生成图片。
 
-## 方式一：素材库
+本 skill 专注于**长文配图**。贴图/多图推送请使用 aws-wechat-sticker。
 
-从本地或项目约定的素材库（配置：素材根目录、头尾图路径）选图。产出：封面建议、正文配图位置与图注、多图推送图序与每张配文 + 尺寸规格。贴图 = 文案 + 图序 + 规格。
+## Type × Style 二维体系
 
-## 方式二：调用 OpenAI 接口生成
+Type × Style 体系为所有图片生成 skill 共用，详见共享资源：
 
-根据正文/摘要/标题生成配图或封面。提供**多套提示词样式预设**，从 `references/presets/` 或配置直接读取（不现场编提示词）；用户或配置选定预设后，用该预设的 prompt 模板调用生成接口。预设可区分风格（插画/写实/简约等）、尺寸、画幅等。
+| 资源 | 路径 |
+|------|------|
+| 风格库与兼容矩阵 | [shared/image-styles/styles.md](../shared/image-styles/styles.md) |
+| 按文章类型的预设组合 | [shared/image-styles/style-presets.md](../shared/image-styles/style-presets.md) |
+| 各 Type 的 prompt 构建模板 | [shared/image-styles/prompt-construction.md](../shared/image-styles/prompt-construction.md) |
+| 内容信号→自动推荐 | [shared/image-styles/auto-selection.md](../shared/image-styles/auto-selection.md) |
 
-## 方式三：本地生成 HTML 再导出为图片
+### Type 类型
 
-按给定内容与版式生成 HTML，再通过本地工具（如 headless 截图或导出 API）导出为图片；适用于信息图、数据图、固定版式封面等。
+| 类型 | 最佳用途 | 对应 writing 标记 |
+|------|---------|------------------|
+| `信息图` | 数据、指标、技术概念 | `![信息图：...]` |
+| `氛围` | 叙事、情感、场景 | `![氛围：...]` |
+| `流程图` | 步骤、工作流 | `![流程图：...]` |
+| `对比` | 并列比较、选择 | `![对比：...]` |
+| `框架` | 模型、架构、体系 | `![框架：...]` |
+| `封面` | 文章封面图 | `![封面：...]` |
 
-## 步骤
+### Style 核心风格
 
-1. **读配置**：封面比例与风格、配图密度、图注风格、多图张数、素材根目录、默认配图方式等。  
-2. **确定方式**：用户指定或配置默认，可选组合（如封面用生成、正文用素材库）。  
-3. **执行**：素材库选取 / 读预设后调 OpenAI / 生成 HTML 并导出。  
-4. **输出**：图片文件或路径、图片规格表、配图位置与图注建议、多图推送文案与顺序。
+| 风格 | 适用场景 |
+|------|---------|
+| `扁平矢量` | 知识科普、教程、科技 |
+| `简约线条` | 通用、知识分享 |
+| `蓝图` | AI、前沿科技、系统设计 |
+| `手绘` | 轻松、个人成长 |
+| `水彩` | 生活、情感、文艺 |
+| `海报` | 观点、评论、文化 |
 
-## References
+## 工作流
 
-- [references/specs.md](references/specs.md)：封面/正文/多图尺寸与格式、品牌头尾图约定。  
-- 方式二：`references/presets/` 下多份提示词样式预设，每份为可被直接读取的 prompt 模板或配置；列表与说明供用户/配置选择。  
-- 方式三：实现时可提供 HTML 模板或导出说明（本地工具、调用方式）。
+```
+配图进度：
+- [ ] 第1步：读取配置与文章
+- [ ] 第2步：解析配图标记
+- [ ] 第3步：确定风格 ⚠️
+- [ ] 第4步：生成配图方案（outline）
+- [ ] 第5步：展示方案并等待确认 ⛔
+- [ ] 第6步：生成图片
+- [ ] 第7步：插入文章
+```
+
+### 第1步：读取配置与文章
+
+从 `config.yaml` 读取：`cover_aspect`、`cover_style`、`image_density`、`caption_style`。
+
+读取文章目录下的 `article.md`（含配图标记）。
+
+### 第2步：解析配图标记
+
+提取所有 `![类型：描述](placeholder)` 标记，解析出位置、类型、描述。
+
+`实证` 类型：提示用户提供素材，或从 `.aws-article/assets/` 搜索。
+
+### 第3步：确定风格 ⚠️
+
+风格确定顺序（首个命中即用）：
+1. 用户当次指定
+2. config 中的 `cover_style`
+3. 根据文章内容自动推荐 → 询问用户确认
+
+全文使用统一风格，保持视觉一致性。
+
+### 第4步：生成配图方案
+
+为每张图生成方案（类型、风格、描述、prompt 要点）。
+
+### 第5步：展示方案并等待确认 ⛔
+
+### 第6步：生成图片
+
+使用共享图片生成脚本：
+
+```bash
+# 单张生成
+python {baseDir}/../shared/scripts/image-gen.py generate imgs/prompts/00-cover.md -o imgs/00-cover.png
+
+# 批量生成
+python {baseDir}/../shared/scripts/image-gen.py batch imgs/prompts/ -o imgs/
+```
+
+图片规格：[references/specs.md](references/specs.md)
+
+### 第7步：插入文章
+
+将 placeholder 替换为实际图片路径，输出到 `{article-dir}/imgs/`。
+
+## 预设查找路径
+
+风格预设按优先级查找：
+1. `.aws-article/presets/image-styles/`（用户自定义）
+2. shared/image-styles/ 内置风格库
+
+用户素材：`.aws-article/assets/`
+
+## 过程文件
+
+| 读取 | 产出 |
+|------|------|
+| `article.md` 中的配图标记 | `imgs/`（outline + prompts + 图片） |

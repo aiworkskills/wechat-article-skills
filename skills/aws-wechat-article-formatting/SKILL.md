@@ -1,25 +1,95 @@
 ---
 name: aws-wechat-article-formatting
-description: Applies preset layout rules to WeChat article content; reads preset from files and outputs formatted Markdown or HTML. Use when the user asks for "排版", "版式", "字号", "段落", "引导语", or styled article output.
+description: 将公众号文章从 Markdown 转换为微信兼容的 HTML（所有样式 inline），支持多套主题和自定义配色。当用户提到「排版」「版式」「字号」「段落」「样式」「转 HTML」或需要格式化文章时使用。
+version: 0.3.0
+metadata:
+  openclaw:
+    homepage: https://github.com/aiworkskills/wechat-article-skills#aws-wechat-article-formatting
 ---
 
-# 排版规范
+# 排版
 
-从**预设**直接读取排版规则后应用到正文，不在现场临时编规则。预设解析顺序：① 用户当次指定 ② 本 skill 或共享配置（.aws-article）中的默认预设 ③ 无则让用户选预设。
+将 Markdown 文章转换为微信公众号兼容的 HTML，所有样式 inline。
 
-## 步骤
+## 脚本目录
 
-1. **确定预设**：按上述顺序得到预设名（用户指定 / 配置 default_format_preset / AskUserQuestion）。  
-2. **读取预设**：从本项目约定的预设目录直接读取该预设文件（如 `references/presets/<preset>.md` 或 YAML/样式文件）。不在 SKILL 正文中写死具体字号、空行等规则。  
-3. **应用**：对给定正文（writing 的产出或用户提供）按该预设的规则应用，生成排版结果。  
-4. **输出**：按所选预设应用后的结果（Markdown 或 HTML，由实现定）；若输出为文件，可约定备份与下游所需信息。
+**Agent 执行**：确定本 SKILL.md 所在目录为 `{baseDir}`。
 
-## 预设目录与格式
+| 脚本 | 用途 |
+|------|------|
+| `scripts/format.py` | Markdown → 微信兼容 HTML |
 
-- 预设存放在 `references/presets/`（或项目约定的其他路径）。  
-- 每预设一份可被直接读取的文件：可为「描述该预设排版规则的 YAML + 片段」、样式/模板文件、或脚本可读的配置；格式由实现时决定。  
-- 预设列表与适用场景可在 SKILL 或 references 中说明，供用户/配置选择。
+## 内置主题
 
-## 配置
+| 主题 | 风格 | 适用场景 |
+|------|------|---------|
+| `default` | 经典蓝 — 左边框小标题，底部分割线大标题 | 科技、干货、通用 |
+| `grace` | 优雅紫 — 圆角色块小标题，文字阴影 | 文艺、生活方式 |
+| `modern` | 暖橙 — 胶囊圆角小标题，宽松行高 | 现代感、品牌 |
+| `simple` | 极简黑 — 底线小标题，最少装饰 | 极简主义、学术 |
 
-- 若使用共享配置：从 .aws-article 等约定路径读取默认预设名（如 default_format_preset），不写死别家路径或键名。
+每个主题包含：标题样式、引用块样式、分割线、强调色、段落间距等完整规则。
+
+## 工作流
+
+```
+排版进度：
+- [ ] 第1步：确定主题
+- [ ] 第2步：转换
+- [ ] 第3步：输出 HTML
+```
+
+### 第1步：确定主题
+
+主题解析顺序（首个命中即用）：
+1. 用户当次指定（如「用 grace 主题」「用优雅风」）
+2. config `default_format_preset`
+3. 若以上均无 → 列出主题供用户选择
+
+### 第2步：转换
+
+```bash
+# 基础转换
+python {baseDir}/scripts/format.py article.md --theme default
+
+# 自定义主色
+python {baseDir}/scripts/format.py article.md --theme modern --color "#A93226"
+
+# 自定义字号
+python {baseDir}/scripts/format.py article.md --font-size 15px
+
+# 指定输出路径
+python {baseDir}/scripts/format.py article.md --theme grace -o article.html
+
+# 列出可用主题
+python {baseDir}/scripts/format.py --list-themes
+```
+
+### 第3步：输出 HTML
+
+输出的 HTML 特性：
+- 所有样式 inline（微信编辑器兼容）
+- 配图标记 `![类型：描述](placeholder)` 保留为 `<img>` 标签，待 images skill 替换
+- 图注自动从标记描述中提取
+
+## 选项
+
+| 选项 | 说明 | 默认值 |
+|------|------|--------|
+| `--theme <名称>` | 主题 | default |
+| `--color <hex>` | 自定义主色 | 主题默认 |
+| `--font-size <px>` | 字号 | 16px |
+| `-o <路径>` | 输出路径 | 同名 .html |
+| `--list-themes` | 列出可用主题 | |
+
+## 自定义主题
+
+在 `.aws-article/presets/formatting/` 下新建主题文件即可。
+
+主题文件格式和扩展方式详见：[references/presets/README.md](references/presets/README.md)
+
+## 过程文件
+
+| 读取 | 产出 |
+|------|------|
+| `article.md` | `article.html` |

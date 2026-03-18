@@ -1,13 +1,69 @@
 # 提交到公众号后台
 
-## 手动方式
+## 方式一：API 提交（推荐）
 
-1. 登录微信公众平台（mp.weixin.qq.com）。  
-2. 进入「素材管理」或「草稿箱」→ 新建图文消息。  
-3. 将已排版的正文（含 HTML 或富文本）粘贴到正文区；标题、摘要、封面、作者等按后台表单填写。  
-4. 正文内图片在后台逐一上传并插入；或使用「导入 Word/HTML」等能力（以平台当前功能为准）。  
-5. 保存为草稿或直接群发；需开评论/仅粉丝可评时在设置中勾选。  
+使用 `scripts/publish.py` 脚本，通过微信公众号 API 完成发布。
 
-## 自建脚本 / API（可选）
+### 前置准备
 
-若项目实现通过 API 或脚本提交（如调用微信公众平台接口），在本文件中补充：调用方式、环境变量、权限、以及与本 skill 的衔接方式（如传入路径、输出 media_id 等）。当前可不实现，仅预留说明。
+1. 在 `config.yaml` 中填写凭证：
+   ```yaml
+   wechat_appid: "你的AppID"
+   wechat_appsecret: "你的AppSecret"
+   ```
+
+2. 在公众平台「开发 → 基本配置」中将服务器 IP 加入白名单
+
+3. 准备文章目录：
+   ```
+   article/
+   ├── article.yaml    # 标题、作者、摘要等元信息
+   ├── content.html    # 排版后的正文 HTML
+   ├── cover.jpg       # 封面图
+   └── images/         # 正文内图片
+   ```
+
+### 一键发布
+
+```bash
+# 创建草稿（不发布，可在后台预览）
+python shared/scripts/publish.py full article/
+
+# 创建草稿并立即发布
+python shared/scripts/publish.py full article/ --publish
+```
+
+### 分步操作
+
+```bash
+# 获取 token
+python shared/scripts/publish.py token
+
+# 上传封面图
+python shared/scripts/publish.py upload-thumb cover.jpg
+
+# 上传正文图片
+python shared/scripts/publish.py upload-content-image images/img1.png
+
+# 创建草稿（需要先准备好 article.yaml）
+python shared/scripts/publish.py create-draft article.yaml
+
+# 发布
+python shared/scripts/publish.py publish <media_id>
+
+# 查询状态
+python shared/scripts/publish.py status <publish_id>
+```
+
+接口详情与错误码：[api-reference.md](api-reference.md)
+
+## 方式二：手动提交
+
+1. 登录微信公众平台（mp.weixin.qq.com）
+2. 进入「素材管理」或「草稿箱」→ 新建图文消息
+3. 填写标题、作者、摘要
+4. 将排版后的正文粘贴到正文编辑区
+5. 上传封面图，设置封面
+6. 逐一上传正文内图片并插入对应位置
+7. 设置评论权限（开启/仅粉丝可评）
+8. 保存为草稿或直接群发

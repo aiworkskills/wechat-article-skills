@@ -1,0 +1,13 @@
+name: 暖橙
+description: 胶囊圆角小标题，宽松行高，适合现代感、品牌
+
+variables:
+  primary-color: "#D97757"
+
+styles:
+  h1: "text-align:center; font-size:24px; font-weight:bold; margin-bottom:28px;"
+  h2: "font-size:18px; font-weight:bold; background:{primary-color}; color:#FFFFFF; padding:8px 20px; border-radius:20px; margin-top:2em; margin-bottom:1em; display:inline-block;"
+  h3: "font-size:16px; font-weight:bold; color:{primary-color}; margin-top:1.5em; margin-bottom:0.8em;"
+  blockquote: "border-left:4px solid {primary-color}; background:#FFF8F5; padding:14px 18px; border-radius:0 8px 8px 0; margin:1em 0; color:{text-light};"
+  hr: "border:none; border-top:2px solid {primary-color}; width:40%; margin:2em auto; opacity:0.3;"
+  strong-color: "{primary-color}"

@@ -1,46 +1,130 @@
 ---
 name: aws-wechat-article-main
-description: Explains the full WeChat official account content workflow and routes to the right sub-skill. Use when the user asks about "公众号运营", "自动运营", "发什么内容", "怎么运营", or wants an overview of the article pipeline.
+description: 微信公众号内容运营总流程与路由。管理选题→写稿→审稿→排版→配图→发布的完整链路，支持一条龙模式与单步模式。当用户提到「公众号运营」「自动运营」「发文章」「内容规划」「怎么运营」或需要了解整体流程时使用。
+version: 0.3.0
+metadata:
+  openclaw:
+    homepage: https://github.com/aiworkskills/wechat-article-skills#aws-wechat-article-main
 ---
 
-# 公众号运营总览与路由
+# 公众号运营总览
 
-说明整条内容链路及各环节对应的子 skill，便于用户从「发什么」或任意一步进入。
+管理微信公众号内容全流程，路由到对应子 skill。
 
-## 流程顺序
+## 流程
 
-固定顺序（审稿在写稿后即做，再排版配图）：
+```
+选题 → 写稿 → 审稿(内容审) → 排版 → 配图 → 审稿(终审) → 发布
+```
 
-1. **选题与标题** → aws-wechat-article-topics  
-2. **写稿** → aws-wechat-article-writing  
-3. **审稿** → aws-wechat-article-review（写稿完成后即做，通过后再排版、配图）  
-4. **排版** → aws-wechat-article-formatting  
-5. **配图/贴图** → aws-wechat-article-images  
-6. **发布** → aws-wechat-article-publish  
+| 步骤 | 子 skill | 读取 | 产出 |
+|------|---------|------|------|
+| 选题 | topics | config、web_search | `topic-card.md` `research.md` |
+| 写稿 | writing | `topic-card.md`、writing-spec | `draft.md`（含配图标记） |
+| 审稿(内容审) | review | `draft.md`、writing-spec | `review.md` → 修改循环 → `article.md` |
+| 排版 | formatting | `article.md` | `article.html` |
+| 配图 | images | `article.md` 中的标记 | `imgs/` 目录 |
+| 审稿(终审) | review | `article.html`、`imgs/` | `review.md`（终审） |
+| 发布 | publish | `article.html`、`imgs/` | `article.yaml` → 发布到公众号 |
 
-每次只跑用户当前提到的那一步；若要一条龙，用户需明确说「从选题到发布全做」或逐步说「先选题」「再写稿」等。
+所有文件存放在同一个文章目录下。
 
-## 各环节对应 skill
+## 路由规则
 
-| 用户意图 / 说法 | 使用 skill |
-|----------------|------------|
-| 起选题、起标题、要摘要、排期 | aws-wechat-article-topics |
-| 写正文、改写、改成公众号风格、结构/开头结尾 | aws-wechat-article-writing |
-| 审稿、合规、敏感词、发布前检查 | aws-wechat-article-review |
-| 排版、版式、字号、段落、引导语 | aws-wechat-article-formatting |
-| 封面、配图、多图推送、贴图、图片规格、素材库、生成图片 | aws-wechat-article-images |
-| 发布公众号、提交、发布 | aws-wechat-article-publish |
+根据用户说法路由到对应子 skill：
 
-## 配置
+| 用户说法 | 路由到 |
+|---------|--------|
+| 选题、起标题、摘要、排期、爆款、内容日历、系列、专栏 | topics |
+| 写正文、改写、公众号风格、结构、开头结尾 | writing |
+| 审稿、合规、敏感词、检查 | review |
+| 排版、版式、字号、段落、样式、转 HTML | formatting |
+| 封面、配图、生成图片 | images |
+| 贴图、多图推送、图片消息、发组图 | **sticker** |
+| 发布、提交、群发 | publish |
 
-- 各子 skill 共用一份配置，路径优先级：项目 `.aws-article/` → 用户 `~/.aws-article/`。  
-- 配置约定与首次引导见本 skill 的 [references/config-schema.md](references/config-schema.md)、[references/first-time-setup.md](references/first-time-setup.md)。  
-- 无配置时由 main 或首个被调用的子 skill 触发首次引导，问完并写入配置后再继续。
+## 运行模式
 
-## 新号搭建（可选）
+### 一条龙模式
 
-新号从 0 搭：定位 → 栏目 → 选题库 → 首月内容规划。可先做定位与栏目，再交给 **aws-wechat-article-topics** 产出首批选题。
+当用户说「从选题到发布全做」「一条龙」「完整流程」时启用。
 
-## 贴图（多图推送）流程
+```
+一条龙进度：
+- [ ] 第1步：选题与标题
+- [ ] 第2步：写稿
+- [ ] 第3步：审稿（内容审 + 修改循环）
+- [ ] 第4步：排版
+- [ ] 第5步：配图
+- [ ] 第6步：终审
+- [ ] 第7步：发布
+```
 
-若发多图贴图而非长文：topics（贴图文案/主题）→ images（图序、每张配文、规格）→ review → publish；writing、formatting 仅在发长文时参与。
+**执行规则**：
+1. **创建文章目录**（见下方）
+2. 按顺序执行每一步，调用对应子 skill
+3. 每步完成后**暂停**，展示产出给用户
+4. 用户说「继续」→ 进入下一步
+5. 用户提出修改 → 按意见调整后重新展示，确认后继续
+6. **第3步审稿**有特殊逻辑：若发现 🔴 项 → 修改 → 重审 → 直到通过才继续
+7. **第6步终审**可选跳过（用户说「直接发布」）
+8. 更新进度清单中的勾选状态
+
+### 单步模式
+
+用户只提到某一步时，仅执行该步骤。若当前无文章目录，自动检测最近的或询问用户。
+
+### 贴图（多图推送）
+
+贴图有独立的 skill：**aws-wechat-sticker**。当用户提到贴图/多图推送时，路由到 sticker skill。
+
+## 文章目录
+
+**一篇文章 = 一个目录**，所有过程文件集中存放。
+
+由 topics 确认选题后自动创建：`{drafts_root}/{YYYY-MM-DD}-{标题slug}/`
+
+```
+drafts/2025-03-18-ai-agent-入门/
+├── topic-card.md          ← topics
+├── research.md            ← topics
+├── draft.md               ← writing
+├── review.md              ← review
+├── article.md             ← 定稿
+├── article.html           ← formatting
+├── article.yaml           ← publish
+└── imgs/                  ← images
+    ├── outline.md
+    ├── prompts/
+    └── NN-type-slug.png
+```
+
+发布后整体移到 `published_root`。
+
+系列规划存放在 `{series_root}/{系列slug}/plan.md`。
+
+## 配置与自定义
+
+### 配置
+
+所有子 skill 共享 `config.yaml`，优先级：用户当次说法 > 项目级 > 用户级。
+
+无配置时触发首次引导：[references/first-time-setup.md](references/first-time-setup.md)
+完整字段与目录约定：[references/config-schema.md](references/config-schema.md)
+
+### 用户可自定义的内容
+
+全部放在 `.aws-article/` 下：
+
+| 类型 | 位置 | 说明 |
+|------|------|------|
+| 配置 | `config.yaml` | 账号定位、写作偏好、模型、API 凭证 |
+| 写作规范 | `writing-spec.md` | 用词、句式、品牌调性 |
+| 排版主题 | `presets/formatting/*.yaml` | YAML 格式的排版主题 |
+| 配图风格 | `presets/image-styles/*.yaml` | 配图风格预设 |
+| 标题风格 | `presets/title-styles/*.md` | 标题风格预设 |
+| 审稿规则 | `presets/review-rules.yaml` | 自定义审稿检查项 |
+| 素材 | `assets/brand/`、`assets/covers/`、`assets/stock/` | 品牌元素、封面、通用素材 |
+| 模板覆盖 | `templates/` | 覆盖内置模板 |
+
+加载优先级：用户当次说法 > `.aws-article/` 用户文件 > skill 内置默认。
