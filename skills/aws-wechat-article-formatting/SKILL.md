@@ -1,7 +1,7 @@
 ---
 name: aws-wechat-article-formatting
-description: 将公众号文章内容按预设排版规则格式化，支持多套排版预设，输出可直接粘贴到公众号后台的格式化内容。当用户提到「排版」「版式」「字号」「段落」「样式」「引导语」或需要格式化文章时使用。
-version: 0.2.0
+description: 将公众号文章从 Markdown 转换为微信兼容的 HTML（所有样式 inline），支持多套主题和自定义配色。当用户提到「排版」「版式」「字号」「段落」「样式」「转 HTML」或需要格式化文章时使用。
+version: 0.3.0
 metadata:
   openclaw:
     homepage: https://github.com/aiworkskills/wechat-article-skills#aws-wechat-article-formatting
@@ -9,62 +9,84 @@ metadata:
 
 # 排版
 
-从预设读取排版规则，应用到正文内容，输出格式化 HTML。
+将 Markdown 文章转换为微信公众号兼容的 HTML，所有样式 inline。
+
+## 脚本目录
+
+**Agent 执行**：确定本 SKILL.md 所在目录为 `{baseDir}`。
+
+| 脚本 | 用途 |
+|------|------|
+| `scripts/format.py` | Markdown → 微信兼容 HTML |
+
+## 内置主题
+
+| 主题 | 风格 | 适用场景 |
+|------|------|---------|
+| `default` | 经典蓝 — 左边框小标题，底部分割线大标题 | 科技、干货、通用 |
+| `grace` | 优雅紫 — 圆角色块小标题，文字阴影 | 文艺、生活方式 |
+| `modern` | 暖橙 — 胶囊圆角小标题，宽松行高 | 现代感、品牌 |
+| `simple` | 极简黑 — 底线小标题，最少装饰 | 极简主义、学术 |
+
+每个主题包含：标题样式、引用块样式、分割线、强调色、段落间距等完整规则。
 
 ## 工作流
 
 ```
 排版进度：
-- [ ] 第1步：确定排版预设
-- [ ] 第2步：读取预设规则
-- [ ] 第3步：应用排版
-- [ ] 第4步：输出格式化结果
+- [ ] 第1步：确定主题
+- [ ] 第2步：转换
+- [ ] 第3步：输出 HTML
 ```
 
-### 第1步：确定排版预设
+### 第1步：确定主题
 
-预设解析顺序（首个命中即用）：
-1. 用户当次指定的预设名
-2. 配置 `default_format_preset`
-3. `.aws-article/presets/formatting/` 下的用户自定义预设
-4. skill 内置 `references/presets/` 下的预设
-5. 若以上均无 → 列出可用预设供用户选择
+主题解析顺序（首个命中即用）：
+1. 用户当次指定（如「用 grace 主题」「用优雅风」）
+2. config `default_format_preset`
+3. 若以上均无 → 列出主题供用户选择
 
-### 第2步：读取预设规则
+### 第2步：转换
 
-按优先级查找预设文件：
-1. `.aws-article/presets/formatting/<预设名>.md`（用户自定义）
-2. skill 内置 `references/presets/<预设名>.md`（内置默认）
+```bash
+# 基础转换
+python {baseDir}/scripts/format.py article.md --theme default
 
-同名时用户文件覆盖内置。
+# 自定义主色
+python {baseDir}/scripts/format.py article.md --theme modern --color "#A93226"
 
-### 第3步：应用排版
+# 自定义字号
+python {baseDir}/scripts/format.py article.md --font-size 15px
 
-读取文章目录下的 `article.md`（定稿），按预设规则格式化。
+# 指定输出路径
+python {baseDir}/scripts/format.py article.md --theme grace -o article.html
 
-配图标记 `![类型：描述](placeholder)` 保留不动，交给 images 处理。
+# 列出可用主题
+python {baseDir}/scripts/format.py --list-themes
+```
 
-### 第4步：输出格式化结果
+### 第3步：输出 HTML
 
-输出 HTML 格式的排版结果，保存为文章目录下的 `article.html`。
+输出的 HTML 特性：
+- 所有样式 inline（微信编辑器兼容）
+- 配图标记 `![类型：描述](placeholder)` 保留为 `<img>` 标签，待 images skill 替换
+- 图注自动从标记描述中提取
 
-## 预设查找路径
+## 选项
 
-| 优先级 | 路径 | 说明 |
-|--------|------|------|
-| 1 | `.aws-article/presets/formatting/` | 用户自定义预设 |
-| 2 | skill 内置 `references/presets/` | 内置默认预设 |
+| 选项 | 说明 | 默认值 |
+|------|------|--------|
+| `--theme <名称>` | 主题 | default |
+| `--color <hex>` | 自定义主色 | 主题默认 |
+| `--font-size <px>` | 字号 | 16px |
+| `-o <路径>` | 输出路径 | 同名 .html |
+| `--list-themes` | 列出可用主题 | |
 
-内置预设：
+## 自定义主题
 
-| 预设 | 风格 | 适用场景 |
-|------|------|---------|
-| default | 简约科技 | 科技、互联网、干货类文章 |
-| *更多预设持续添加中* | | |
+在 `.aws-article/presets/formatting/` 下新建主题文件即可。
 
-## 自定义预设
-
-在 `.aws-article/presets/formatting/` 下新建 `.md` 文件，按 [references/presets/README.md](references/presets/README.md) 中的格式编写。预设名 = 文件名。
+主题文件格式和扩展方式详见：[references/presets/README.md](references/presets/README.md)
 
 ## 过程文件
 
