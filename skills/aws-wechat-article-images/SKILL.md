@@ -59,6 +59,17 @@ Prompt 构建：[shared/image-styles/prompt-construction.md](../shared/image-sty
 
 ### 第6步：生成图片
 
+**生成方式（优先级）**：
+
+1. **优先：调用专用图片生成 API**（`image-gen.py`）— 检查 config 中 `image_model` 是否配置了 `base_url` + `api_key` + `model`
+2. **降级：当前 Agent 的多模态能力** — 如果 `image_model` 未配置，由当前模型直接生成
+
+**必须告知用户当前使用的方式**：
+- 已配置 → `ℹ️ 使用专用图片模型生成（{model}@{base_url}）`
+- 未配置 → `ℹ️ 图片生成 API 未配置，使用当前 Agent 生图。如需更好的效果，请在 config.yaml 中配置 image_model。`
+
+**调用专用 API 时**：
+
 ```bash
 python {baseDir}/../shared/scripts/image-gen.py batch imgs/prompts/ -o imgs/
 ```

@@ -33,7 +33,14 @@ metadata:
 
 **输入**：`topic-card.md` / 用户提供的提纲或素材 / 用户口述主题
 
-**写作方式**：Agent 直写 / 调用第三方模型（`write.py`）。用户指定模型或长文推荐用第三方模型。
+**写作方式（优先级）**：
+
+1. **优先：调用第三方模型**（`write.py`）— 检查 config 中 `writing_model` 是否配置了 `base_url` + `api_key` + `model`
+2. **降级：当前 Agent 直接写** — 如果 `writing_model` 未配置，由当前模型直接写作
+
+**必须告知用户当前使用的方式**：
+- 已配置第三方模型 → `ℹ️ 使用第三方模型写作（{model}@{base_url}）`
+- 未配置 → `ℹ️ 写作模型未配置，使用当前 Agent 直接写作。如需使用专用模型，请在 config.yaml 中配置 writing_model。`
 
 ### 第3步：写作
 
