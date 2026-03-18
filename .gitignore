@@ -1,5 +1,16 @@
-# 本地配置（含可能敏感信息）
+# 本地配置（含敏感信息）
 .aws-article/config.yaml
+.aws-article/writing-spec.md
+
+# 用户自定义预设和素材
+.aws-article/presets/
+.aws-article/assets/
+.aws-article/templates/
+
+# 文章过程文件
+drafts/
+posts/
+series/
 
 # Cursor 项目本地配置
 .cursor

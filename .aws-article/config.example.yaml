@@ -43,9 +43,6 @@ cover_style: 简约
 image_density: 每节一图
 caption_style: 有图注
 multi_image_count: 6
-assets_root: imgs/
-header_image: ""
-footer_image: ""
 
 # ── 审稿 ──
 review_required:
@@ -65,6 +62,7 @@ only_fans_can_comment: 0
 # 安全提示：config.yaml 已在 .gitignore 中，AppSecret 不会被提交
 
 # ── 路径 ──
-posts_root: posts/
 drafts_root: drafts/
 published_root: posts/published/
+series_root: series/
+# 素材和预设统一放在 .aws-article/ 下，详见 .aws-article/README.md

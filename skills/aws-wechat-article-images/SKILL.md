@@ -150,6 +150,31 @@ Prompt 构建模板：[references/prompt-construction.md](references/prompt-cons
 - 每张：主题 + 配文 + 风格统一
 - 统一比例和风格
 
+## 预设查找路径
+
+风格预设按优先级查找：
+1. `.aws-article/presets/image-styles/<风格名>.md`（用户自定义）
+2. skill 内置风格库
+
+用户素材查找：`.aws-article/assets/`（brand/covers/stock）
+
+## 过程文件
+
+| 读取 | 产出 |
+|------|------|
+| `article.md` 中的配图标记 | `imgs/` 目录（outline + prompts + 图片） |
+
+```
+imgs/
+├── outline.md                   # 配图方案
+├── prompts/                     # 各图的 prompt 文件
+│   ├── 00-cover.md
+│   └── 01-infographic-xxx.md
+├── 00-cover.png
+├── 01-infographic-xxx.png
+└── 02-scene-xxx.png
+```
+
 ## References
 
 | 文件 | 内容 |

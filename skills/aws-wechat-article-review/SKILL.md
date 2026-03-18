@@ -1,7 +1,7 @@
 ---
 name: aws-wechat-article-review
 description: 审核微信公众号文章草稿，检查合规、敏感词、错别字和链接，输出固定格式的审稿清单。当用户提到「审稿」「合规」「敏感词」「检查」或写稿完成后使用。
-version: 0.1.0
+version: 0.2.0
 metadata:
   openclaw:
     homepage: https://github.com/aiworkskills/wechat-article-skills#aws-wechat-article-review
@@ -49,6 +49,12 @@ metadata:
 
 输出模板：[references/output-format.md](references/output-format.md)
 
-## 产出
+## 过程文件
 
-审稿清单与修改建议 → 交给用户确认 → 通过后进入 **aws-wechat-article-formatting** 和 **aws-wechat-article-images**。
+| 读取 | 产出 |
+|------|------|
+| `draft.md` | `review.md`（审稿结果）、`article.md`（定稿） |
+
+- 审稿结果保存为 `review.md`
+- 用户确认修改完成后，将最终稿保存为 `article.md`（定稿）
+- `article.md` 交给 **aws-wechat-article-formatting** 和 **aws-wechat-article-images**

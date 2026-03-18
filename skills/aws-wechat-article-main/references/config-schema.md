@@ -65,14 +65,60 @@ need_open_comment: 1           # 开启评论：0=否 1=是
 only_fans_can_comment: 0       # 仅粉丝可评：0=否 1=是
 
 # ── 路径 ──
-posts_root: posts/
-drafts_root: drafts/
-published_root: posts/published/
+drafts_root: drafts/               # 进行中的文章
+published_root: posts/published/   # 已发布的文章
+series_root: series/               # 系列规划
 ```
 
 > **安全提示**：config.yaml 已在 `.gitignore` 中，不会提交到仓库。请注意保管 AppSecret 和 API Key。
 
-> **写作规范**：除 config.yaml 外，可创建 `.aws-article/writing-spec.md` 定义写作规范（用词、句式、品牌调性等）。示例见 `.aws-article/writing-spec.example.md`。
+## 文件组织约定
+
+### 全局目录（`.aws-article/`）
+
+```
+.aws-article/
+├── config.yaml                  # 配置
+├── writing-spec.md              # 写作规范
+├── presets/                     # 用户自定义预设
+│   ├── formatting/              #   排版预设
+│   ├── image-styles/            #   配图风格
+│   └── title-styles/            #   标题风格
+├── assets/                      # 素材库
+│   ├── brand/                   #   品牌元素（头图、尾图）
+│   ├── covers/                  #   封面图素材
+│   └── stock/                   #   通用素材
+└── templates/                   # 模板覆盖
+```
+
+预设和模板的加载优先级：用户当次说法 > `.aws-article/` 用户文件 > skill 内置默认。详见 `.aws-article/README.md`。
+
+### 文章目录（一篇文章一个目录）
+
+```
+drafts/{日期}-{标题slug}/
+├── topic-card.md                # topics 产出：选题卡片
+├── research.md                  # topics 产出：调研摘要
+├── draft.md                     # writing 产出：初稿（含配图标记）
+├── review.md                    # review 产出：审稿结果
+├── article.md                   # 审稿通过后的定稿
+├── article.html                 # formatting 产出：排版后 HTML
+├── article.yaml                 # publish 需要的元信息
+└── imgs/                        # images 产出
+    ├── outline.md               #   配图方案
+    ├── prompts/                 #   各图的 prompt 文件
+    └── NN-type-slug.png         #   生成的图片
+```
+
+目录名格式：`{YYYY-MM-DD}-{标题slug}`，由 topics 确认选题后创建。发布后整体移动到 `published_root`。
+
+### 系列目录
+
+```
+series/{系列slug}/
+├── plan.md                      # 系列总规划
+└── progress.md                  # 进度追踪
+```
 
 ## 说明
 

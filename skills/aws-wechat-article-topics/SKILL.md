@@ -95,10 +95,17 @@ metadata:
 ### 第6步：输出选题卡片
 
 用户确认后：
-- 单篇：输出最终选题卡片 → 交给 **aws-wechat-article-writing**
-- 系列：将系列规划存入 `drafts_root`，输出当前篇选题卡片 → 交给 writing
 
-## 产出
+1. **创建文章目录**：`{drafts_root}/{YYYY-MM-DD}-{标题slug}/`
+2. 将选题卡片保存为 `topic-card.md`
+3. 将调研摘要保存为 `research.md`
+4. 系列模式：将系列规划保存到 `{series_root}/{系列slug}/plan.md`
 
-- 单篇选题卡片（标题、摘要、角度、大纲）
-- 或系列规划 + 当前篇选题卡片
+→ 交给 **aws-wechat-article-writing**
+
+## 过程文件
+
+| 文件 | 说明 |
+|------|------|
+| `topic-card.md` | 选题卡片（标题、摘要、角度、大纲） |
+| `research.md` | 调研摘要（搜索发现、竞品分析、数据点） |

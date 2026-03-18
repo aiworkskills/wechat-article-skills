@@ -129,11 +129,12 @@ python {baseDir}/scripts/publish.py full article/ --publish
 
 接口详情与错误码：[references/api-reference.md](references/api-reference.md)
 
-## 输入
+## 过程文件
 
-- 审稿通过的完整稿件（标题 + 摘要 + 排版后正文 HTML + 封面图 + 配图）
+| 读取 | 产出 |
+|------|------|
+| `article.html` `article.yaml` `imgs/` | 发布结果 |
 
-## 输出
+`article.yaml` 由 publish 自动从文章目录下的其他文件生成（标题从 `article.md`、封面从 `imgs/00-cover.*`）。
 
-- 草稿 `media_id`
-- 发布 `publish_id` 与状态
+发布成功后，整个文章目录从 `drafts_root` 移动到 `published_root`。
