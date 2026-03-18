@@ -21,11 +21,11 @@ metadata:
 
 ## 前置条件
 
-需要设置环境变量：
+在 `config.yaml` 中填写公众号凭证：
 
-```bash
-export WECHAT_APPID=你的AppID
-export WECHAT_APPSECRET=你的AppSecret
+```yaml
+wechat_appid: "你的AppID"
+wechat_appsecret: "你的AppSecret"
 ```
 
 获取方式：登录 [微信公众平台](https://mp.weixin.qq.com) → 开发 → 基本配置 → 获取 AppID 和 AppSecret。

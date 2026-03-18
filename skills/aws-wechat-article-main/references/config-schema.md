@@ -50,6 +50,8 @@ custom_sensitive_words: []   # 自定义敏感词
 review_output_format: 分块详细  # 简要清单、分块详细
 
 # ── 发布 ──
+wechat_appid: ""               # 公众号 AppID
+wechat_appsecret: ""           # 公众号 AppSecret
 publish_method: api            # api、manual
 need_open_comment: 1           # 开启评论：0=否 1=是
 only_fans_can_comment: 0       # 仅粉丝可评：0=否 1=是
@@ -60,7 +62,7 @@ drafts_root: drafts/
 published_root: posts/published/
 ```
 
-> **安全提示**：`WECHAT_APPID` 和 `WECHAT_APPSECRET` 不应写入 config.yaml，请通过环境变量设置。
+> **安全提示**：config.yaml 已在 `.gitignore` 中，不会提交到仓库。但请注意保管好你的 AppSecret。
 
 ## 说明
 

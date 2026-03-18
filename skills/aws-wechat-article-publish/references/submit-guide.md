@@ -6,10 +6,10 @@
 
 ### 前置准备
 
-1. 设置环境变量：
-   ```bash
-   export WECHAT_APPID=你的AppID
-   export WECHAT_APPSECRET=你的AppSecret
+1. 在 `config.yaml` 中填写凭证：
+   ```yaml
+   wechat_appid: "你的AppID"
+   wechat_appsecret: "你的AppSecret"
    ```
 
 2. 在公众平台「开发 → 基本配置」中将服务器 IP 加入白名单

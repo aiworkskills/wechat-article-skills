@@ -143,6 +143,19 @@ Content-Type: application/json
 | 45028 | 接口无权限 | 检查公众号类型和权限 |
 | 48001 | API 未授权 | 检查公众号开发者设置 |
 
+## 凭证配置
+
+在 `config.yaml` 中配置（config.yaml 已在 .gitignore 中，不会被提交）：
+
+```yaml
+wechat_appid: "你的AppID"
+wechat_appsecret: "你的AppSecret"
+```
+
+脚本按以下顺序查找配置文件：
+1. 项目级：`.aws-article/config.yaml`
+2. 用户级：`~/.aws-article/config.yaml`
+
 ## 权限要求
 
 - 需要已认证的服务号或订阅号

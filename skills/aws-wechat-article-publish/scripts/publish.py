@@ -4,9 +4,8 @@
 
 支持通过微信公众号 API 完成：上传图片、创建草稿、发布、查询状态。
 
-环境变量：
-    WECHAT_APPID       公众号 AppID
-    WECHAT_APPSECRET   公众号 AppSecret
+凭证从 config.yaml 读取（wechat_appid / wechat_appsecret 字段）。
+配置查找顺序：项目 .aws-article/config.yaml → 用户 ~/.aws-article/config.yaml
 
 用法：
     python publish.py token                           获取 access_token
@@ -21,8 +20,6 @@
 import argparse
 import json
 import mimetypes
-import os
-import re
 import sys
 import time
 import urllib.error
@@ -273,19 +270,47 @@ def _find_file(directory: Path, candidates: list[str]) -> Path | None:
     return None
 
 
-# ── CLI ─────────────────────────────────────────────────────
+# ── 配置读取 ────────────────────────────────────────────────
+
+def _load_config() -> dict:
+    """按优先级查找并读取 config.yaml。"""
+    import yaml
+
+    candidates = [
+        Path(".aws-article/config.yaml"),
+        Path.home() / ".aws-article" / "config.yaml",
+    ]
+    for p in candidates:
+        if p.exists():
+            with open(p, encoding="utf-8") as f:
+                cfg = yaml.safe_load(f) or {}
+            _info(f"读取配置: {p}")
+            return cfg
+
+    _err(
+        "未找到 config.yaml，请在以下位置创建：\n"
+        "  项目级: .aws-article/config.yaml\n"
+        "  用户级: ~/.aws-article/config.yaml\n"
+        "参考示例: .aws-article/config.example.yaml"
+    )
+
 
 def _get_credentials() -> tuple[str, str]:
-    appid = os.environ.get("WECHAT_APPID", "")
-    appsecret = os.environ.get("WECHAT_APPSECRET", "")
+    """从 config.yaml 读取 wechat_appid 和 wechat_appsecret。"""
+    cfg = _load_config()
+    appid = cfg.get("wechat_appid", "")
+    appsecret = cfg.get("wechat_appsecret", "")
     if not appid or not appsecret:
         _err(
-            "请设置环境变量 WECHAT_APPID 和 WECHAT_APPSECRET\n"
-            "  export WECHAT_APPID=your_appid\n"
-            "  export WECHAT_APPSECRET=your_appsecret"
+            "config.yaml 中缺少 wechat_appid 或 wechat_appsecret\n"
+            "请在 config.yaml 中添加：\n"
+            "  wechat_appid: 你的AppID\n"
+            "  wechat_appsecret: 你的AppSecret"
         )
     return appid, appsecret
 
+
+# ── CLI ─────────────────────────────────────────────────────
 
 def _get_token() -> str:
     appid, appsecret = _get_credentials()
