@@ -27,6 +27,15 @@ closing_block: ""           # 文末固定引导语模板
 forbidden_words: []         # 禁用词/敏感词表
 original_attribution: ""    # 原创/转载标注习惯
 
+# ── 写作模型（第三方 LLM）──
+writing_model:
+  provider: deepseek         # deepseek、openai、zhipu、qwen、moonshot、custom
+  model: deepseek-chat       # 具体模型名，留空则用 provider 默认
+  api_key: ""                # API Key
+  base_url: ""               # 自定义端点（仅 custom 时必填，其他 provider 自动填充）
+  temperature: 0.7
+  max_tokens: 4000
+
 # ── 排版 ──
 default_format_preset: ""   # 默认排版预设名，空则每次询问
 
@@ -62,7 +71,9 @@ drafts_root: drafts/
 published_root: posts/published/
 ```
 
-> **安全提示**：config.yaml 已在 `.gitignore` 中，不会提交到仓库。但请注意保管好你的 AppSecret。
+> **安全提示**：config.yaml 已在 `.gitignore` 中，不会提交到仓库。请注意保管 AppSecret 和 API Key。
+
+> **写作规范**：除 config.yaml 外，可创建 `.aws-article/writing-spec.md` 定义写作规范（用词、句式、品牌调性等）。示例见 `.aws-article/writing-spec.example.md`。
 
 ## 说明
 
