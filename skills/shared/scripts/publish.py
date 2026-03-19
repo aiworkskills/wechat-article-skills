@@ -27,7 +27,9 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-DEFAULT_API_BASE = "https://api.weixin.qq.com/cgi-bin"
+# base 仅域名；接口路径 /cgi-bin 拼在请求 URL 上
+DEFAULT_API_BASE = "https://api.weixin.qq.com"
+API_PATH = "/cgi-bin"
 API_BASE = DEFAULT_API_BASE  # 运行时从 config 覆盖
 
 
@@ -49,7 +51,7 @@ def _info(msg: str):
 def get_access_token(appid: str, appsecret: str) -> str:
     """获取 access_token（有效期 2 小时）。"""
     url = (
-        f"{API_BASE}/token?"
+        f"{API_BASE}{API_PATH}/token?"
         f"grant_type=client_credential&appid={appid}&secret={appsecret}"
     )
     data = _api_get(url)
@@ -111,7 +113,7 @@ CONTENT_MAX_BYTES = 1 * 1024 * 1024   # 正文 1MB
 def upload_thumb(token: str, image_path: str) -> dict:
     """上传封面图为永久素材，返回 {media_id, url}。自动压缩到 10MB 以内。"""
     image_path = _compress_image(image_path, THUMB_MAX_BYTES)
-    url = f"{API_BASE}/material/add_material?access_token={token}&type=image"
+    url = f"{API_BASE}{API_PATH}/material/add_material?access_token={token}&type=image"
     data = _upload_file(url, image_path, field_name="media")
     if "media_id" not in data:
         _err(f"上传封面图失败: {data}")
@@ -121,7 +123,7 @@ def upload_thumb(token: str, image_path: str) -> dict:
 def upload_content_image(token: str, image_path: str) -> str:
     """上传正文内图片，返回可在正文中使用的 URL。自动压缩到 1MB 以内。"""
     image_path = _compress_image(image_path, CONTENT_MAX_BYTES, for_content=True)
-    url = f"{API_BASE}/media/uploadimg?access_token={token}"
+    url = f"{API_BASE}{API_PATH}/media/uploadimg?access_token={token}"
     data = _upload_file(url, image_path, field_name="media")
     if "url" not in data:
         _err(f"上传正文图片失败: {data}")
@@ -140,7 +142,7 @@ def create_draft(token: str, articles: list[dict]) -> str:
         need_open_comment(可选, 0/1),
         only_fans_can_comment(可选, 0/1)
     """
-    url = f"{API_BASE}/draft/add?access_token={token}"
+    url = f"{API_BASE}{API_PATH}/draft/add?access_token={token}"
     body = {"articles": articles}
     data = _api_post_json(url, body)
     if "media_id" not in data:
@@ -152,7 +154,7 @@ def create_draft(token: str, articles: list[dict]) -> str:
 
 def publish_draft(token: str, media_id: str) -> str:
     """发布草稿（异步），返回 publish_id。"""
-    url = f"{API_BASE}/freepublish/submit?access_token={token}"
+    url = f"{API_BASE}{API_PATH}/freepublish/submit?access_token={token}"
     data = _api_post_json(url, {"media_id": media_id})
     if "publish_id" not in data:
         _err(f"提交发布失败: {data}")
@@ -166,7 +168,7 @@ def get_publish_status(token: str, publish_id: str) -> dict:
         0=成功, 1=发布中, 2=原创失败, 3=常规失败,
         4=审核不通过, 5=已删除, 6=已封禁
     """
-    url = f"{API_BASE}/freepublish/get?access_token={token}"
+    url = f"{API_BASE}{API_PATH}/freepublish/get?access_token={token}"
     return _api_post_json(url, {"publish_id": publish_id})
 
 
@@ -181,7 +183,7 @@ def get_published_articles(token: str, offset: int = 0, count: int = 10,
         count: 返回数量，1-20
         no_content: True = 不返回正文（省流量）
     """
-    url = f"{API_BASE}/freepublish/batchget?access_token={token}"
+    url = f"{API_BASE}{API_PATH}/freepublish/batchget?access_token={token}"
     body = {"offset": offset, "count": count, "no_content": 1 if no_content else 0}
     return _api_post_json(url, body)
 
@@ -457,7 +459,7 @@ def _get_credentials(account_alias: str = None) -> tuple[str, str]:
 _cli_account: str | None = None
 
 def _init_api_base():
-    """从 config 加载自定义 API 基础地址（用于固定 IP 转发代理）。"""
+    """从 config 加载自定义 API 基础地址（仅域名，用于固定 IP 转发代理）。/cgi-bin 由脚本拼到接口路径上。"""
     global API_BASE
     try:
         cfg = _load_config()
@@ -468,8 +470,12 @@ def _init_api_base():
     acc = _resolve_account(cfg, _cli_account) if _cli_account or cfg.get("wechat_accounts") else {}
     api_base = acc.get("api_base", "") or cfg.get("wechat_api_base", "")
     if api_base:
-        API_BASE = api_base.rstrip("/")
-        _info(f"API 端点: {API_BASE}")
+        api_base = api_base.rstrip("/")
+        # 若配置里带了 /cgi-bin，去掉，由脚本统一拼到接口上
+        if api_base.endswith("/cgi-bin"):
+            api_base = api_base[:-8].rstrip("/")
+        API_BASE = api_base
+        _info(f"API 端点: {API_BASE}{API_PATH}")
 
 def _get_token() -> str:
     _init_api_base()

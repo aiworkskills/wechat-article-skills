@@ -73,6 +73,7 @@ python {baseDir}/scripts/format.py --list-themes
 
 输出的 HTML 特性：
 - 所有样式 inline（微信编辑器兼容）
+- **正文不含文章标题**：Markdown 中第一个 `#`（h1）在转换时被跳过，标题在公众号后台单独填写，正文不重复
 - 配图标记 `![类型：描述](placeholder)` 保留为 `<img>` 标签，待 images skill 替换
 - 图注自动从标记描述中提取
 
