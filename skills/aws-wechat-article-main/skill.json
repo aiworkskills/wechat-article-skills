@@ -1,0 +1,22 @@
+{
+  "name": "aws-wechat-article-main",
+  "version": "0.4.0",
+  "author": "aiworkskills",
+  "description": "管理微信公众号从选题到发布的完整内容流程，路由到各子能力。",
+  "license": "MIT",
+  "homepage": "https://github.com/aiworkskills/wechat-article-skills",
+  "tags": ["wechat", "公众号", "content-automation", "orchestration"],
+  "permissions": ["filesystem"],
+  "entryPoint": {
+    "type": "natural",
+    "path": "SKILL.md"
+  },
+  "dependencies": [
+    "aws-wechat-article-topics",
+    "aws-wechat-article-writing",
+    "aws-wechat-article-review",
+    "aws-wechat-article-formatting",
+    "aws-wechat-article-images",
+    "aws-wechat-article-publish"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "aws-wechat-article-writing",
+  "version": "0.3.0",
+  "author": "aiworkskills",
+  "description": "写公众号文章或改写已有内容，可调用第三方模型生成初稿。",
+  "license": "MIT",
+  "homepage": "https://github.com/aiworkskills/wechat-article-skills",
+  "tags": ["wechat", "公众号", "writing", "llm"],
+  "permissions": ["filesystem", "network", "shell"],
+  "entryPoint": {
+    "type": "natural",
+    "path": "SKILL.md"
+  }
+}

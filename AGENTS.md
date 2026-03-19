@@ -6,9 +6,11 @@ This repository is a **Cursor IDE Skills collection** for WeChat Official Accoun
 
 ### Repository structure
 
-- `skills/` — source for 7 sub-skills (Markdown `SKILL.md` files + references)
-- `scripts/install-skills.sh` — copies skills into `.cursor/skills/` for Cursor to load
+- `skills/` — source for 8 sub-skills (Markdown `SKILL.md` files + references)
+- `scripts/install-skills.sh` — multi-platform installer (Cursor / Claude Code / Codex / OpenClaw)
 - `.aws-article/config.example.yaml` — example YAML config (copy to `config.yaml` for use)
+- `CLAUDE.md` — Claude Code project instructions
+- `AGENTS.md` — Codex / Cursor Cloud agent instructions
 
 ### "Build" / install
 
@@ -16,7 +18,16 @@ This repository is a **Cursor IDE Skills collection** for WeChat Official Accoun
 bash scripts/install-skills.sh
 ```
 
-This is the only setup step. It copies the 7 skill directories from `skills/` into `.cursor/skills/`.
+Installs skills for all supported platforms:
+
+| Target | Directory | Action |
+|--------|-----------|--------|
+| Cursor | `.cursor/skills/` | Copy full skill directories |
+| Claude Code | `.claude/rules/` | Generate rule files from SKILL.md |
+| Codex | `AGENTS.md` | Already tracked in repo |
+| OpenClaw | `skills/` | Native — no copy needed |
+
+Install for a single target: `bash scripts/install-skills.sh cursor`
 
 ### Lint / test / build
 
@@ -32,5 +43,6 @@ Copy `.aws-article/config.example.yaml` to `.aws-article/config.yaml` and edit a
 
 ### Gotchas
 
-- `.cursor/` is git-ignored — installed skills are local-only and must be reinstalled after a fresh clone.
+- `.cursor/` and `.claude/` are git-ignored — installed skills are local-only and must be reinstalled after a fresh clone.
 - The install script uses `rm -rf` before `cp -R` so it's idempotent.
+- OpenClaw reads `skills/` directly — no installation needed.

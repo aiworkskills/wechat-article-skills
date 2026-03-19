@@ -1,0 +1,14 @@
+{
+  "name": "aws-wechat-sticker",
+  "version": "0.2.0",
+  "author": "aiworkskills",
+  "description": "创作公众号贴图和多图推送，从构思到生图到发布的完整流程。",
+  "license": "MIT",
+  "homepage": "https://github.com/aiworkskills/wechat-article-skills",
+  "tags": ["wechat", "公众号", "sticker", "multi-image"],
+  "permissions": ["filesystem", "network", "shell"],
+  "entryPoint": {
+    "type": "natural",
+    "path": "SKILL.md"
+  }
+}

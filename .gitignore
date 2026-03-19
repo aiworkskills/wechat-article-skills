@@ -12,8 +12,9 @@ drafts/
 posts/
 series/
 
-# Cursor 项目本地配置
+# AI 工具本地配置（安装脚本生成）
 .cursor
+.claude
 
 # Python
 __pycache__/
