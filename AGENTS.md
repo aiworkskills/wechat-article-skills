@@ -6,7 +6,7 @@ This repository is a **Cursor IDE Skills collection** for WeChat Official Accoun
 
 ### Repository structure
 
-- `skills/` — source for 7 sub-skills (Markdown `SKILL.md` files + references)
+- `skills/` — source for 8 sub-skills + 1 Cloud agent starter skill (Markdown `SKILL.md` files + references)
 - `scripts/install-skills.sh` — copies skills into `.cursor/skills/` for Cursor to load
 - `.aws-article/config.example.yaml` — example YAML config (copy to `config.yaml` for use)
 
@@ -16,7 +16,7 @@ This repository is a **Cursor IDE Skills collection** for WeChat Official Accoun
 bash scripts/install-skills.sh
 ```
 
-This is the only setup step. It copies the 7 skill directories from `skills/` into `.cursor/skills/`.
+This is the only setup step. It copies all skill directories from `skills/` into `.cursor/skills/`.
 
 ### Lint / test / build
 

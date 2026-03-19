@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 mkdir -p "$ROOT/.cursor/skills"
 
 # 安装各 skill（长文流程 + 贴图）
-for d in "$ROOT/skills"/aws-wechat-article-* "$ROOT/skills"/aws-wechat-sticker; do
+for d in "$ROOT/skills"/aws-wechat-article-* "$ROOT/skills"/aws-wechat-sticker "$ROOT/skills"/cloud-agent-starter; do
   [ -d "$d" ] || continue
   name=$(basename "$d")
   rm -rf "$ROOT/.cursor/skills/$name"
