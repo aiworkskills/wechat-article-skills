@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# 将 skills/ 下的所有 skill 和共享资源安装到各 AI 编程工具的指定目录。
+# 将 skills/ 下的 skill 和共享资源安装到各 AI 编程工具的指定目录。
+#
+# 概念区分：
+#   skill    = 有 SKILL.md 的用户级能力（选题、写作、排版…）
+#   resource = 被 skill 引用的共享基础设施（scripts/、image-styles/）
 #
 # 支持的目标：
-#   cursor      → .cursor/skills/        （复制完整 skill 目录）
-#   claude-code → .claude/rules/          （从 SKILL.md 生成规则文件）
+#   cursor      → .cursor/skills/        （复制 skill 目录 + resource）
+#   claude-code → .claude/rules/          （仅从 SKILL.md 生成规则文件）
 #   codex       → AGENTS.md              （已在仓库中维护，仅提示）
 #   openclaw    → skills/                （原生读取，无需安装）
 #
@@ -14,19 +18,25 @@
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-# 收集所有 skill 目录（含 shared）
+# ── 收集 ────────────────────────────────────────────────
+# skill：有 SKILL.md、面向用户
 SKILL_DIRS=()
-for d in "$ROOT/skills"/aws-wechat-article-* "$ROOT/skills"/aws-wechat-sticker "$ROOT/skills"/shared; do
+for d in "$ROOT/skills"/aws-wechat-article-* "$ROOT/skills"/aws-wechat-sticker; do
   [ -d "$d" ] && SKILL_DIRS+=("$d")
 done
 
+# resource：被 skill 引用的共享基础设施
+RESOURCE_DIRS=()
+[ -d "$ROOT/skills/shared" ] && RESOURCE_DIRS+=("$ROOT/skills/shared")
+
 # ── Cursor ──────────────────────────────────────────────
+# Cursor 需要完整的目录结构（skill + resource），{baseDir}/../shared/ 路径才能解析
 install_cursor() {
   echo "=== Cursor ==="
   local target="$ROOT/.cursor/skills"
   mkdir -p "$target"
 
-  for d in "${SKILL_DIRS[@]}"; do
+  for d in "${SKILL_DIRS[@]}" "${RESOURCE_DIRS[@]}"; do
     local name=$(basename "$d")
     rm -rf "$target/$name"
     cp -R "$d" "$target/"
@@ -35,6 +45,8 @@ install_cursor() {
 }
 
 # ── Claude Code ─────────────────────────────────────────
+# 仅为 skill 生成规则文件；resource 不生成规则（不是 agent 指令），
+# 脚本通过 skills/shared/ 路径在仓库中直接访问。
 install_claude_code() {
   echo "=== Claude Code ==="
   local target="$ROOT/.claude/rules"

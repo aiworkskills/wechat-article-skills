@@ -6,9 +6,5 @@
   "license": "MIT",
   "homepage": "https://github.com/aiworkskills/wechat-article-skills",
   "tags": ["wechat", "公众号", "shared", "library"],
-  "permissions": ["filesystem", "network", "shell"],
-  "entryPoint": {
-    "type": "natural",
-    "path": "SKILL.md"
-  }
+  "permissions": ["filesystem", "network", "shell"]
 }
