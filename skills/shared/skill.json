@@ -1,0 +1,14 @@
+{
+  "name": "aws-wechat-shared",
+  "version": "0.3.0",
+  "author": "aiworkskills",
+  "description": "公众号 skill 共享资源：发布脚本、图片生成脚本、Type×Style 图片风格体系。",
+  "license": "MIT",
+  "homepage": "https://github.com/aiworkskills/wechat-article-skills",
+  "tags": ["wechat", "公众号", "shared", "library"],
+  "permissions": ["filesystem", "network", "shell"],
+  "entryPoint": {
+    "type": "natural",
+    "path": "SKILL.md"
+  }
+}

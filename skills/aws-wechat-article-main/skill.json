@@ -12,6 +12,7 @@
     "path": "SKILL.md"
   },
   "dependencies": [
+    "aws-wechat-shared",
     "aws-wechat-article-topics",
     "aws-wechat-article-writing",
     "aws-wechat-article-review",

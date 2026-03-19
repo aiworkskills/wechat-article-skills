@@ -6,7 +6,7 @@ This repository is a **Cursor IDE Skills collection** for WeChat Official Accoun
 
 ### Repository structure
 
-- `skills/` — source for 8 sub-skills (Markdown `SKILL.md` files + references)
+- `skills/` — 8 sub-skills + shared resources (each has `SKILL.md` + `skill.json`)
 - `scripts/install-skills.sh` — multi-platform installer (Cursor / Claude Code / Codex / OpenClaw)
 - `.aws-article/config.example.yaml` — example YAML config (copy to `config.yaml` for use)
 - `CLAUDE.md` — Claude Code project instructions

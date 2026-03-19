@@ -10,5 +10,6 @@
   "entryPoint": {
     "type": "natural",
     "path": "SKILL.md"
-  }
+  },
+  "dependencies": ["aws-wechat-shared"]
 }

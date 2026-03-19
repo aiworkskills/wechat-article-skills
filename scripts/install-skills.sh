@@ -14,9 +14,9 @@
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-# 收集 skill 目录
+# 收集所有 skill 目录（含 shared）
 SKILL_DIRS=()
-for d in "$ROOT/skills"/aws-wechat-article-* "$ROOT/skills"/aws-wechat-sticker; do
+for d in "$ROOT/skills"/aws-wechat-article-* "$ROOT/skills"/aws-wechat-sticker "$ROOT/skills"/shared; do
   [ -d "$d" ] && SKILL_DIRS+=("$d")
 done
 
@@ -32,12 +32,6 @@ install_cursor() {
     cp -R "$d" "$target/"
     echo "  Installed: $name"
   done
-
-  if [ -d "$ROOT/skills/shared" ]; then
-    rm -rf "$target/shared"
-    cp -R "$ROOT/skills/shared" "$target/"
-    echo "  Installed: shared"
-  fi
 }
 
 # ── Claude Code ─────────────────────────────────────────
@@ -46,13 +40,11 @@ install_claude_code() {
   local target="$ROOT/.claude/rules"
   mkdir -p "$target"
 
-  # 为每个 skill 生成规则文件：保留 SKILL.md 正文，将 {baseDir} 替换为实际路径
   for d in "${SKILL_DIRS[@]}"; do
     local name=$(basename "$d")
     local skill_file="$d/SKILL.md"
     [ -f "$skill_file" ] || continue
 
-    # 去掉 YAML frontmatter（--- 到 --- 之间的内容），替换 {baseDir}
     python3 -c "
 import sys, re, pathlib
 text = pathlib.Path(sys.argv[1]).read_text()
