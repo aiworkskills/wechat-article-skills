@@ -194,6 +194,8 @@ def build_system_prompt(cfg: dict, writing_spec: str, structure_template: str) -
     parts.append("\n## 配图标记\n")
     parts.append("在需要配图的位置插入标记，格式：`![类型：描述](placeholder)`")
     parts.append("类型包括：封面、信息图、氛围、流程图、对比、实证")
+    parts.append("- 必须用图片语法 ![]()，不能写成 []()（少写 ! 会在排版时变成链接）")
+    parts.append("- 每个配图标记独占一行，前后留空行，不要与正文同一行")
     parts.append("- 封面标记放在标题之前")
     parts.append("- 描述要写清画面内容和意图")
     parts.append("- 信息图需包含具体数据点或维度")

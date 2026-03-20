@@ -57,6 +57,8 @@ Type（画面构成）× Style（视觉风格）自由组合。
 
 为每张图生成方案（类型、风格、prompt 要点）。
 
+**图片内文字**：画面中出现的文字必须为中文。在 prompt 里**直接写出要显示的中文文案**（如「传统对话AI」「OpenClaw」），禁止只写 “labels in Chinese” 或 “Chinese or English OK”，否则模型会生成英文。
+
 Prompt 构建：[shared/image-styles/prompt-construction.md](../shared/image-styles/prompt-construction.md)
 
 ### 第5步：展示方案并等待确认 ⛔
@@ -72,6 +74,8 @@ Prompt 构建：[shared/image-styles/prompt-construction.md](../shared/image-sty
 - 已配置 → `ℹ️ 使用专用图片模型生成（{model}@{base_url}）`
 - 未配置 → `ℹ️ 图片生成 API 未配置，使用当前 Agent 生图。如需更好的效果，请在 config.yaml 中配置 image_model。`
 
+**⛔ API 未配置时的终点**：只做到第 4 步（或第 5 步）。产出 `imgs/prompts/*.md` 与方案；**不执行**「替换 article 中的 placeholder」或「修复 HTML」。若 `imgs/README.md` 尚不存在或需补充当前方案的说明，可创建/更新（如何配置、如何跑 `image-gen.py batch`、如何在 `article.html` 中替换）；若已存在且已涵盖当前方案，**不必重写**。
+
 **调用专用 API 时**：
 
 ```bash
@@ -82,10 +86,12 @@ python {baseDir}/../shared/scripts/image-gen.py batch imgs/prompts/ -o imgs/
 
 ### 第7步：插入文章
 
-替换 placeholder 为实际图片路径，输出到 `imgs/`。
+仅当**已生成图片**时执行：替换 placeholder 为实际图片路径，输出到 `imgs/`。
+
+**修复 HTML 的触发条件**：仅当在 `article.html` 中**确实存在** `href="placeholder"` 或 placeholder 被渲染成可点击链接时，才将误转的 `<a>` 改为 `<img>` 或占位说明；**不要**默认每次都执行「修复流程图占位」或「修复 HTML」。
 
 ## 过程文件
 
 | 读取 | 产出 |
 |------|------|
-| `article.md` 中的标记 | `imgs/`（outline + prompts + 图片） |
+| `article.md` 中的标记 | `imgs/`（outline + prompts + 图片；未配置 API 时为 prompts + 可选 imgs/README.md） |

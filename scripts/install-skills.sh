@@ -6,8 +6,8 @@
 #   resource = 被 skill 引用的共享基础设施（scripts/、image-styles/）
 #
 # 支持的目标：
-#   cursor      → .cursor/skills/        （复制 skill 目录 + resource）
-#   claude-code → .claude/rules/          （仅从 SKILL.md 生成规则文件）
+#   cursor      → .cursor/skills/        （符号链接，改源码即生效）
+#   claude-code → .claude/rules/          （从 SKILL.md 生成规则文件）
 #   codex       → AGENTS.md              （已在仓库中维护，仅提示）
 #   openclaw    → skills/                （原生读取，无需安装）
 #
@@ -30,7 +30,7 @@ RESOURCE_DIRS=()
 [ -d "$ROOT/skills/shared" ] && RESOURCE_DIRS+=("$ROOT/skills/shared")
 
 # ── Cursor ──────────────────────────────────────────────
-# Cursor 需要完整的目录结构（skill + resource），{baseDir}/../shared/ 路径才能解析
+# 用符号链接，改源码即生效，无需重新安装
 install_cursor() {
   echo "=== Cursor ==="
   local target="$ROOT/.cursor/skills"
@@ -39,8 +39,8 @@ install_cursor() {
   for d in "${SKILL_DIRS[@]}" "${RESOURCE_DIRS[@]}"; do
     local name=$(basename "$d")
     rm -rf "$target/$name"
-    cp -R "$d" "$target/"
-    echo "  Installed: $name"
+    ln -s "$d" "$target/$name"
+    echo "  Linked: $name"
   done
 }
 

@@ -258,12 +258,13 @@ def _preformat_markdown(text: str) -> str:
 # ── Markdown → HTML ──────────────────────────────────────────
 
 def _md_to_html(md_text: str, styles: dict) -> str:
-    """Markdown → 带 inline style 的 HTML。"""
+    """Markdown → 带 inline style 的 HTML。正文不包含文章标题（第一个 h1 跳过，由公众号后台单独填）。"""
     lines = md_text.strip().split("\n")
     html_parts = []
     in_list = None
     in_blockquote = False
     paragraph_lines = []
+    first_h1_skipped = False
 
     def flush_paragraph():
         if paragraph_lines:
@@ -304,6 +305,10 @@ def _md_to_html(md_text: str, styles: dict) -> str:
             close_list()
             close_blockquote()
             level = len(heading_match.group(1))
+            # 跳过第一个 h1（文章标题），公众号后台单独填写标题，正文不再重复
+            if level == 1 and not first_h1_skipped:
+                first_h1_skipped = True
+                continue
             text = _inline_format(heading_match.group(2), styles)
             tag = f"h{level}"
             style = styles.get(tag, "")
