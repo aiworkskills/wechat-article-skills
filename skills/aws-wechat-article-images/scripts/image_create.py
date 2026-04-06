@@ -4,13 +4,25 @@
 
 调用 OpenAI 兼容的图片生成 API（DALL-E、Flux、SD 等）。
 
-图片模型：`image_model`（base_url / model / default_size / default_quality；provider 可选）须写在 **`.aws-article/config.yaml`**，
+图片模型（可选）：`image_model`（base_url / model / default_size / default_quality；provider 可选）须写在 **`.aws-article/config.yaml`**，
 **`IMAGE_MODEL_API_KEY`** 写在仓库根 **`aws.env`**，与 **`validate_env.py`** 一致。
+
+**base_url 须为完整端点路径**（含协议类型后缀），脚本根据路径判断调用模式：
+  - https://xxx.com/v1/images/generations  — DALL-E / gpt-image 等
+  - https://xxx.com/v1/chat/completions    — Gemini 等多模态模型（通过中转站）
+
+未配置时 generate/batch/test 以退出码 2 退出（stderr 含 `[NO_MODEL]`），
+Agent 可读取 `imgs/prompts/*.md` 中的 prompt 文件后用自身多模态能力生图。
 
 用法（在仓库根执行）：
     python skills/aws-wechat-article-images/scripts/image_create.py generate <prompt.md> -o out.png
     python skills/aws-wechat-article-images/scripts/image_create.py batch imgs/prompts/ -o imgs/
     python skills/aws-wechat-article-images/scripts/image_create.py test
+
+退出码：
+    0  成功
+    1  硬错误（API 失败、文件缺失等）
+    2  图片模型未配置（Agent 可降级自行生图）
 """
 
 import argparse
@@ -116,17 +128,15 @@ def _model_config_from_config_and_env(cfg: dict | None, env: dict[str, str]) -> 
     }
 
 
-def _resolve_model_config() -> dict:
+def _resolve_model_config() -> dict | None:
+    """Return model config dict, or None if not configured."""
     env_map = _load_env_map()
     cfg = _load_config_yaml()
     m = _model_config_from_config_and_env(cfg, env_map)
     if m:
         _info(f"图片模型已解析（API Key 等来自 {_resolve_env_path().name}）")
         return m
-    _err(
-        "图片模型配置不完整。请在 .aws-article/config.yaml 填写 image_model（须含 base_url、model；provider 可选），"
-        "并在仓库根 aws.env 填写 IMAGE_MODEL_API_KEY（键名见 .aws-article/env.example.yaml；可运行 validate_env.py 自检）。"
-    )
+    return None
 
 
 def _http_error_hint(code: int) -> str:
@@ -317,7 +327,7 @@ def _image_bytes_from_openai_like_result(result: dict, url: str) -> bytes:
 
 def _generate_image_openai_compatible(model_cfg: dict, prompt: str, size: str = None,
                                       quality: str = None, api_type: str = "openai") -> bytes:
-    """OpenAI 兼容生图。base_url：网关根，或已含 images/generations、chat/completions 的完整端点。"""
+    """OpenAI 兼容生图。base_url 须为完整端点（含 /v1/images/generations 或 /v1/chat/completions）。"""
     b = model_cfg["base_url"].rstrip("/")
     bl = b.lower()
     if api_type == "volcengine":
@@ -327,10 +337,12 @@ def _generate_image_openai_compatible(model_cfg: dict, prompt: str, size: str = 
             url = b
         elif "/v1/images/generations" in bl:
             url = b
-        elif bl.rstrip("/").endswith("/v1"):
-            url = f"{b.rstrip('/')}/images/generations"
         else:
-            url = f"{b}/v1/images/generations"
+            _err(
+                "image_model.base_url 须包含完整端点路径。示例：\n"
+                "  - https://xxx.com/v1/images/generations  （DALL-E / gpt-image 等）\n"
+                "  - https://xxx.com/v1/chat/completions    （Gemini 等多模态模型通过中转站生图）"
+            )
     else:
         _err(f"provider 无效: {api_type}（应为 openai | volcengine | qwen | gemini）")
         raise RuntimeError("invalid image provider")
@@ -576,6 +588,13 @@ def main():
         sys.exit(0)
 
     model_cfg = _resolve_model_config()
+    if model_cfg is None:
+        print(
+            "[NO_MODEL] 图片模型未配置（image_model 或 IMAGE_MODEL_API_KEY 缺失）。"
+            "Agent 可读取 imgs/prompts/*.md 后用自身多模态能力生图。",
+            file=sys.stderr,
+        )
+        sys.exit(2)
 
     if args.command == "test":
         _info("测试 API 连通性...")

@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 """
-校验 `.aws-article/config.yaml` 与仓库根 `aws.env` 中的写作模型、图片模型、微信公众号配置是否完整。
+校验 `.aws-article/config.yaml` 与仓库根 `aws.env` 中的配置是否完整。
 
-写作模型（须同时满足，缺一即整组失败）：
+写作模型（可选，未配置时产生警告，不阻断——Agent 可代写）：
   - config.yaml → writing_model：base_url、model（provider 可选）
   - aws.env → WRITING_MODEL_API_KEY
 
-图片模型（同上）：
+图片模型（条件可选）：
   - config.yaml → image_model：base_url、model（provider 可选）
   - aws.env → IMAGE_MODEL_API_KEY
+  - 当 Agent 具备图片生成能力时（传入 --agent-image-capable）：未配置仅为警告
+  - 当 Agent 不具备图片生成能力时（默认）：未配置为阻断级错误
 
-微信公众号（环境检测须完整；**例外**：`config.yaml` 顶层 **`publish_method: none`** 时跳过本组，表示用户明确不接微信）：
+微信公众号（阻断级；**例外**：`config.yaml` 顶层 **`publish_method: none`** 时跳过本组）：
   - config.yaml：wechat_accounts（≥1）、wechat_api_base、wechat_{i}_name（i=1..N）
   - aws.env：WECHAT_{i}_APPID、WECHAT_{i}_APPSECRET
 
-任一组不完整（且微信组在须校验时未过）：打印 **failed**，再打印对应汇总句（可多行），**退出码 1**。
-三组均通过（或已声明 **publish_method: none** 且写作+图片通过）：打印 **True**、**配置校验通过**，**退出码 0**。
-
 用法（仓库根）：
     python skills/aws-wechat-article-main/scripts/validate_env.py
+    python skills/aws-wechat-article-main/scripts/validate_env.py --agent-image-capable
     python skills/aws-wechat-article-main/scripts/validate_env.py --config .aws-article/config.yaml --env aws.env
 """
 from __future__ import annotations
@@ -130,6 +130,12 @@ def main() -> int:
         default=Path("aws.env"),
         help="默认 仓库根 aws.env",
     )
+    parser.add_argument(
+        "--agent-image-capable",
+        action="store_true",
+        default=False,
+        help="当前 Agent 具备图片生成能力；传入时图片模型未配置仅为警告，否则为阻断",
+    )
     args = parser.parse_args()
     config_path: Path = args.config
     env_path: Path = args.env
@@ -175,10 +181,15 @@ def main() -> int:
         return 1
 
     bad: list[str] = []
+    warnings: list[str] = []
+
     if not _writing_ok(cfg, env_map):
-        bad.append("写作模型配置不完整")
+        warnings.append("写作模型未配置（将由 Agent 代写）")
     if not _image_ok(cfg, env_map):
-        bad.append("图片模型配置不完整")
+        if args.agent_image_capable:
+            warnings.append("图片模型未配置（将由 Agent 代生成）")
+        else:
+            bad.append("图片模型配置不完整（当前 Agent 不支持图片生成，须配置外部模型）")
 
     pm = str(cfg.get("publish_method") or "").strip().lower()
     skip_wechat = pm == "none"
@@ -189,10 +200,15 @@ def main() -> int:
         print("failed", file=sys.stdout)
         for line in bad:
             print(line, file=sys.stdout)
+        for line in warnings:
+            print(line, file=sys.stdout)
         return 1
 
     print("True", file=sys.stdout)
-    print("配置校验通过", file=sys.stdout)
+    if warnings:
+        print(f"配置校验通过（{'；'.join(warnings)}）", file=sys.stdout)
+    else:
+        print("配置校验通过", file=sys.stdout)
     if skip_wechat:
         print(
             "（已跳过微信公众号校验：publish_method 为 none）",

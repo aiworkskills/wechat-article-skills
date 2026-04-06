@@ -1,6 +1,6 @@
 # 贴图风格预设
 
-本目录下的 `.md` 文件为**贴图/多图推送风格预设**。创作贴图时按 config 的 `default_sticker_style` 或用户指定加载。
+本目录下的 `.md` 文件为**贴图/多图推送风格预设**。创作贴图时按 config 的 `custom_sticker_style` > `default_sticker_style`（`custom_*` 优先）或用户指定加载。
 
 ## Schema
 

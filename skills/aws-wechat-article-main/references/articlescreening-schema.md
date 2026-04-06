@@ -12,7 +12,7 @@
 
 全局校验与首次引导：[first-time-setup.md](first-time-setup.md)；总览流程：[SKILL.md](../SKILL.md)。
 
-**优先级**：用户当次说法 > 本篇 **`article.yaml`**（仅本篇字段）> **`.aws-article/config.yaml`** > 各 skill 内置默认。
+**优先级**：用户当次说法 > 本篇 **`article.yaml`**（仅本篇字段）> **`.aws-article/config.yaml`**（`custom_*` 覆盖 `default_*`）> 各 skill 内置默认。
 
 ---
 
@@ -22,9 +22,11 @@
 
 **说明**：**`publish_completed`** 请放在本篇 **`article.yaml`**（见下节），勿写在全局 **`config.yaml`**；若旧稿或历史模板仍把「是否发完」放在 config 里，以 **`article.yaml`** 为准并逐步从 config 中清理。
 
-**配图风格**：**`default_cover_image_style`**（封面）与 **`default_article_image_style`**（正文配图）指向 **`presets/image-styles/`** 下同名 `.md`。
+**配图风格**：**`default_cover_image_style`** / **`custom_cover_image_style`**（封面）与 **`default_article_image_style`** / **`custom_article_image_style`**（正文配图）指向 **`presets/image-styles/`** 下同名 `.md`。
 
 **预设候选列表**：**`default_structure`**、**`default_closing_block`**、**`default_title_style`**、**`default_format_preset`**、**`default_cover_image_style`**、**`default_article_image_style`**（及 **`default_sticker_style`**）**须为 YAML 字符串列表**：`[]`、单元素 `[名]`，或多项候选；**多项时**智能体须在本篇 **`article.yaml`** 同键改为**单元素列表**后，再运行 **`write.py`**（结构/文末）与 **`format.py`**（排版主题）。**勿使用字符串标量。**
+
+**`custom_*` 覆盖层**：每个 `default_*` 字段均有对应的 `custom_*`（如 `custom_structure`、`custom_format_preset` 等），格式相同。当 `custom_*` 非空时，优先于同名 `default_*`。合并优先级：**`article.yaml` > `custom_*` > `default_*`**。
 
 ---
 
@@ -42,7 +44,7 @@
 | `need_open_comment` | 是否开启留言（与微信能力一致） |
 | `only_fans_can_comment` | 是否仅粉丝可留言 |
 | **`publish_completed`** | **`false`** / **`true`**。新建本篇为 **`false`**；**发布闭环结束后**由智能体改为 **`true`**。**`publish.py` 不读写此键**；用于对话分流与运营备忘。 |
-| **`default_structure`** 等全局同名 **`default_*`** | 可选。与 **`config.yaml`** 合并时**本篇覆盖**；若全局某键为**多元素候选列表**，须在本篇写入**单元素列表** `[名]`，再运行 **`write.py`** / **`format.py`**。 |
+| **`default_structure`** / **`custom_structure`** 等全局同名预设键 | 可选。与 **`config.yaml`** 合并时**本篇覆盖**（`custom_*` 优先于 `default_*`）；若全局某键为**多元素候选列表**，须在本篇写入**单元素列表** `[名]`，再运行 **`write.py`** / **`format.py`**。 |
 
 ---
 

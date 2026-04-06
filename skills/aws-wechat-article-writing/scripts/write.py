@@ -5,12 +5,15 @@
 调用第三方 LLM API（OpenAI 兼容格式）生成公众号文章。
 支持 DeepSeek、OpenAI、Claude（兼容端点）、智谱、通义千问等。
 
-写作模型：`writing_model`（base_url / model 必填；provider / temperature / max_tokens 可选）写在 **`.aws-article/config.yaml`**，
-**`WRITING_MODEL_API_KEY`** 写在仓库根 **`aws.env`**，与 **`validate_env.py`** 一致。
+写作模型（可选）：`writing_model`（base_url / model；provider / temperature / max_tokens 可选）写在
+**`.aws-article/config.yaml`**，**`WRITING_MODEL_API_KEY`** 写在仓库根 **`aws.env`**。
+未配置时 draft/rewrite/continue 以退出码 2 退出；可改用 prompt 子命令获取提示词，由 Agent 代写。
 
 文风、预设名、`closing_block` 等：合并 **`.aws-article/config.yaml`（顶层，不含 writing_model/image_model）** 与本篇 **`article.yaml`**（本篇覆盖同名字段）。
 结构/文末预设 **`.md`** 仍从 **`.aws-article/presets/`**（及用户目录）解析。
 **`default_structure` / `default_closing_block`** 须为 **YAML 列表**：`[]` 表示未选默认；`[名]` 单元素即用；**多元素为候选池**，须先在本篇 **`article.yaml`** 同键写成**单元素列表** `[名]` 后再运行本脚本（勿使用字符串标量）。
+
+退出码: 0=成功  1=硬错误  2=写作模型未配置(仅draft/rewrite/continue)
 
 用法：
     python write.py draft <topic_card.md>              按选题卡片写初稿
@@ -18,6 +21,8 @@
     python write.py rewrite <article.md>               改写已有文章
     python write.py rewrite <article.md> --instruction "改成口语化"
     python write.py continue <article.md>              续写未完成的文章
+    python write.py prompt draft <topic_card.md>       只输出提示词JSON(不调LLM)
+    python write.py prompt rewrite <article.md> --instruction "..."
 """
 
 import argparse
@@ -202,17 +207,15 @@ def _load_writing_context(draft_dir: Path) -> dict:
     return merged
 
 
-def _resolve_model_config() -> dict:
+def _resolve_model_config() -> dict | None:
+    """Return model config dict, or None if not configured."""
     env_map = _load_env_map()
     cfg = _load_config_yaml()
     m = _model_config_from_config_and_env(cfg, env_map)
     if m:
         _info(f"写作模型已解析（API Key 等来自 {_resolve_env_path().name}）")
         return m
-    _err(
-        "写作模型配置不完整。请在 .aws-article/config.yaml 填写 writing_model（须含 base_url、model；provider 可选），"
-        "并在仓库根 aws.env 填写 WRITING_MODEL_API_KEY（键名见 .aws-article/env.example.yaml；可运行 validate_env.py 自检）。"
-    )
+    return None
 
 
 def _load_writing_spec() -> str:
@@ -654,6 +657,39 @@ def continue_writing(
 
 # ── CLI ──────────────────────────────────────────────────────
 
+def _build_prompts(mode, input_text, screening, writing_spec,
+                   structure_template, closing_block, image_source,
+                   img_analysis, instruction=""):
+    """Build system_prompt + user_prompt without calling LLM."""
+    system_prompt = build_system_prompt(
+        screening, writing_spec, structure_template, closing_block,
+        image_source=image_source, img_analysis=img_analysis,
+    )
+    if mode == "draft":
+        user_prompt = f"请根据以下选题卡片，写一篇完整的微信公众号文章：\n\n{input_text}"
+        if image_source == "user" and img_analysis:
+            user_prompt += f"\n\n以下是用户上传图片的分析记录，需据此组织章节并使用对应图片：\n\n{img_analysis}"
+    elif mode == "rewrite":
+        user_prompt = "请改写以下文章"
+        if instruction:
+            user_prompt += f"，改写要求：{instruction}"
+        user_prompt += f"\n\n---\n\n{input_text}"
+        if image_source == "user" and img_analysis:
+            user_prompt += f"\n\n附：用户图片分析记录（改写时保持图片映射关系）：\n\n{img_analysis}"
+    elif mode == "continue":
+        user_prompt = (
+            "以下是一篇未完成的微信公众号文章，请从断点处继续写完，"
+            "保持风格和结构一致：\n\n"
+            f"{input_text}"
+        )
+        if image_source == "user" and img_analysis:
+            user_prompt += f"\n\n附：用户图片分析记录（续写时保持图片映射关系）：\n\n{img_analysis}"
+    else:
+        _err(f"未知写作模式: {mode}")
+        raise RuntimeError("unknown mode")
+    return {"system_prompt": system_prompt, "user_prompt": user_prompt}
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="公众号文章写作工具",
@@ -675,11 +711,47 @@ def main():
     p_continue.add_argument("input", help="文章文件路径（.md）")
     p_continue.add_argument("-o", "--output", help="输出路径")
 
+    p_prompt = sub.add_parser("prompt", help="只输出写作提示词 JSON（不调用 LLM）")
+    p_prompt.add_argument("mode", choices=["draft", "rewrite", "continue"], help="写作模式")
+    p_prompt.add_argument("input", help="输入文件路径")
+    p_prompt.add_argument("--instruction", default="", help="改写要求（仅 rewrite）")
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
         sys.exit(0)
 
+    # prompt subcommand: build prompts only, no model config needed
+    if args.command == "prompt":
+        input_path = Path(args.input).resolve()
+        if not input_path.exists():
+            _err(f"文件不存在: {input_path}")
+        input_text = input_path.read_text(encoding="utf-8")
+        draft_dir = input_path.parent
+        screening = _load_writing_context(draft_dir)
+        writing_spec = _load_writing_spec()
+        structure_template = _load_structure_template(screening)
+        closing_block = _load_closing_block(screening)
+        image_source = _resolve_image_source(screening)
+        img_analysis = _load_img_analysis(draft_dir)
+        if image_source == "user" and not img_analysis:
+            _err(
+                "当前 image_source=user，但未找到本篇 img_analysis.md。"
+                "请先生成并补全 img_analysis.md，再执行。"
+            )
+        if image_source == "user" and img_analysis:
+            cover_count = _extract_recommended_cover_count(img_analysis)
+            if cover_count != 1:
+                _err(f"img_analysis.md 中“推荐用途：封面”必须且只能有 1 处，当前为 {cover_count} 处。")
+        prompts = _build_prompts(
+            args.mode, input_text, screening, writing_spec,
+            structure_template, closing_block, image_source, img_analysis,
+            instruction=getattr(args, "instruction", ""),
+        )
+        print(json.dumps(prompts, ensure_ascii=False))
+        sys.exit(0)
+
+    # draft / rewrite / continue: need model config
     input_path = Path(args.input).resolve()
     if not input_path.exists():
         _err(f"文件不存在: {input_path}")
@@ -688,6 +760,13 @@ def main():
     draft_dir = input_path.parent
     screening = _load_writing_context(draft_dir)
     model_cfg = _resolve_model_config()
+    if model_cfg is None:
+        print(
+            "[NO_MODEL] 写作模型未配置（writing_model 或 WRITING_MODEL_API_KEY 缺失）。"
+            "请使用 write.py prompt 获取提示词后由 Agent 代写。",
+            file=sys.stderr,
+        )
+        sys.exit(2)
     writing_spec = _load_writing_spec()
     structure_template = _load_structure_template(screening)
     closing_block = _load_closing_block(screening)

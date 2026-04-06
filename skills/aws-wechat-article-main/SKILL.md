@@ -60,12 +60,14 @@ python skills/aws-wechat-article-main/scripts/validate_env.py
 
 ### 智能体行为约束（禁止自作主张）
 
-检测到 **`.aws-article/config.yaml` 或 `aws.env` 缺失**、**`validate_env.py` 退出码 1**（写作 / 图片 / 微信任一组未就绪，且未声明 **`publish_method: none`**），或用户**已要求调用 `publish.py`** 而微信槽位 / 凭证未就绪时：
+检测到 **`.aws-article/config.yaml` 或 `aws.env` 缺失**、**`validate_env.py` 退出码 1**（微信配置不完整，且未声明 **`publish_method: none`**），或用户**已要求调用 `publish.py`** 而微信槽位 / 凭证未就绪时：
 
-- **禁止**在未询问用户、未取得用户**明确文字确认**的情况下，自行决定：用当前 Agent 代写、跳过 `write.py`/`image_create.py`、仅出 prompt 却继续宣称「一条龙已完成」、或继续排版/发布并假装配置已就绪。
-- **必须先**：向用户说明**具体缺哪一类**（脚本 **`failed`** 下的 **`写作模型配置不完整`** / **`图片模型配置不完整`** / **`微信公众号配置不完整`**；或即将 **`publish.py`** 但微信未配齐），并**统一按** [首次引导](references/first-time-setup.md) 中「校验失败时的配置引导」文案执行。
-- **输出约束**：该场景下除“环境检查结果”可按实际失败项替换外，其余引导文案须与首次引导保持一致。
+- **禁止**在未询问用户、未取得用户**明确文字确认**的情况下，自行决定：跳过微信配置、仅出 prompt 却继续宣称「一条龙已完成」、或继续排版/发布并假装配置已就绪。
+- **必须先**：向用户说明**具体缺哪一类**（脚本 **`failed`** 下的 **`微信公众号配置不完整`**；或即将 **`publish.py`** 但微信未配齐），并**统一按** [首次引导](references/first-time-setup.md) 中「校验失败时的配置引导」文案执行。
+- **输出约束**：该场景下除”环境检查结果”可按实际失败项替换外，其余引导文案须与首次引导保持一致。
 - 用户补全并落盘后，智能体协助重跑 **`validate_env.py`**；若用户明确声明本次例外，按首次引导与本节约束继续处理。涉及 **`aws.env`** 的密钥仍由用户本地粘贴更安全，避免无必要重复口述 `AppSecret`。
+
+> **模型未配置例外**：写作模型未配置时（`validate_env.py` 退出码 0 + 警告），**不适用**上述「禁止自作主张」约束——Agent 可自动通过 `write.py prompt` 获取相同提示词后代写，**无须**「本次例外」确认。图片模型同理，但仅在 Agent 支持图片生成（传入 `--agent-image-capable`）时才降为警告；不支持时图片模型仍为阻断级。须告知用户当前使用的方式。
 
 > **单步子 skill**：用户只触发某一子能力（如仅排版、仅审稿）且**未走本总览流水线**时，仍以各子 skill 内说明为准；**一条龙 / 完整流程 / 从选题到发布** 必须满足本节 BLOCKING 与上条「禁止自作主张」。
 
@@ -95,8 +97,10 @@ python skills/aws-wechat-article-main/scripts/validate_env.py
 
 ### 1) 配置自检（必做）
 
-- 按上文 **配置检查** 完成：**`config.yaml` 与 `aws.env` 均存在** → 运行 **`validate_env.py` 且退出码 0**（写作、图片、微信均通过，或已设 **`publish_method: none`** 且写作+图片通过）。**退出码 1** 时按 [首次引导](references/first-time-setup.md) 补全环境，或设 **`none`** / 用户 **本次例外**。  
-- **校验未通过时**：只展示 [首次引导](references/first-time-setup.md) 中的 **配置选项**，**不要**在同一轮回复里再问「写哪篇 / 继续哪篇草稿 / 新选题」等；须等配置闭环（重跑校验通过或「本次例外」已书面确认）后，**再**进入下方 **「2) 全局账号约束」**。
+- 按上文 **配置检查** 完成：**`config.yaml` 与 `aws.env` 均存在** → 运行 **`validate_env.py`**（若 Agent 支持图片生成则加 `--agent-image-capable`）**且退出码 0**。**退出码 1** 时按 [首次引导](references/first-time-setup.md) 补全环境，或设 **`none`** / 用户 **本次例外**。
+- **退出码 0 + 模型警告**：流程**不阻断**，可直接进入下一步。写作模型未配置时 Agent 通过 `write.py prompt` 获取相同提示词后代写；图片模型未配置（且加了 `--agent-image-capable`）时由 Agent 代生成。
+- **智能体须自判图片能力**：运行 `validate_env.py` 前判断自身是否支持图片生成。若支持则加 `--agent-image-capable`；否则不加（图片模型未配置将阻断）。
+- **退出码 1（微信不完整）时**：只展示 [首次引导](references/first-time-setup.md) 中的 **配置选项**，**不要**在同一轮回复里再问「写哪篇 / 继续哪篇草稿 / 新选题」等；须等配置闭环（重跑校验通过或「本次例外」已书面确认）后，**再**进入下方 **「2) 全局账号约束」**。
 - **`validate_env.py` 不检查** `article_category`、`target_reader`、`default_author`；须在 **「2) 全局账号约束」** 中单独检查并落盘。
 
 ### 2) 全局账号约束（`.aws-article/config.yaml`）⛔
@@ -135,6 +139,8 @@ python skills/aws-wechat-article-main/scripts/validate_env.py
 ### 4) 内容流水线（子 skill）
 
 须已具备 **本篇目录** 与 **`article.yaml`**（「已有目录」分支按上条处理）；账号侧约束以 **`config.yaml`** 为准。
+
+**确认轮次优化**：全局三键已非空时静默通过；`publish_method` 已为合法值时不重复盘问；多个待确认项可合并为一轮提问。用户意图明确时（如给出主题 + "写一篇文章"），理想轮次为 **1 轮**（确认标题/摘要）+ **写完后展示结果**。配图方案在用户无特殊要求时按默认风格自动执行，不单独确认。
 
 ```
 选题 → 写稿 → 审稿(内容审) → 排版 → 配图 → 审稿(终审)

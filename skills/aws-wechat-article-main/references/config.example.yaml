@@ -30,13 +30,29 @@ original_attribution: ""     # Attribution style (e.g. "original / authorized re
 # Format: must be YAML string lists. [] = no default; single item = use directly; multiple items = candidate pool —
 #   the agent must narrow to a single-item list in this article's article.yaml before running write.py / format.py
 #   (write validates structure/closing; format validates format_preset). Do not use scalar strings.
-default_structure: []         # e.g. [story] or [story, tutorial, insight]
-default_closing_block: []    # e.g. [brand]
-default_title_style: []      # e.g. [story]; agent picks one during topic selection (or writes back to article.yaml first)
-default_format_preset: []   # e.g. [readable]; must match a file in presets/formatting/ or a built-in theme name
-default_cover_image_style: []   # e.g. [warm-illustration]
-default_article_image_style: [] # Can differ from cover; when multiple candidates, narrow in article.yaml then load the .md
-default_sticker_style: []    # e.g. [storyboard]; sticker workflow — agent picks one from the list
+# Priority: article.yaml > custom_* > default_*
+default_structure:                # e.g. single or multiple candidates
+  - AI Skill 爆款教程结构
+  - AI Skills 实操爆文结构
+default_closing_block: []         # e.g. - brand
+default_title_style:
+  - 技术实操指南型
+default_format_preset:
+  - 金融蓝
+default_cover_image_style: []     # e.g. - warm-illustration
+default_article_image_style: []   # Can differ from cover; when multiple candidates, narrow in article.yaml then load the .md
+default_sticker_style: []         # e.g. - storyboard; sticker workflow — agent picks one from the list
+
+# ── Custom presets (override defaults) ──
+# Same format as default_*: YAML string lists. When set, takes priority over default_*.
+# article.yaml still takes highest priority over both.
+custom_structure: []
+custom_closing_block: []
+custom_title_style: []
+custom_format_preset: []
+custom_cover_image_style: []
+custom_article_image_style: []
+custom_sticker_style: []
 
 # ── Images ──
 image_source: generated       # generated | user; user = use uploaded images directly (skip image_create.py)
@@ -120,9 +136,13 @@ writing_model:
   max_tokens: 4000
 
 # ── Image generation model ──
+# base_url must be the FULL endpoint path (script detects mode from path suffix):
+#   - https://xxx.com/v1/images/generations   (DALL-E / gpt-image)
+#   - https://xxx.com/v1/chat/completions     (Gemini etc. via proxy)
+#   - Gemini native / Qwen native / Volcengine: use their full endpoint URL
 image_model:
-  provider: ""                    # Optional; auto-detected from base_url / model if empty (openai | volcengine | qwen | gemini)
-  base_url: ""
+  provider: ""                    # Optional; auto-detected from base_url path if empty (openai | volcengine | qwen | gemini)
+  base_url: ""                    # Full endpoint URL (see examples above)
   model: ""
   default_size: "1024x1024"
   default_quality: "standard"

@@ -342,10 +342,21 @@ def full_publish(token: str, article_dir: str, do_publish: bool = False):
         _err(f"未找到 {content_path}")
     content = content_path.read_text(encoding="utf-8")
 
-    # 上传封面
-    cover_path = _find_file(article_dir, ["cover.jpg", "cover.png", "cover.jpeg", "cover.webp"])
+    # 上传封面（优先 article_dir/cover.*，fallback imgs/cover.* 和 imgs/*-cover.*）
+    _cover_names = ["cover.jpg", "cover.png", "cover.jpeg", "cover.webp"]
+    cover_path = _find_file(article_dir, _cover_names)
     if not cover_path:
-        _err("未找到封面图（cover.jpg/png/jpeg/webp）")
+        _imgs = article_dir / "imgs"
+        if _imgs.is_dir():
+            cover_path = _find_file(_imgs, _cover_names)
+            if not cover_path:
+                for _sfx in (".jpg", ".png", ".jpeg", ".webp"):
+                    _cands = sorted(_imgs.glob(f"*-cover{_sfx}"))
+                    if _cands:
+                        cover_path = _cands[0]
+                        break
+    if not cover_path:
+        _err("未找到封面图（cover.jpg/png/jpeg/webp）；支持 article_dir/ 或 imgs/ 下")
     _info(f"上传封面图: {cover_path}")
     thumb = upload_thumb(token, str(cover_path))
     _ok(f"封面图上传成功: media_id={thumb['media_id']}")

@@ -38,53 +38,62 @@ if ((Test-Path -LiteralPath ".aws-article\config.yaml") -and (Test-Path -Literal
 
 ```bash
 python skills/aws-wechat-article-main/scripts/validate_env.py
+# 若当前 Agent 支持图片生成（如 GPT-4o），加 --agent-image-capable：
+python skills/aws-wechat-article-main/scripts/validate_env.py --agent-image-capable
 ```
 
 （默认读取 **`.aws-article/config.yaml`** 与 **`aws.env`**；可用 `--config`、`--env` 指定路径。）
 
+**智能体须自判**：运行 `validate_env.py` 前，判断自身是否具备图片生成能力。若具备（如模型原生支持生图），加 `--agent-image-capable`；否则不加（图片模型未配置将阻断）。
+
 **脚本运行结果**
 
-- **成功（退出码 0）**：输出 **`True`**、**`配置校验通过`**。若 **`publish_method: none`**，会多一行说明已跳过微信公众号校验。  
-- **失败（退出码 1）**：先输出 **`failed`**，再输出一类或多类：**`写作模型配置不完整`** / **`图片模型配置不完整`** / **`微信公众号配置不完整`**（可多行同时出现）。
+- **成功（退出码 0）**：输出 **`True`**、**`配置校验通过`**。若写作/图片模型未配置，会附带警告（如 `配置校验通过（写作模型未配置（将由 Agent 代写）；图片模型未配置（将由 Agent 代生成））`），**不阻断流程**。若 **`publish_method: none`**，会多一行说明已跳过微信公众号校验。
+- **失败（退出码 1）**：先输出 **`failed`**，再输出阻断项（**`微信公众号配置不完整`**）及模型警告（如有）。模型未配置只是警告，微信配置不完整才是阻断原因。
 
 #### 校验失败时的配置引导（必须严格执行）
 
 **当 `validate_env.py` 退出码为 1** 时，**必须**按下述文案**原样输出**（除「环境检查结果」一行可按终端 **`failed`** 实际汇总替换外，其余三条与措辞不得改写）。
 
-环境检查结果：写作模型、生图模型、公众号配置不完整
+环境检查结果：公众号配置不完整
 
-1. **微信配置（必填）**：填好微信配置后，我才能帮您将文章发送到草稿箱。  
-2. **写作或生图模型配置（选填）**：配置claude、GPT、banana等专用模型有助于生成更好的文章；若您不想配置，请明确告诉我，我将亲自执行后续流程。  
+1. **微信配置（必填）**：填好微信配置后，我才能帮您将文章发送到草稿箱。
+2. **写作或生图模型配置（选填）**：配置claude、GPT、banana等专用模型有助于生成更好的文章；若您不想配置，我将使用相同的写作约束亲自执行后续流程。
 3. **配置方式**：您可直接把缺失配置发给我，我来帮您写入并复检；也可前往我们的平台 **`https://aiworkskills.cn/`** 自行配置（更多结构预设、配图预设等高级配置也在该平台）。
 
-**额外操作**：若仅仅不配置微信账号，可将 **`config.yaml`** 中 **`publish_method`** 设为 **`none`**，不发布到草稿箱。（改后须在仓库根重跑 **`python skills/aws-wechat-article-main/scripts/validate_env.py`** 方生效；**写作组、图片组仍须配齐**。这句话不输出给用户）
+**额外操作**：若仅仅不配置微信账号，可将 **`config.yaml`** 中 **`publish_method`** 设为 **`none`**，不发布到草稿箱。（改后须在仓库根重跑 **`python skills/aws-wechat-article-main/scripts/validate_env.py`** 方生效。这句话不输出给用户）
+
+**注意**：写作模型未配置**不阻断流程**（退出码仍为 0），Agent 通过 `write.py prompt` 获取相同提示词后代写。图片模型未配置时，仅当 Agent 传入 `--agent-image-capable` 才降为警告（退出码 0）；未传入时仍为阻断（退出码 1）。
 
 **⛔ 配置与写稿分两阶段（必须遵守）**
 
-- **`validate_env.py` 退出码 1** 时：**本轮只谈环境配置**——向用户展示上列 **环境检查结果 + 三条 + 额外操作** 即可，**结束在该主题**；**禁止**在同一条回复（或同一轮未闭环配置前）里再接：写哪篇文章、是否继续某篇草稿、`drafts/` 路径、选题、定题、`topic-card`、审稿、排版等**任何写稿向流程**。  
-- **下一阶段**：用户按上文配置引导完成落盘并重跑校验至 **退出码 0**，或明确声明「不配置模型，按本次例外由智能体继续」并按总览 [SKILL.md](../SKILL.md) 完成 **「本次例外」** 书面确认后，**从下一轮对话起**先完成总览 **「2) 全局账号约束」**，再进入 **「3) 本篇准备」**、写稿等。  
+- **`validate_env.py` 退出码 1** 时：**本轮只谈环境配置**——向用户展示上列 **环境检查结果 + 三条 + 额外操作** 即可，**结束在该主题**；**禁止**在同一条回复（或同一轮未闭环配置前）里再接：写哪篇文章、是否继续某篇草稿、`drafts/` 路径、选题、定题、`topic-card`、审稿、排版等**任何写稿向流程**。
+- **`validate_env.py` 退出码 0（含模型警告）** 时：流程**不阻断**，可直接进入下一阶段。模型未配置时 Agent 会通过 `write.py prompt` 获取相同提示词后自行代写，无须「本次例外」确认。
+- **下一阶段**：用户按上文配置引导完成落盘并重跑校验至 **退出码 0**，或明确声明「不配置微信，按本次例外由智能体继续」并按总览 [SKILL.md](../SKILL.md) 完成 **「本次例外」** 书面确认后，**从下一轮对话起**先完成总览 **「2) 全局账号约束」**，再进入 **「3) 本篇准备」**、写稿等。
   - **在不了解用户是要续写旧稿还是新开一篇时**（含刚闭环配置后接写稿）：须按总览 **「3) 本篇准备」** 开头规则**先问再动**，**禁止**直接假定某一 `drafts/…` 目录并调用写作脚本。
 
 ---
 
 ## `validate_env.py` 在做什么（摘要）
 
-| 组别 | `config.yaml` | `aws.env` | 失败时提示 |
+| 组别 | `config.yaml` | `aws.env` | 缺失时行为 |
 |------|----------------|-----------|------------|
-| 写作模型 | `writing_model.base_url`、`model`（`provider` 可选） | `WRITING_MODEL_API_KEY` | 写作模型配置不完整 |
-| 图片模型 | `image_model.base_url`、`model`（`provider` 可选） | `IMAGE_MODEL_API_KEY` | 图片模型配置不完整 |
-| 微信公众号 | `wechat_accounts`（≥1）、`wechat_api_base`、`wechat_{i}_name` | `WECHAT_{i}_APPID`、`WECHAT_{i}_APPSECRET` | 微信公众号配置不完整 |
+| 写作模型 | `writing_model.base_url`、`model`（`provider` 可选） | `WRITING_MODEL_API_KEY` | **警告**（不阻断）：Agent 可代写 |
+| 图片模型 | `image_model.base_url`、`model`（`provider` 可选） | `IMAGE_MODEL_API_KEY` | 取决于 `--agent-image-capable`：传入则**警告**，未传则**阻断** |
+| 微信公众号 | `wechat_accounts`（≥1）、`wechat_api_base`、`wechat_{i}_name` | `WECHAT_{i}_APPID`、`WECHAT_{i}_APPSECRET` | **阻断**：`failed` + 退出码 1 |
 
-三组**各自**须全部满足，任一组缺失则 **`failed`** 且退出码 1。**例外**：**`config.yaml`** 中 **`publish_method: none`** 时**不校验**微信组（用户明确不接公众号 API）。
+写作模型未配置只产生**警告**；图片模型未配置时，若 Agent 支持图片生成（`--agent-image-capable`）则为警告，否则为**阻断**；微信组缺失则 **`failed`** 且退出码 1。**例外**：**`config.yaml`** 中 **`publish_method: none`** 时**不校验**微信组。
 
 ---
 
 ## 阻断规则
 
-⛔ **缺少 `.aws-article/config.yaml` 或 `aws.env`**，或 **`validate_env.py` 退出码 1**（写作 / 图片 / 微信任一组未配齐，且未设 **`publish_method: none`**）：
+⛔ **缺少 `.aws-article/config.yaml` 或 `aws.env`**，或 **`validate_env.py` 退出码 1**（微信配置不完整，且未设 **`publish_method: none`**）：
 
-- 禁止进入一条龙默认流水线（除非用户按总览 SKILL 明确声明「本次例外」，或先设 **`publish_method: none`** 并重跑校验通过）。  
+- 禁止进入一条龙默认流水线（除非用户按总览 SKILL 明确声明「本次例外」，或先设 **`publish_method: none`** 并重跑校验通过）。
 - 禁止宣称环境已就绪或一条龙已完成。
+
+**写作模型未配置不触发阻断**：`validate_env.py` 退出码仍为 0（附带警告），Agent 通过 `write.py prompt` 获取相同提示词后自行代写。**图片模型**：仅当 Agent 具备图片生成能力（传入 `--agent-image-capable`）时才降为警告，否则仍阻断。
 
 **不接微信**：将 **`publish_method`** 设为 **`none`** 后重跑 **`validate_env.py`**，可跳过微信组校验；**`publish.py full`** 仍按 **`none`** 直接跳过。
 

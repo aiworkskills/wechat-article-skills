@@ -1,6 +1,6 @@
 # 配图风格预设
 
-本目录下的 `.md` 文件为**配图风格预设**。生成配图时按合并配置中的 **`default_cover_image_style`**、**`default_article_image_style`**（**须为 YAML 字符串列表**；多候选须在本篇 **`article.yaml`** 同键改为**单元素列表**）加载对应 `.md`；未配置时按用户指定或自动推荐。
+本目录下的 `.md` 文件为**配图风格预设**。生成配图时按合并配置中的 **`custom_cover_image_style`** > **`default_cover_image_style`**、**`custom_article_image_style`** > **`default_article_image_style`**（**须为 YAML 字符串列表**；`custom_*` 非空时优先；多候选须在本篇 **`article.yaml`** 同键改为**单元素列表**）加载对应 `.md`；未配置时按用户指定或自动推荐。
 
 ## Schema
 

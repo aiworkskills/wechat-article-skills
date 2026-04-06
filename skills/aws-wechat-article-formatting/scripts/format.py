@@ -17,6 +17,8 @@
     python format.py --list-themes                       列出可用主题
 """
 
+from __future__ import annotations
+
 import argparse
 import html as html_mod
 import json
@@ -511,9 +513,8 @@ def _preformat_markdown(text: str) -> str:
     # 连续多个空行 → 最多两个
     text = re.sub(r'\n{3,}', '\n\n', text)
 
-    # 修复加粗标记中的空格问题（** 内侧不应有空格）
-    text = re.sub(r'\*\*\s+', '**', text)
-    text = re.sub(r'\s+\*\*', '**', text)
+    # 修复加粗标记中的空格问题（清理 **..** 配对内侧空格，不动外侧）
+    text = re.sub(r'\*\* *(.+?) *\*\*', r'**\1**', text)
 
     return text
 
@@ -525,6 +526,8 @@ def _md_to_html(md_text: str, styles: dict) -> str:
     lines = md_text.strip().split("\n")
     html_parts = []
     in_list = None
+    list_stack = []     # 嵌套列表标签栈：["ul", "ol", ...]
+    list_depth = -1     # 当前嵌套深度（-1 = 不在列表中）
     in_blockquote = False
     in_code_block = False
     code_block_lines = []
@@ -551,10 +554,11 @@ def _md_to_html(md_text: str, styles: dict) -> str:
             paragraph_lines.clear()
 
     def close_list():
-        nonlocal in_list
-        if in_list:
-            html_parts.append(f"</{in_list}>")
-            in_list = None
+        nonlocal in_list, list_depth
+        while list_stack:
+            html_parts.append(f"</{list_stack.pop()}>")
+        list_depth = -1
+        in_list = None
 
     def close_blockquote():
         nonlocal in_blockquote
@@ -628,6 +632,50 @@ def _md_to_html(md_text: str, styles: dict) -> str:
             html_parts.append(f'<hr style="{styles.get("hr", "")}" />')
             continue
 
+        # Markdown 表格
+        if re.match(r'^\|.+\|$', stripped):
+            flush_paragraph()
+            close_list()
+            close_blockquote()
+            # 收集连续的表格行
+            table_lines = [stripped]
+            # 向前看后续行（通过索引）
+            cur_idx = lines.index(line)
+            lookahead = cur_idx + 1
+            while lookahead < len(lines):
+                next_s = lines[lookahead].strip()
+                if re.match(r'^\|.+\|$', next_s):
+                    table_lines.append(next_s)
+                    lookahead += 1
+                else:
+                    break
+            # 跳过已消费的行（通过替换为空行，后续循环会跳过）
+            for skip_i in range(cur_idx + 1, lookahead):
+                lines[skip_i] = ""
+            # 解析表格
+            tbl_style = styles.get("table", "") or "width:100%; border-collapse:collapse; margin:1em 0; font-size:14px;"
+            th_style = styles.get("th", "") or "background:#f5f5f5; padding:8px 14px; text-align:center; font-weight:bold;"
+            td_style = styles.get("td", "") or "padding:8px 14px; border:1px solid #EEE; text-align:center;"
+            rows = []
+            for tl in table_lines:
+                cells = [c.strip() for c in tl.strip("|").split("|")]
+                rows.append(cells)
+            # 过滤分隔行（|---|---|）
+            data_rows = [r for r in rows if not all(re.match(r'^-+$', c.strip()) for c in r)]
+            if data_rows:
+                table_html = f'<table style="{tbl_style}">'
+                for ri, row in enumerate(data_rows):
+                    table_html += "<tr>"
+                    for cell in row:
+                        tag = "th" if ri == 0 else "td"
+                        st = th_style if ri == 0 else td_style
+                        cell_text = _inline_format(cell, styles)
+                        table_html += f'<{tag} style="{st}">{cell_text}</{tag}>'
+                    table_html += "</tr>"
+                table_html += "</table>"
+                html_parts.append(table_html)
+            continue
+
         img_match = re.match(r'^!\[(.+?)\]\((.+?)\)$', stripped)
         if img_match:
             flush_paragraph()
@@ -672,41 +720,66 @@ def _md_to_html(md_text: str, styles: dict) -> str:
         elif in_blockquote:
             close_blockquote()
 
-        if re.match(r'^[-*]\s+', stripped):
+        # 列表项检测（支持嵌套：通过缩进层级判断）
+        ul_match = re.match(r'^( *)[-*]\s+', line)
+        ol_match = re.match(r'^( *)\d+\.\s+', line)
+        if ul_match or ol_match:
             flush_paragraph()
-            if in_list != "ul":
-                close_list()
-                ul_style = styles.get("ul", "") or f'margin:0.8em 0; padding-left:1.5em; color:{styles["text-color"]};'
-                html_parts.append(f'<ul style="{ul_style}">')
-                in_list = "ul"
-            raw_text = re.sub(r'^[-*]\s+', '', stripped).strip()
-            if not raw_text:
-                continue
-            text = _inline_format(raw_text, styles)
-            li_style = styles.get("li", "") or (
-                f'margin:0.4em 0; font-size:{styles["font-size"]}; '
-                f'line-height:{styles["line-height"]};'
-            )
-            html_parts.append(f'<li style="{li_style}">{text}</li>')
-            continue
+            close_blockquote()
+            indent = len((ul_match or ol_match).group(1))
+            # 缩进层级：每 2 个空格（或 1 个 tab）为一级
+            level = indent // 2
+            list_type = "ul" if ul_match else "ol"
 
-        ol_match = re.match(r'^\d+\.\s+', stripped)
-        if ol_match:
-            flush_paragraph()
-            if in_list != "ol":
-                close_list()
-                ol_style = styles.get("ol", "") or f'margin:0.8em 0; padding-left:1.5em; color:{styles["text-color"]};'
-                html_parts.append(f'<ol style="{ol_style}">')
-                in_list = "ol"
-            raw_text = re.sub(r'^\d+\.\s+', '', stripped).strip()
-            if not raw_text:
-                continue
-            text = _inline_format(raw_text, styles)
+            ul_style = styles.get("ul", "") or f'margin:0.8em 0; padding-left:1.5em; color:{styles["text-color"]};'
+            ol_style = styles.get("ol", "") or f'margin:0.8em 0; padding-left:1.5em; color:{styles["text-color"]};'
             li_style = styles.get("li", "") or (
                 f'margin:0.4em 0; font-size:{styles["font-size"]}; '
                 f'line-height:{styles["line-height"]};'
             )
+
+            # 需要更深的嵌套
+            while level > list_depth:
+                tag = list_type
+                st = ul_style if tag == "ul" else ol_style
+                # 子列表不需要外边距
+                if list_depth >= 0:
+                    st = re.sub(r'margin:[^;]+;?', '', st).strip()
+                    if not st:
+                        st = f'padding-left:1.5em; color:{styles["text-color"]};'
+                html_parts.append(f'<{tag} style="{st}">')
+                list_stack.append(tag)
+                list_depth += 1
+
+            # 需要回退到更浅的层级
+            while level < list_depth:
+                if list_stack:
+                    html_parts.append(f'</{list_stack.pop()}>')
+                list_depth -= 1
+
+            # 同层级但列表类型变了
+            if list_stack and list_stack[-1] != list_type:
+                html_parts.append(f'</{list_stack.pop()}>')
+                st = ul_style if list_type == "ul" else ol_style
+                html_parts.append(f'<{list_type} style="{st}">')
+                list_stack.append(list_type)
+
+            # 第一层还没开始
+            if not list_stack:
+                st = ul_style if list_type == "ul" else ol_style
+                html_parts.append(f'<{list_type} style="{st}">')
+                list_stack.append(list_type)
+                list_depth = 0
+
+            if ul_match:
+                raw_text = re.sub(r'^[-*]\s+', '', stripped).strip()
+            else:
+                raw_text = re.sub(r'^\d+\.\s+', '', stripped).strip()
+            if not raw_text:
+                continue
+            text = _inline_format(raw_text, styles)
             html_parts.append(f'<li style="{li_style}">{text}</li>')
+            in_list = list_type
             continue
 
         close_list()
@@ -717,7 +790,7 @@ def _md_to_html(md_text: str, styles: dict) -> str:
     close_list()
     close_blockquote()
 
-    return "\n".join(html_parts)
+    return "".join(html_parts)
 
 
 def _inline_format(text: str, styles: dict) -> str:
@@ -738,6 +811,9 @@ def _inline_format(text: str, styles: dict) -> str:
         text = re.sub(r'\*(.+?)\*', rf'<em style="{em_style}">\1</em>', text)
     else:
         text = re.sub(r'\*(.+?)\*', r'<em>\1</em>', text)
+    # strikethrough ~~text~~
+    del_style = styles.get("del", "") or "text-decoration:line-through; color:#999;"
+    text = re.sub(r'~~(.+?)~~', rf'<del style="{del_style}">\1</del>', text)
     # inline code
     code_style = styles.get("code", "")
     if not code_style:

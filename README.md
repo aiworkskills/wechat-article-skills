@@ -231,6 +231,84 @@ AI：[排版 → HTML 已保存]
 
 ---
 
+## 模型配置
+
+### 为什么需要配置模型
+
+这套 Skill 运行在 Claude Code / Cursor 等 AI 编程工具上——这些工具本身就是一个大模型。**但写文章和生成图片用的是另外两个专用模型**，原因是：
+
+- **写作模型**：你可能偏好用 DeepSeek 写中文、用 GPT-4o 写英文、用 Qwen 省成本——不同模型写出来的风格和质量差异很大。配一个专用的写作模型，让你自由选择最适合你的那个。
+- **图片模型**：封面和配图需要调用图片生成 API（如 DALL-E、通义万相等），这不是文本模型能做的事。
+
+两个模型都不配也能用——AI 会用自己的能力直写文章，只是没有专用模型效果好，且无法生成图片。
+
+### 配置方式
+
+模型配置分两个文件：
+
+| 文件 | 放什么 | 位置 |
+|------|--------|------|
+| `.aws-article/config.yaml` | 模型地址和名称 | 仓库内 |
+| `aws.env` | API 密钥 | 仓库根 |
+
+密钥和配置分开存放，`aws.env` 已在 `.gitignore` 中，不会被提交。
+
+### 写作模型
+
+在 `.aws-article/config.yaml` 中填写：
+
+```yaml
+writing_model:
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  model: "qwen-plus"
+  temperature: 0.7
+  max_tokens: 4000
+```
+
+在 `aws.env` 中填写密钥：
+
+```
+WRITING_MODEL_API_KEY=sk-xxxxxxxxxxxxxxxx
+```
+
+支持任何 OpenAI 兼容的 API 端点，包括：
+
+| 服务商 | base_url 示例 | model 示例 |
+|--------|--------------|-----------|
+| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-plus` / `qwen-max` |
+| DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat` |
+| OpenAI | `https://api.openai.com/v1` | `gpt-4o` / `gpt-4o-mini` |
+| 豆包 | `https://ark.cn-beijing.volces.com/api/v3` | 你的推理接入点 ID |
+
+### 图片模型
+
+在 `.aws-article/config.yaml` 中填写：
+
+```yaml
+image_model:
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  model: "wanx-v1"
+  default_size: "1024x1024"
+  default_quality: "standard"
+```
+
+在 `aws.env` 中填写密钥：
+
+```
+IMAGE_MODEL_API_KEY=sk-xxxxxxxxxxxxxxxx
+```
+
+### 不想配置？
+
+完全可以。首次引导时告诉 AI「不配置模型」，它会：
+
+- **写作**：由当前 AI（Claude / GPT）直接写，效果取决于你用的编程工具
+- **配图**：跳过自动生成，你可以手动上传图片
+
+后续随时可以补配。
+
+---
+
 ## License
 
 [Apache License 2.0](LICENSE)

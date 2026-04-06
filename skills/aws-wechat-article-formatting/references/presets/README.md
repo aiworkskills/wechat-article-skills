@@ -2,7 +2,7 @@
 
 ## 使用主题
 
-不传 `--theme` 时，**`format.py`** 从合并配置读取 **`default_format_preset`**（**`.aws-article/config.yaml`** + 本篇 **`article.yaml`**）。该键**须为 YAML 字符串列表**：`[]`、单元素 `[主题名]`，或多候选；**多候选**须在本篇同键改为**单元素列表**后再运行，否则报错。
+不传 `--theme` 时，**`format.py`** 从合并配置读取 **`custom_format_preset`**（优先）> **`default_format_preset`**（**`.aws-article/config.yaml`** + 本篇 **`article.yaml`**）。该键**须为 YAML 字符串列表**：`[]`、单元素 `[主题名]`，或多候选；**多候选**须在本篇同键改为**单元素列表**后再运行，否则报错。
 
 ```bash
 python format.py article.md --theme <主题名>

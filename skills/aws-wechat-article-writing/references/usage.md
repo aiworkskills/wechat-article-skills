@@ -15,11 +15,13 @@ python skills/aws-wechat-article-writing/scripts/write.py rewrite article.md --i
 python skills/aws-wechat-article-writing/scripts/write.py continue article.md -o article.md
 ```
 
-## 模型配置
+## 模型配置（可选）
 
 支持任何 OpenAI 兼容端点（官方、中转、自建均可）。
 
-**须同时配置（与 `validate_env.py` 一致）**：在 **`.aws-article/config.yaml`** 填写 `writing_model`（`base_url`、`model` 必填；`provider`、`temperature`、`max_tokens` 可选），在仓库根 **`aws.env`** 仅填密钥 **`WRITING_MODEL_API_KEY`**。
+在 **`.aws-article/config.yaml`** 填写 `writing_model`（`base_url`、`model`；`provider`、`temperature`、`max_tokens` 可选），在仓库根 **`aws.env`** 仅填密钥 **`WRITING_MODEL_API_KEY`**。
+
+**未配置时**：`draft`/`rewrite`/`continue` 以退出码 2 退出（`[NO_MODEL]`），可改用 `prompt` 子命令获取提示词后由 Agent 代写。
 
 ```yaml
 # .aws-article/config.yaml 片段
@@ -50,6 +52,27 @@ WRITING_MODEL_API_KEY=你的APIKey
 ## 写作约束（合并）
 
 合并顺序：**`.aws-article/config.yaml`（顶层）** → 本篇 **`article.yaml`**（本篇覆盖同名字段）。须至少合并出非空约束（通常已有全局 `config.yaml`）。字段说明见 `skills/aws-wechat-article-main/references/articlescreening-schema.md`。
+
+## `prompt` 子命令（不调 LLM）
+
+```bash
+# 只输出 system_prompt + user_prompt 的 JSON，不调用 LLM，不需要模型配置
+python skills/aws-wechat-article-writing/scripts/write.py prompt draft drafts/20260324-example/topic-card.md
+python skills/aws-wechat-article-writing/scripts/write.py prompt rewrite article.md --instruction "改成口语化"
+python skills/aws-wechat-article-writing/scripts/write.py prompt continue article.md
+```
+
+输出格式：`{"system_prompt": "...", "user_prompt": "..."}`
+
+用途：模型未配置时，Agent 先通过此命令获取与 `draft`/`rewrite`/`continue` 完全相同的提示词，再按该提示词直接写文章。
+
+## 退出码
+
+| 退出码 | 含义 |
+|--------|------|
+| 0 | 成功（`draft`/`rewrite`/`continue` 输出文章；`prompt` 输出提示词 JSON） |
+| 1 | 硬错误（API 失败、YAML 解析、文件缺失等） |
+| 2 | 写作模型未配置（仅 `draft`/`rewrite`/`continue`），stderr 含 `[NO_MODEL]` |
 
 ## 脚本行为
 
