@@ -317,7 +317,7 @@ def _detect_api_type(model_cfg: dict) -> str:
     raise RuntimeError("undetected writing provider")
 
 
-def _post_json(url: str, body: dict, api_key: str, timeout: int = 120) -> dict:
+def _post_json(url: str, body: dict, api_key: str, timeout: int = 300) -> dict:
     data = json.dumps(body, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
         url,
@@ -325,6 +325,7 @@ def _post_json(url: str, body: dict, api_key: str, timeout: int = 120) -> dict:
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
+            "User-Agent": "aws-article-writer/1.0",
         },
     )
     try:
@@ -363,13 +364,18 @@ def _call_openai_like(model_cfg: dict, system_prompt: str, user_prompt: str, api
         ],
         "temperature": model_cfg["temperature"],
         "max_tokens": model_cfg["max_tokens"],
+        "stream": False,
     }
     _info(f"调用模型: {model_cfg['model']} @ {url} ({api_type})")
     result = _post_json(url, body, model_cfg["api_key"])
 
+    # 兼容 apimart 等网关：响应可能包裹在 {"code":200,"data":{...}} 中
+    if "data" in result and isinstance(result["data"], dict) and "choices" in result["data"]:
+        result = result["data"]
+
     choices = result.get("choices", [])
     if not choices:
-        _err(f"API 返回无内容: {result}")
+        _err(f"API 返回无内容（顶层键: {list(result.keys())}）: {json.dumps(result, ensure_ascii=False)[:500]}")
     content = choices[0].get("message", {}).get("content", "")
 
     usage = result.get("usage", {})

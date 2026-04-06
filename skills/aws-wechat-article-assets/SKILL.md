@@ -27,7 +27,7 @@ description: 公众号素材与预设包：图片入库到 `.aws-article/assets/
 3. 在**仓库根**执行：
 
 ```bash
-python skills/aws-wechat-article-assets/scripts/stock_image_ingest.py <源图片路径> --stem "中文名"
+python {baseDir}/scripts/stock_image_ingest.py <源图片路径> --stem "中文名"
 ```
 
 4. 生成 `淘米.png` + `淘米.md`（格式见下）。
@@ -72,8 +72,8 @@ python skills/aws-wechat-article-assets/scripts/stock_image_ingest.py <源图片
 3. 在**仓库根**执行：
 
 ```bash
-python skills/aws-wechat-article-assets/scripts/import_presets_aws.py path/to/bundle.aws
-python skills/aws-wechat-article-assets/scripts/import_presets_aws.py path/to/bundle.aws --dry-run
+python {baseDir}/scripts/import_presets_aws.py path/to/bundle.aws
+python {baseDir}/scripts/import_presets_aws.py path/to/bundle.aws --dry-run
 ```
 
 ### 脚本 `import_presets_aws.py`
@@ -86,8 +86,8 @@ python skills/aws-wechat-article-assets/scripts/import_presets_aws.py path/to/bu
 
 | 脚本 | 路径 |
 |------|------|
-| `stock_image_ingest.py` | `skills/aws-wechat-article-assets/scripts/stock_image_ingest.py` |
-| `import_presets_aws.py` | `skills/aws-wechat-article-assets/scripts/import_presets_aws.py` |
+| `stock_image_ingest.py` | `{baseDir}/scripts/stock_image_ingest.py` |
+| `import_presets_aws.py` | `{baseDir}/scripts/import_presets_aws.py` |
 
 ## 过程文件
 

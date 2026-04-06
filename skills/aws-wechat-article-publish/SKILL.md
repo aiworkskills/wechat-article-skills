@@ -13,7 +13,7 @@ description: 将文章发布到微信公众号（API 写入草稿箱或提交发
 
 ## 脚本目录
 
-**Agent 执行**：本 skill 的 `{baseDir}` 为 **`skills/aws-wechat-article-publish/`**。发布子命令在 **`{baseDir}/scripts/publish.py`**（仓库根执行）。
+**Agent 执行**：确定本 SKILL.md 所在目录为 `{baseDir}`。发布子命令在 **`{baseDir}/scripts/publish.py`**（项目根执行）。
 
 | 脚本 / 子命令 | 用途 |
 |--------|------|
