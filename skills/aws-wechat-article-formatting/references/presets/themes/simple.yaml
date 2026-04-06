@@ -1,0 +1,26 @@
+name: 极简黑
+description: 极度克制的留白风格，适合思想深度类账号
+
+variables:
+  primary-color: "#18181B"
+  bg-accent-color: "#FAFAFA"
+
+styles:
+  h1: "text-align:center; font-size:24px; font-weight:300; color:#18181B; letter-spacing:4px; margin-bottom:32px;"
+  h2: "font-size:18px; font-weight:400; color:#18181B; letter-spacing:2px; margin:2.5em 0 1em;"
+  h3: "font-size:16px; font-weight:600; color:#333; margin:2em 0 0.8em;"
+  h4: "font-size:15px; font-weight:500; color:#555; margin:1.5em 0 0.6em;"
+  p: "font-size:15px; line-height:2; color:#333; margin:1em 0; letter-spacing:0.5px;"
+  strong: "font-weight:700; color:#18181B;"
+  em: "font-style:italic; color:#666;"
+  a: "color:#18181B; text-decoration:underline; text-underline-offset:3px;"
+  blockquote: "border:none; padding:16px 24px; margin:1.5em 2em; color:#666; font-style:italic; font-size:16px; line-height:2; text-align:center;"
+  ul: "padding-left:20px; margin:0.8em 0;"
+  ol: "padding-left:20px; margin:0.8em 0;"
+  li: "margin-bottom:8px; line-height:1.8; color:#444;"
+  hr: "border:none; width:24px; height:1px; background:#18181B; margin:2.5em auto;"
+  img: "max-width:100%; display:block; margin:0 auto;"
+  figcaption: "text-align:center; font-size:12px; color:#bbb; margin-top:8px; letter-spacing:1px;"
+  code: "color:#18181B; background:#f4f4f5; padding:2px 6px; border-radius:2px; font-size:90%;"
+  pre: "background:#fafafa; padding:20px; border-radius:4px; font-size:13px; line-height:1.8; border:1px solid #e5e5e5; overflow-x:auto; color:#333;"
+  strong-color: "#18181B"

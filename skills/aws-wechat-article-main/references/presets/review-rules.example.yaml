@@ -1,0 +1,16 @@
+# 自定义审稿规则
+# 复制到 .aws-article/presets/review-rules.yaml 后按需修改。
+# 审稿时追加在标准检查项之后执行。
+
+custom_rules:
+  - name: 品牌名称规范
+    check: 正文中「XX公司」必须使用全称，不能简写
+    level: 必须    # 必须 / 建议
+
+  - name: 数据来源
+    check: 所有引用的数据必须标注来源和日期
+    level: 建议
+
+  - name: CTA 检查
+    check: 文末必须包含明确的行动号召
+    level: 建议

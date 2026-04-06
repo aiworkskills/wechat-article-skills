@@ -1,0 +1,15 @@
+{
+  "name": "aws-wechat-article-publish",
+  "version": "0.4.0",
+  "author": "aiworkskills",
+  "description": "将文章发布到微信公众号，支持 API 发布和手动提交，含发布前检查。",
+  "license": "MIT",
+  "homepage": "https://github.com/aiworkskills/wechat-article-skills",
+  "tags": ["wechat", "公众号", "publish", "api"],
+  "permissions": ["filesystem", "network", "shell"],
+  "entryPoint": {
+    "type": "natural",
+    "path": "SKILL.md"
+  },
+  "dependencies": []
+}

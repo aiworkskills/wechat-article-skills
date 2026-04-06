@@ -1,0 +1,134 @@
+# Account & workflow config (template)
+# Copy to .aws-article/config.yaml; secrets go in aws.env at repo root (see env.example.yaml in this directory)
+# Per-article metadata & publish_completed go in each article.yaml; field docs: skills/aws-wechat-article-main/references/articlescreening-schema.md
+
+# ── Account & positioning ──
+article_category:        # Account niche / positioning (e.g. tech / education / lifestyle); affects overall style & topic selection
+target_reader: ""            # Target reader persona (e.g. college students / beginners / dev managers); determines vocabulary depth & examples
+tone:                    # Tone (casual / professional / formal / sharp / humorous); affects voice & sentence style
+update_frequency:        # Publishing frequency (e.g. daily / weekly / biweekly); used for scheduling hints
+default_author: ""           # Default author name; falls back to this when a single article has no author set
+
+# ── Topics & titles ──
+topic_direction: "不写XX"          # Topic direction or exclusions (e.g. "avoid XX" / "more case studies"); guides topic generation boundaries
+title_style: 干货型          # Title style preset (e.g. practical / story / listicle); preference for title generation
+title_max_length: 25         # Max title length (in Chinese characters)
+summary_length: "80-128"     # Target summary word count range (for model prompts & self-check; WeChat digest max 128 chars)
+forbidden_title_phrases: []  # Banned title words / phrases (list); prevents clickbait or sensitive terms
+
+# ── Writing ──
+writing_style: 口语化        # Writing style (conversational / formal / methodology / case-study / narrative); affects structure & expression
+paragraph_preference: 短段为主 # Paragraph preference (short / long / mixed); affects layout & line breaks
+heading_density: 每节必有小标题 # Subheading density (required per section / moderate / minimal); used for structure validation
+target_word_count: ""        # Target word count (e.g. "1800-2500" or "2000"); used for writing & validation
+closing_block: ""            # Global closing block (Markdown string); leave empty if using a preset
+forbidden_words: []          # Banned words list for body text; used in review & self-check
+original_attribution: ""     # Attribution style (e.g. "original / authorized reprint / references")
+
+# ── Preset defaults ──
+# Presets live in .aws-article/presets/{type}/; see each directory's README.md
+# Format: must be YAML string lists. [] = no default; single item = use directly; multiple items = candidate pool —
+#   the agent must narrow to a single-item list in this article's article.yaml before running write.py / format.py
+#   (write validates structure/closing; format validates format_preset). Do not use scalar strings.
+default_structure: []         # e.g. [story] or [story, tutorial, insight]
+default_closing_block: []    # e.g. [brand]
+default_title_style: []      # e.g. [story]; agent picks one during topic selection (or writes back to article.yaml first)
+default_format_preset: []   # e.g. [readable]; must match a file in presets/formatting/ or a built-in theme name
+default_cover_image_style: []   # e.g. [warm-illustration]
+default_article_image_style: [] # Can differ from cover; when multiple candidates, narrow in article.yaml then load the .md
+default_sticker_style: []    # e.g. [storyboard]; sticker workflow — agent picks one from the list
+
+# ── Images ──
+image_source: generated       # generated | user; user = use uploaded images directly (skip image_create.py)
+cover_aspect: "2.35:1"       # Cover image aspect ratio (e.g. 2.35:1 / 1.91:1 / 16:9); used for generation & crop reference
+cover_style: 简约             # Cover style preference (minimal / illustration / photo / brand-color)
+image_density: 每节一图       # In-article image density (one per section / moderate / few / optional)
+caption_style: 有图注         # Caption style (with captions / no captions / key images only)
+multi_image_count: 6          # Default image count for multi-image scenarios (for generation or layout reference)
+# Assets (covers, brand header/footer images, etc.) go in .aws-article/assets/
+
+# ── Review ──
+review_required:              # Required review checks (checked items appear in self-check / review report)
+  - 敏感词                    # Example: check for sensitive words
+  - 错别字                    # Example: typos / common misspellings
+  - 链接                      # Example: external link format / availability
+  - 原创标注                  # Example: whether original / reprint attribution is present
+custom_sensitive_words: []    # Custom sensitive words list (overrides the general list)
+review_output_format: 分块详细 # Review output format (brief / detailed-by-section); affects report presentation
+
+
+# ── Embeds ──
+# Articles can reference {embed:profile:name}, {embed:miniprogram:name}, {embed:miniprogram_card:name}, {embed:link:name}
+# Per-article article.yaml should only set embeds.related_articles (e.g. manual); deep-merged with global related_articles.
+# Do not duplicate profile / miniprogram config in article.yaml.
+embeds:
+  profiles:                   # WeChat official account cards (for {embed:profile:name})
+    - nickname: ""            # Matches the placeholder; also used as data-nickname
+      alias: ""               # Only for gh_ legacy format; new format uses id/headimg instead
+      id: ""                  # data-id (when both id & headimg are set, outputs mp-common-profile)
+      profile_id: ""          # Same as id; use either one
+      headimg: ""             # data-headimg (official account avatar URL)
+      signature: ""           # data-signature
+      service_type: "2"       # data-service_type
+  miniprograms:               # {embed:miniprogram:…} text links
+    - title: ""               # Matches the placeholder; also used as link text when applink is set
+      appid: ""               # Mini Program AppID
+      path: "pages/index/index" # Launch path
+      applink: ""             # When set, generates a weapp text link
+      image: ""               # Thumbnail for legacy mp-miniprogram card (when no applink)
+  miniprogram_cards:          # {embed:miniprogram_card:…} mp-common-miniprogram cards (separate from the above)
+    - title: ""               # Matches the placeholder
+      appid: ""
+      path: "pages/index/index"
+      applink: ""
+      card_title: ""          # Card title (defaults to title)
+      avatar: ""              # Mini Program avatar URL
+      imageurl: ""            # Card cover image URL
+      imageurlback: ""        # Optional: back-side image URL
+  related_articles:           # Past / related article links (for {embed:link:name}; actual list usually merged from article.yaml's manual)
+    manual:
+       - name: "第一篇的占位名"
+         url: "https://..."
+       - name: "第二篇的占位名"
+         url: "https://..."              # Manually pinned article list [{name, url}]; used by {embed:link:name}
+
+# ── Paths ──
+drafts_root: drafts/          # Local drafts root directory (one subdirectory per article)
+published_root: posts/published/ # Local published archive directory (for backup / sync; does not affect live content)
+series_root: series/          # Series / topic root directory (holds series config & assets)
+
+
+# ── Publishing & comments (WeChat credentials in aws.env under WECHAT_N_*; this section only selects method & slot) ──
+ENABLE_WECHAT:                # Whether WeChat account is configured; true / false
+publish_method: draft         # draft | published | none; none = no WeChat config, publish.py full skips API calls
+wechat_publish_slot: 1        # Multi-account: which WeChat slot to use (1..wechat_accounts); single account can omit or set 1
+need_open_comment: 1          # 1 = enable comments on publish; 0 = disable (subject to WeChat backend / API capability)
+only_fans_can_comment: 0      # 1 = only followers can comment; 0 = everyone can comment (requires comments enabled)
+
+# Whether publishing is complete
+publish_completed: false      # true / false; whether publishing is done
+# Assets and presets are stored under .aws-article/; see .aws-article/README.md
+
+# ── Writing model (third-party LLM) ──
+# Supports any OpenAI-compatible endpoint (official, proxy, or self-hosted)
+# Writing spec: see .aws-article/writing-spec.md (copy from writing-spec.example.md in this directory)
+writing_model:
+  provider: ""                    # Optional; auto-detected from base_url / model if empty (openai | volcengine | qwen | gemini)
+  base_url: ""
+  model: ""                  # e.g. qwen-plus / qwen-turbo / qwen-max
+  temperature: 0.7
+  max_tokens: 4000
+
+# ── Image generation model ──
+image_model:
+  provider: ""                    # Optional; auto-detected from base_url / model if empty (openai | volcengine | qwen | gemini)
+  base_url: ""
+  model: ""
+  default_size: "1024x1024"
+  default_quality: "standard"
+
+# ── WeChat accounts ──
+wechat_accounts: 1                       # Number of WeChat accounts; default 1
+wechat_api_base: ""                        # WeChat API base URL
+wechat_1_name: ""                                                # WeChat account 1 display name
+wechat_2_name: ""                                                   # WeChat account 2 display name

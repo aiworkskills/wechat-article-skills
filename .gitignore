@@ -1,0 +1,33 @@
+# 本地配置（含敏感信息）
+.aws-article/config.yaml
+.aws-article/writing-spec.md
+aws.env
+
+# 用户自定义预设和素材
+.aws-article/presets/
+.aws-article/assets/
+.aws-article/templates/
+.aws-article/tmp/
+
+# 文章过程文件
+drafts/
+posts/
+series/
+
+# AI 工具本地配置（安装脚本生成）
+.cursor
+.claude
+CLAUDE.md
+AGENTS.md
+
+# 安装/初始化脚本
+scripts/
+
+# Python
+__pycache__/
+*.pyc
+
+# 系统与编辑器
+.DS_Store
+*.log
+

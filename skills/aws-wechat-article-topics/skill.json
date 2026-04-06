@@ -1,0 +1,14 @@
+{
+  "name": "aws-wechat-article-topics",
+  "version": "0.2.0",
+  "author": "aiworkskills",
+  "description": "为公众号找选题、起标题、写摘要，支持热点调研和系列策划。",
+  "license": "MIT",
+  "homepage": "https://github.com/aiworkskills/wechat-article-skills",
+  "tags": ["wechat", "公众号", "topics", "research"],
+  "permissions": ["filesystem", "network"],
+  "entryPoint": {
+    "type": "natural",
+    "path": "SKILL.md"
+  }
+}

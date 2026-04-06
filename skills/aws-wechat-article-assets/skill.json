@@ -1,0 +1,15 @@
+{
+  "name": "aws-wechat-article-assets",
+  "version": "0.2.0",
+  "author": "aiworkskills",
+  "description": "图片入库 stock/images + 同名 md；导入 .aws 预设包合并 presets，config.yaml 仅首次复制、已有则输出差异。",
+  "license": "MIT",
+  "homepage": "https://github.com/aiworkskills/wechat-article-skills",
+  "tags": ["wechat", "公众号", "assets", "stock-images", "presets"],
+  "permissions": ["filesystem", "shell"],
+  "entryPoint": {
+    "type": "natural",
+    "path": "SKILL.md"
+  },
+  "dependencies": []
+}
