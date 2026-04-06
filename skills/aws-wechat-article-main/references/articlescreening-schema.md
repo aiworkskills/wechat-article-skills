@@ -22,11 +22,11 @@
 
 **说明**：**`publish_completed`** 请放在本篇 **`article.yaml`**（见下节），勿写在全局 **`config.yaml`**；若旧稿或历史模板仍把「是否发完」放在 config 里，以 **`article.yaml`** 为准并逐步从 config 中清理。
 
-**配图风格**：**`default_cover_image_style`** / **`custom_cover_image_style`**（封面）与 **`default_article_image_style`** / **`custom_article_image_style`**（正文配图）指向 **`presets/image-styles/`** 下同名 `.md`。
+**配图风格**：**`custom_cover_image_style`**（封面）指向 `cover-styles/` 预设（内置 + `.aws-article/presets/cover-styles/`）；**`custom_article_image_style`**（正文配图）指向 **`presets/image-styles/`** 下同名 `.md`。
 
-**预设候选列表**：**`default_structure`**、**`default_closing_block`**、**`default_title_style`**、**`default_format_preset`**、**`default_cover_image_style`**、**`default_article_image_style`**（及 **`default_sticker_style`**）**须为 YAML 字符串列表**：`[]`、单元素 `[名]`，或多项候选；**多项时**智能体须在本篇 **`article.yaml`** 同键改为**单元素列表**后，再运行 **`write.py`**（结构/文末）与 **`format.py`**（排版主题）。**勿使用字符串标量。**
+**预设候选列表**：**`default_structure`**、**`default_closing_block`**、**`default_title_style`**、**`default_format_preset`**（及 **`default_sticker_style`**）**须为 YAML 字符串列表**：`[]`、单元素 `[名]`，或多项候选；**多项时**智能体须在本篇 **`article.yaml`** 同键改为**单元素列表**后，再运行 **`write.py`**（结构/文末）与 **`format.py`**（排版主题）。**勿使用字符串标量。** 配图风格字段（`custom_cover_image_style`、`custom_article_image_style`）同理。
 
-**`custom_*` 覆盖层**：每个 `default_*` 字段均有对应的 `custom_*`（如 `custom_structure`、`custom_format_preset` 等），格式相同。当 `custom_*` 非空时，优先于同名 `default_*`。合并优先级：**`article.yaml` > `custom_*` > `default_*`**。
+**`custom_*` 覆盖层**：`default_structure`、`default_closing_block` 等字段均有对应的 `custom_*`（如 `custom_structure`、`custom_format_preset` 等），格式相同。当 `custom_*` 非空时，优先于同名 `default_*`。合并优先级：**`article.yaml` > `custom_*` > `default_*`**。配图风格字段仅有 `custom_*`（无 `default_*`），优先级为 **`article.yaml` > `custom_*`**。
 
 ---
 

@@ -281,6 +281,17 @@
 
 ### 封面
 
+封面 prompt 的「风格」关键词直接来自封面预设 `.md` 文件的「Prompt 要点」部分（见 [cover-styles/](../cover-styles/)），无须引用 Style 维度。
+
+**YAML frontmatter 必须包含 `aspect`**：从 `config.yaml` 的 `cover_aspect` 读取（如 `2.35:1`），写入 frontmatter，`image_create.py` 据此转换为实际尺寸。缺少 frontmatter 的 aspect 会导致 fallback 到 1:1。
+
+```yaml
+---
+aspect: "2.35:1"   # ← 必须：取自 config cover_aspect
+quality: standard
+---
+```
+
 ```
 [文章标题] - 封面图
 
@@ -293,8 +304,7 @@
 - 画面简洁有焦点
 - 适合作为公众号封面缩略图（小尺寸也清晰）
 
-风格：[选定的风格特征]
-比例：[config cover_aspect]
+风格：[从封面预设 .md 的 Prompt 要点加载]
 ```
 
 ---

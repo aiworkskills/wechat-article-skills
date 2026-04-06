@@ -14,7 +14,7 @@
 
 - 格式：JPG / PNG
 - 单张建议 ≤ 2MB
-- 风格按配置 `cover_style` 或预设决定
+- 风格按 `custom_cover_image_style` 指定的封面预设决定（见 `cover-styles/`）
 
 ## 正文配图
 

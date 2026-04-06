@@ -39,8 +39,6 @@ default_title_style:
   - 技术实操指南型
 default_format_preset:
   - 金融蓝
-default_cover_image_style: []     # e.g. - warm-illustration
-default_article_image_style: []   # Can differ from cover; when multiple candidates, narrow in article.yaml then load the .md
 default_sticker_style: []         # e.g. - storyboard; sticker workflow — agent picks one from the list
 
 # ── Custom presets (override defaults) ──
@@ -50,8 +48,8 @@ custom_structure: []
 custom_closing_block: []
 custom_title_style: []
 custom_format_preset: []
-custom_cover_image_style: []
-custom_article_image_style: []
+custom_cover_image_style: []      # Cover style preset names → loads from cover-styles/ (built-in + .aws-article/presets/cover-styles/)
+custom_article_image_style: []    # Article image style preset names → loads from presets/image-styles/
 custom_sticker_style: []
 
 # ── Images ──
