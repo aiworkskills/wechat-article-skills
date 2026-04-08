@@ -106,17 +106,54 @@ python skills/aws-wechat-article-main/scripts/validate_env.py --agent-image-capa
 - **环境与密钥**：写作/生图的 **URL 与模型名**在 **`config.yaml`**，**API Key** 在 **`aws.env`**；微信 **AppID/AppSecret** 在 **`aws.env`**，槽位展示名与 **`wechat_api_base`** 等在 **`config.yaml`**。  
 - **`validate_env.py` 退出码 0** 表示环境检测通过：**写作 + 图片 + 微信** 均完整，或已声明 **`publish_method: none`**（跳过微信组）。要走 **`publish.py`**（**非 none**），须微信已在校验中通过；建议 **`check-wechat-env`**。
 
-### 第 2 步：预设目录（可选）
+### 第 2 步：检查通过以后检查并创建预设目录（这个必须执行）
 
-若尚无 `.aws-article/presets` 等，可创建（与 `init-presets.sh` 一致）：
+通过环境检查后，必须先判断以下目录是否存在；**不存在就立即创建**：
+
+- `.aws-article/presets/structures`
+- `.aws-article/presets/closing-blocks`
+- `.aws-article/presets/title-styles`
+- `.aws-article/presets/formatting`
+- `.aws-article/presets/image-styles`
+- `.aws-article/presets/sticker-styles`
+- `.aws-article/assets/brand`
+- `.aws-article/assets/covers`
+- `.aws-article/assets/stock/images`
+- `.aws-article/assets/stock/references`
+- `.aws-article/tmp`
+
+可按操作系统执行：
 
 ```bash
+# Linux / macOS
 mkdir -p .aws-article/presets/structures .aws-article/presets/closing-blocks \
   .aws-article/presets/title-styles .aws-article/presets/formatting \
   .aws-article/presets/image-styles .aws-article/presets/sticker-styles \
   .aws-article/assets/brand .aws-article/assets/covers \
   .aws-article/assets/stock/images .aws-article/assets/stock/references \
   .aws-article/tmp
+```
+
+```powershell
+# Windows PowerShell
+$dirs = @(
+  ".aws-article/presets/structures",
+  ".aws-article/presets/closing-blocks",
+  ".aws-article/presets/title-styles",
+  ".aws-article/presets/formatting",
+  ".aws-article/presets/image-styles",
+  ".aws-article/presets/sticker-styles",
+  ".aws-article/assets/brand",
+  ".aws-article/assets/covers",
+  ".aws-article/assets/stock/images",
+  ".aws-article/assets/stock/references",
+  ".aws-article/tmp"
+)
+foreach ($d in $dirs) {
+  if (-not (Test-Path -LiteralPath $d)) {
+    New-Item -ItemType Directory -Path $d -Force | Out-Null
+  }
+}
 ```
 
 ### 第 3 步：全局 vs 本篇文件

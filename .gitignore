@@ -17,6 +17,7 @@ series/
 # AI 工具本地配置（安装脚本生成）
 .cursor
 .claude
+.workbuddy/
 CLAUDE.md
 AGENTS.md
 

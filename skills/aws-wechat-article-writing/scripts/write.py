@@ -18,6 +18,8 @@
 用法：
     python write.py draft <topic_card.md>              按选题卡片写初稿
     python write.py draft <topic_card.md> -o out.md    指定输出路径
+    python write.py draft <topic_card.md> --reference .aws-article/assets/stock/references/说明.md
+    （可重复 --reference，最多 5 个；须位于 .aws-article/assets/stock/references/ 下）
     python write.py rewrite <article.md>               改写已有文章
     python write.py rewrite <article.md> --instruction "改成口语化"
     python write.py continue <article.md>              续写未完成的文章
@@ -34,6 +36,11 @@ import urllib.request
 from pathlib import Path
 
 import yaml
+
+# 参考资料库：仅允许该目录下 .md；全文注入，不设脚本内截断（API 超限请减少 --reference）
+MAX_REFERENCE_FILES = 5
+REFERENCE_STOCK_REL = Path(".aws-article") / "assets" / "stock" / "references"
+
 
 def _err(msg: str):
     print(f"[ERROR] {msg}", file=sys.stderr)
@@ -483,6 +490,52 @@ def _extract_image_filenames(img_analysis: str) -> list[str]:
     return uniq
 
 
+def _reference_allow_dir(cwd: Path) -> Path:
+    return (cwd.resolve() / REFERENCE_STOCK_REL).resolve()
+
+
+def _is_file_under_dir(path: Path, parent: Path) -> bool:
+    try:
+        rp = path.resolve()
+        rp.relative_to(parent.resolve())
+        return rp.is_file()
+    except ValueError:
+        return False
+
+
+def build_reference_library_block(raw_paths: list[str], cwd: Path) -> str:
+    """读取允许的参考资料 .md，拼成系统提示「参考资料库」正文。"""
+    if not raw_paths:
+        return ""
+    if len(raw_paths) > MAX_REFERENCE_FILES:
+        _err(f"--reference 最多 {MAX_REFERENCE_FILES} 个路径，当前 {len(raw_paths)} 个")
+    allow_dir = _reference_allow_dir(cwd)
+    if not allow_dir.is_dir():
+        _err(f"参考资料目录不存在: {allow_dir}")
+    chunks: list[str] = []
+    repo_root = cwd.resolve()
+    for i, raw in enumerate(raw_paths, 1):
+        p = Path(raw.strip())
+        if not p.is_absolute():
+            p = (cwd / p).resolve()
+        else:
+            p = p.resolve()
+        if not _is_file_under_dir(p, allow_dir):
+            _err(
+                f"参考资料须为 {allow_dir} 下的文件（建议路径前缀 "
+                f"{REFERENCE_STOCK_REL.as_posix()}/）：{p}"
+            )
+        if p.suffix.lower() != ".md":
+            _err(f"参考资料须为 .md 文件：{p}")
+        rel_display = p.relative_to(repo_root).as_posix()
+        try:
+            text = p.read_text(encoding="utf-8")
+        except OSError as e:
+            _err(f"无法读取参考资料: {p}：{e}")
+        chunks.append(f"### {i}\n\n{text}\n\n资料路径：`{rel_display}`\n")
+    return "\n".join(chunks)
+
+
 # ── 写作模式 ─────────────────────────────────────────────────
 
 def build_system_prompt(
@@ -492,6 +545,7 @@ def build_system_prompt(
     closing_block: str = "",
     image_source: str = "generated",
     img_analysis: str = "",
+    reference_library_block: str = "",
 ) -> str:
     """构建系统 prompt：config/本篇合并约束 + 写作规范 + 结构模板。closing_block 已解析（预设 > 内联）。"""
     parts = ["你是一位资深的微信公众号内容创作者。请按以下要求写文章。\n"]
@@ -537,14 +591,32 @@ def build_system_prompt(
     if structure_template:
         parts.append(f"\n## 文章结构参考\n\n{structure_template}")
 
-    parts.append(
-        "\n## 输出要求\n"
-        "- 输出完整的 Markdown 格式文章\n"
-        "- 包含：标题（# 开头）、摘要（> 引用块，80-128字）、正文（## 小标题分节）、结尾、文末区块\n"
-        "- 开头 2-3 句必须吸睛\n"
-        "- 段落短小，适合手机阅读\n"
-        "- 不要输出任何解释性文字，只输出文章本身"
-    )
+    ref_block = (reference_library_block or "").strip()
+    if ref_block:
+        parts.append(
+            "\n## 参考资料库\n"
+            "以下为仓库内说明文档全文或节选，**可作事实与术语依据**。\n"
+            "**引用标注（硬性）**：若某句或某段**实际依据**了某条资料，须在该句/段**结束之后**立刻写出标注；"
+            "标注**整段**必须用**一对中文全角括号**（ ）包起来，中间为「资料路径：」+ **反引号**内的仓库相对路径，"
+            "路径须与下文中对应条目 **`资料路径：`** 后的字符串**完全一致**。\n"
+            "**正确示例**：（资料路径：`.aws-article/assets/stock/references/某说明.md`）\n"
+            + ref_block
+        )
+
+    out_lines = [
+        "\n## 输出要求\n",
+        "- 输出完整的 Markdown 格式文章\n",
+        "- 包含：标题（# 开头）、摘要（> 引用块，80-128字）、正文（## 小标题分节）、结尾、文末区块\n",
+        "- 开头 2-3 句必须吸睛\n",
+        "- 段落短小，适合手机阅读\n",
+        "- 不要输出任何解释性文字，只输出文章本身",
+    ]
+    if ref_block:
+        out_lines.append(
+            "- **参考资料引用格式（硬性）**：凡依据参考资料处，句末或段末须为「（资料路径：`…`）」；"
+            "一对中文括号**不可省略**；反引号内路径须与「参考资料库」中某条 **`资料路径：`** 后路径**完全一致**"
+        )
+    parts.append("".join(out_lines))
     if image_source == "user" and img_analysis:
         image_files = _extract_image_filenames(img_analysis)
         parts.append(
@@ -587,6 +659,7 @@ def draft(
     closing_block: str = "",
     image_source: str = "generated",
     img_analysis: str = "",
+    reference_library_block: str = "",
 ) -> str:
     """按选题卡片写初稿。"""
     system_prompt = build_system_prompt(
@@ -596,6 +669,7 @@ def draft(
         closing_block,
         image_source=image_source,
         img_analysis=img_analysis,
+        reference_library_block=reference_library_block,
     )
     user_prompt = f"请根据以下选题卡片，写一篇完整的微信公众号文章：\n\n{topic_card}"
     if image_source == "user" and img_analysis:
@@ -613,6 +687,7 @@ def rewrite(
     closing_block: str = "",
     image_source: str = "generated",
     img_analysis: str = "",
+    reference_library_block: str = "",
 ) -> str:
     """改写已有文章。"""
     system_prompt = build_system_prompt(
@@ -622,6 +697,7 @@ def rewrite(
         closing_block,
         image_source=image_source,
         img_analysis=img_analysis,
+        reference_library_block=reference_library_block,
     )
     user_prompt = f"请改写以下文章"
     if instruction:
@@ -641,6 +717,7 @@ def continue_writing(
     closing_block: str = "",
     image_source: str = "generated",
     img_analysis: str = "",
+    reference_library_block: str = "",
 ) -> str:
     """续写未完成的文章。"""
     system_prompt = build_system_prompt(
@@ -650,6 +727,7 @@ def continue_writing(
         closing_block,
         image_source=image_source,
         img_analysis=img_analysis,
+        reference_library_block=reference_library_block,
     )
     user_prompt = (
         "以下是一篇未完成的微信公众号文章，请从断点处继续写完，"
@@ -665,11 +743,12 @@ def continue_writing(
 
 def _build_prompts(mode, input_text, screening, writing_spec,
                    structure_template, closing_block, image_source,
-                   img_analysis, instruction=""):
+                   img_analysis, instruction="", reference_library_block=""):
     """Build system_prompt + user_prompt without calling LLM."""
     system_prompt = build_system_prompt(
         screening, writing_spec, structure_template, closing_block,
         image_source=image_source, img_analysis=img_analysis,
+        reference_library_block=reference_library_block,
     )
     if mode == "draft":
         user_prompt = f"请根据以下选题卡片，写一篇完整的微信公众号文章：\n\n{input_text}"
@@ -704,23 +783,32 @@ def main():
     )
     sub = parser.add_subparsers(dest="command", help="子命令")
 
+    ref_help = (
+        "参考资料 Markdown 路径；须位于 "
+        f"{REFERENCE_STOCK_REL.as_posix()}/ 下；可重复，最多 {MAX_REFERENCE_FILES} 个"
+    )
+
     p_draft = sub.add_parser("draft", help="按选题卡片写初稿")
     p_draft.add_argument("input", help="选题卡片文件路径（.md）")
     p_draft.add_argument("-o", "--output", help="输出路径（默认输出到终端）")
+    p_draft.add_argument("--reference", action="append", metavar="PATH", help=ref_help)
 
     p_rewrite = sub.add_parser("rewrite", help="改写已有文章")
     p_rewrite.add_argument("input", help="文章文件路径（.md）")
     p_rewrite.add_argument("--instruction", default="", help="改写要求")
     p_rewrite.add_argument("-o", "--output", help="输出路径")
+    p_rewrite.add_argument("--reference", action="append", metavar="PATH", help=ref_help)
 
     p_continue = sub.add_parser("continue", help="续写未完成的文章")
     p_continue.add_argument("input", help="文章文件路径（.md）")
     p_continue.add_argument("-o", "--output", help="输出路径")
+    p_continue.add_argument("--reference", action="append", metavar="PATH", help=ref_help)
 
     p_prompt = sub.add_parser("prompt", help="只输出写作提示词 JSON（不调用 LLM）")
     p_prompt.add_argument("mode", choices=["draft", "rewrite", "continue"], help="写作模式")
     p_prompt.add_argument("input", help="输入文件路径")
     p_prompt.add_argument("--instruction", default="", help="改写要求（仅 rewrite）")
+    p_prompt.add_argument("--reference", action="append", metavar="PATH", help=ref_help)
 
     args = parser.parse_args()
     if not args.command:
@@ -749,10 +837,15 @@ def main():
             cover_count = _extract_recommended_cover_count(img_analysis)
             if cover_count != 1:
                 _err(f"img_analysis.md 中“推荐用途：封面”必须且只能有 1 处，当前为 {cover_count} 处。")
+        refs = getattr(args, "reference", None) or []
+        ref_block = build_reference_library_block(refs, Path.cwd()) if refs else ""
+        if ref_block:
+            _info(f"已将 {len(refs)} 个参考资料文件注入 system_prompt（--reference）")
         prompts = _build_prompts(
             args.mode, input_text, screening, writing_spec,
             structure_template, closing_block, image_source, img_analysis,
             instruction=getattr(args, "instruction", ""),
+            reference_library_block=ref_block,
         )
         print(json.dumps(prompts, ensure_ascii=False))
         sys.exit(0)
@@ -791,6 +884,11 @@ def main():
             _err(f"img_analysis.md 中“推荐用途：封面”必须且只能有 1 处，当前为 {cover_count} 处。")
         _info("检测到用户供图模式：将直接使用现有图片写稿（封面仅 1 张）")
 
+    refs = getattr(args, "reference", None) or []
+    ref_block = build_reference_library_block(refs, Path.cwd()) if refs else ""
+    if ref_block:
+        _info(f"已将 {len(refs)} 个参考资料文件注入系统提示（--reference）")
+
     if args.command == "draft":
         result = draft(
             input_text,
@@ -801,6 +899,7 @@ def main():
             closing_block,
             image_source=image_source,
             img_analysis=img_analysis,
+            reference_library_block=ref_block,
         )
     elif args.command == "rewrite":
         result = rewrite(
@@ -813,6 +912,7 @@ def main():
             closing_block,
             image_source=image_source,
             img_analysis=img_analysis,
+            reference_library_block=ref_block,
         )
     elif args.command == "continue":
         result = continue_writing(
@@ -824,6 +924,7 @@ def main():
             closing_block,
             image_source=image_source,
             img_analysis=img_analysis,
+            reference_library_block=ref_block,
         )
     else:
         parser.print_help()
