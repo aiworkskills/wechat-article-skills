@@ -4,7 +4,7 @@
 
 ## 加载规则
 
-生成封面时按 **`custom_cover_image_style`**（`config.yaml` 或本篇 `article.yaml`）加载对应预设名的 `.md` 文件。
+生成封面时按 **`article.yaml` > `custom_cover_image_style` > `default_cover_image_style`** 合并后的预设名加载对应 `.md`（`custom_*` 非空时覆盖同名 `default_*`；须收窄为单元素列表后再执行配图）。
 
 **预设发现**：Agent 运行时扫描两个目录合并可用列表：
 

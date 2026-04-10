@@ -1,0 +1,26 @@
+name: 优雅紫
+description: 柔和圆润的风格，适合文化、美学类账号
+
+variables:
+  primary-color: "#664D9D"
+  bg-accent-color: "#F6EEFF"
+
+styles:
+  h1: "text-align:center; font-size:22px; font-weight:bold; color:#595959; margin-bottom:24px;"
+  h2: "font-size:18px; font-weight:bold; color:#595959; padding-left:10px; border-left:5px solid #DEC6FB; margin:2em 0 1em;"
+  h3: "font-size:16px; font-weight:bold; color:#595959; text-align:center; border-bottom:2px solid #DEC6FB; display:inline-block; padding-bottom:4px; margin:1.5em 0 0.8em;"
+  h4: "font-size:15px; font-weight:bold; color:#595959; margin:1.2em 0 0.6em;"
+  p: "font-size:14px; line-height:1.75; color:#595959; margin:10px 0; letter-spacing:2px;"
+  strong: "color:#595959; font-weight:bold;"
+  em: "font-style:normal; color:#595959; background:{bg-accent-color};"
+  a: "color:{primary-color}; font-weight:normal; border-bottom:1px solid {primary-color};"
+  blockquote: "border:1px solid #DEC6FB; background:{bg-accent-color}; padding:15px 20px; border-radius:6px; margin:1.2em 0; color:#595959; border-left-width:1px;"
+  ul: "padding-left:20px; margin:0.6em 0; list-style-type:circle;"
+  ol: "padding-left:20px; margin:0.6em 0;"
+  li: "margin-bottom:6px; line-height:1.75; color:#595959; font-size:14px;"
+  hr: "border:none; border-top:2px solid #DEC6FB; padding:0; margin:2em 0;"
+  img: "max-width:100%; border-radius:6px; display:block; margin:20px auto;"
+  figcaption: "text-align:center; font-size:13px; color:#595959; margin-top:4px;"
+  code: "color:{primary-color}; background:{bg-accent-color}; padding:2px 8px; border-radius:10px; font-size:90%;"
+  pre: "background:#F9F5FF; padding:16px; border-radius:10px; border:1px solid #E9D5FF; font-size:13px; line-height:1.8; overflow-x:auto; color:#5B3A8C;"
+  strong-color: "#595959"

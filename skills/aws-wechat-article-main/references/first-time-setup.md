@@ -114,6 +114,7 @@ python skills/aws-wechat-article-main/scripts/validate_env.py --agent-image-capa
 - `.aws-article/presets/closing-blocks`
 - `.aws-article/presets/title-styles`
 - `.aws-article/presets/formatting`
+- `.aws-article/presets/cover-styles`
 - `.aws-article/presets/image-styles`
 - `.aws-article/presets/sticker-styles`
 - `.aws-article/assets/brand`
@@ -128,7 +129,8 @@ python skills/aws-wechat-article-main/scripts/validate_env.py --agent-image-capa
 # Linux / macOS
 mkdir -p .aws-article/presets/structures .aws-article/presets/closing-blocks \
   .aws-article/presets/title-styles .aws-article/presets/formatting \
-  .aws-article/presets/image-styles .aws-article/presets/sticker-styles \
+  .aws-article/presets/cover-styles .aws-article/presets/image-styles \
+  .aws-article/presets/sticker-styles \
   .aws-article/assets/brand .aws-article/assets/covers \
   .aws-article/assets/stock/images .aws-article/assets/stock/references \
   .aws-article/tmp
@@ -141,6 +143,7 @@ $dirs = @(
   ".aws-article/presets/closing-blocks",
   ".aws-article/presets/title-styles",
   ".aws-article/presets/formatting",
+  ".aws-article/presets/cover-styles",
   ".aws-article/presets/image-styles",
   ".aws-article/presets/sticker-styles",
   ".aws-article/assets/brand",

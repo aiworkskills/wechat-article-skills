@@ -39,6 +39,8 @@ default_title_style:
   - 技术实操指南型
 default_format_preset:
   - 金融蓝
+default_cover_image_style: []   # Cover preset names → cover-styles/ (built-in + .aws-article/presets/cover-styles/)
+default_article_image_style: [] # Body image preset names → presets/image-styles/
 default_sticker_style: []         # e.g. - storyboard; sticker workflow — agent picks one from the list
 
 # ── Custom presets (override defaults) ──
@@ -48,14 +50,15 @@ custom_structure: []
 custom_closing_block: []
 custom_title_style: []
 custom_format_preset: []
-custom_cover_image_style: []      # Cover style preset names → loads from cover-styles/ (built-in + .aws-article/presets/cover-styles/)
-custom_article_image_style: []    # Article image style preset names → loads from presets/image-styles/
+custom_cover_image_style: []      # Overrides default_cover_image_style; same paths as default_cover_image_style
+custom_article_image_style: []    # Overrides default_article_image_style; loads from presets/image-styles/
 custom_sticker_style: []
 
 # ── Images ──
+# Cover presets: cover-styles/ (separate from body presets/image-styles/). Lists: default_* then custom_* then article.yaml.
 image_source: generated       # generated | user; user = use uploaded images directly (skip image_create.py)
 cover_aspect: "2.35:1"       # Cover image aspect ratio (e.g. 2.35:1 / 1.91:1 / 16:9); used for generation & crop reference
-cover_style: 简约             # Cover style preference (minimal / illustration / photo / brand-color)
+cover_style: 简约             # Broad preference alongside cover presets; minimal / illustration / photo / brand-color
 image_density: 每节一图       # In-article image density (one per section / moderate / few / optional)
 caption_style: 有图注         # Caption style (with captions / no captions / key images only)
 multi_image_count: 6          # Default image count for multi-image scenarios (for generation or layout reference)

@@ -1,0 +1,26 @@
+name: 经典蓝
+description: 沉稳大气的编辑风格，适合科技、商业类账号
+
+variables:
+  primary-color: "#1A6DB5"
+  bg-accent-color: "#EBF5FF"
+
+styles:
+  h1: "text-align:center; font-size:22px; font-weight:bold; color:{primary-color}; border-bottom:2px solid {primary-color}; padding-bottom:10px; margin-bottom:24px;"
+  h2: "font-size:17px; font-weight:bold; color:#fff; background:{primary-color}; padding:5px 14px 4px; border-top-left-radius:3px; border-top-right-radius:3px; display:inline-block; margin:2em 0 0; border-bottom:2px solid #14527D;"
+  h3: "font-size:16px; font-weight:bold; color:{primary-color}; padding-left:10px; border-left:3px solid {primary-color}; margin:1.5em 0 0.8em;"
+  h4: "font-size:15px; font-weight:bold; color:#444; margin:1.2em 0 0.6em;"
+  p: "font-size:15px; line-height:1.8; color:#3a3a3a; margin:10px 0; letter-spacing:0.5px;"
+  strong: "color:{primary-color}; font-weight:bold;"
+  em: "font-style:italic; color:#555;"
+  a: "color:{primary-color}; text-decoration:none; border-bottom:1px solid {primary-color};"
+  blockquote: "border-left:4px solid {primary-color}; background:#f7fbff; padding:14px 16px; margin:1.2em 0; color:#555;"
+  ul: "padding-left:20px; margin:0.6em 0;"
+  ol: "padding-left:20px; margin:0.6em 0;"
+  li: "margin-bottom:6px; line-height:1.75; color:#3a3a3a;"
+  hr: "border:none; height:1px; background:linear-gradient(to right, rgba(26,109,181,0), rgba(26,109,181,0.6), rgba(26,109,181,0)); margin:2em 0;"
+  img: "max-width:100%; border-radius:5px; display:block; margin:0 auto; box-shadow:#84A1A8 0px 6px 12px;"
+  figcaption: "text-align:center; font-size:12px; color:#999; margin-top:6px;"
+  code: "color:{primary-color}; background:{bg-accent-color}; padding:2px 6px; border-radius:3px; font-size:90%;"
+  pre: "background:#0F2A44; color:#93C5FD; padding:16px; border-radius:10px; font-size:13px; line-height:1.8; overflow-x:auto; box-shadow:0 8px 24px rgba(0,0,0,0.2);"
+  strong-color: "{primary-color}"

@@ -214,6 +214,14 @@ def _load_writing_context(draft_dir: Path) -> dict:
     return merged
 
 
+def _load_article_yaml(draft_dir: Path) -> dict:
+    """仅用于读取本篇已选预设（单元素列表）。"""
+    art = (draft_dir / "article.yaml").resolve()
+    if not art.is_file():
+        return {}
+    return _load_yaml_file(art)
+
+
 def _resolve_model_config() -> dict | None:
     """Return model config dict, or None if not configured."""
     env_map = _load_env_map()
@@ -256,9 +264,13 @@ def _find_preset_file(preset_dirs: list[Path], subdir: str, name: str, exts: lis
     return None
 
 
-def _load_structure_template(screening: dict) -> str:
-    """加载文章结构模板。合并上下文中 default_structure 非空时从 presets/structures 加载。"""
-    default_name = _coerce_single_preset("default_structure", screening.get("default_structure"))
+def _load_structure_template(screening: dict, article_cfg: dict) -> str:
+    """
+    加载文章结构模板。
+    预设选择仅读取本篇 article.yaml 的 default_structure（单元素列表）。
+    未选择时回退内置结构模板。
+    """
+    default_name = _coerce_single_preset("default_structure", article_cfg.get("default_structure"))
     if default_name:
         preset_dirs = _preset_dirs(_aws_root())
         found = _find_preset_file(preset_dirs, "structures", default_name, [".md"])
@@ -276,9 +288,12 @@ def _load_structure_template(screening: dict) -> str:
     return ""
 
 
-def _load_closing_block(screening: dict) -> str:
-    """文末区块：预设文件优先于 screening 内联 closing_block。"""
-    default_name = _coerce_single_preset("default_closing_block", screening.get("default_closing_block"))
+def _load_closing_block(screening: dict, article_cfg: dict) -> str:
+    """
+    文末区块：预设选择仅读取本篇 article.yaml 的 default_closing_block。
+    若本篇未选择预设，才使用合并上下文中的内联 closing_block。
+    """
+    default_name = _coerce_single_preset("default_closing_block", article_cfg.get("default_closing_block"))
     if default_name:
         preset_dirs = _preset_dirs(_aws_root())
         found = _find_preset_file(preset_dirs, "closing-blocks", default_name, [".md"])
@@ -822,10 +837,11 @@ def main():
             _err(f"文件不存在: {input_path}")
         input_text = input_path.read_text(encoding="utf-8")
         draft_dir = input_path.parent
+        article_cfg = _load_article_yaml(draft_dir)
         screening = _load_writing_context(draft_dir)
         writing_spec = _load_writing_spec()
-        structure_template = _load_structure_template(screening)
-        closing_block = _load_closing_block(screening)
+        structure_template = _load_structure_template(screening, article_cfg)
+        closing_block = _load_closing_block(screening, article_cfg)
         image_source = _resolve_image_source(screening)
         img_analysis = _load_img_analysis(draft_dir)
         if image_source == "user" and not img_analysis:
@@ -857,6 +873,7 @@ def main():
     input_text = input_path.read_text(encoding="utf-8")
 
     draft_dir = input_path.parent
+    article_cfg = _load_article_yaml(draft_dir)
     screening = _load_writing_context(draft_dir)
     model_cfg = _resolve_model_config()
     if model_cfg is None:
@@ -867,8 +884,8 @@ def main():
         )
         sys.exit(2)
     writing_spec = _load_writing_spec()
-    structure_template = _load_structure_template(screening)
-    closing_block = _load_closing_block(screening)
+    structure_template = _load_structure_template(screening, article_cfg)
+    closing_block = _load_closing_block(screening, article_cfg)
 
     image_source = _resolve_image_source(screening)
     img_analysis = _load_img_analysis(draft_dir)

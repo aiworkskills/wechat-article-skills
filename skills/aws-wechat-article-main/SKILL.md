@@ -140,7 +140,8 @@ python {baseDir}/scripts/validate_env.py
 2. **定题与 slug**：在写作意图已明确的前提下，确定**发文章标题**——用户从候选中选一个，或**自定义标题**；据此生成 **slug**，目录名为 `YYYYMMDD-标题slug`（slug 规则：小写、连字符、与项目习惯一致即可）。
 3. **建目录与 `article.yaml`**：创建 `{drafts_root}/YYYYMMDD-标题slug/`（`drafts_root` 以 **`config.yaml`** 为准，默认 `drafts/`）。随即初始化本篇 **`article.yaml`**（含 **`publish_completed: false`**，及标题、作者、摘要等；目录内**宜最先写入**；可用 `{baseDir}/../aws-wechat-article-publish/scripts/article_init.py`）。
    - **`publish_method`**：默认 **`draft`**；要发出去 → **`published`** 或 **`full --publish`**；用户明确不填微信 → **`none`**。
-4. 至此才进入 **第 4 步内容流水线**。
+4. **本篇预设单选落盘（必做）**：初始化后按场景执行：**新建首轮**以 **`.aws-article/config.yaml`** 为来源，按 **`custom_* > default_*`** 结合本篇主题/选题卡，为以下字段各选**单一预设**并写回本篇 **`article.yaml`** 为**单元素列表**：`default_structure`、`default_closing_block`、`default_title_style`、`default_format_preset`、`default_cover_image_style`、`default_article_image_style`、`default_sticker_style`。**续写/重入**时若本篇 `article.yaml` 对应字段已为单元素列表，视为本篇已选并优先保留，不重选不覆盖。若 `config.yaml` 不存在或候选为空，可保持 `[]`。
+5. 至此才进入 **第 4 步内容流水线**。
 
 #### B. 我已有目录
 

@@ -24,6 +24,7 @@
 import argparse
 from pathlib import Path
 import sys
+import yaml
 
 
 def _info(msg: str):
@@ -104,6 +105,62 @@ def _write_closing_md(article_dir: Path, links: list[tuple[str, str]], overwrite
     return closing_path
 
 
+PRESET_FIELDS = [
+    "default_structure",
+    "default_closing_block",
+    "default_title_style",
+    "default_format_preset",
+    "default_cover_image_style",
+    "default_article_image_style",
+    "default_sticker_style",
+]
+
+
+def _ensure_preset_fields(article_yaml_path: Path):
+    """
+    若仓库存在 .aws-article/config.yaml，则在 article.yaml 中补齐预设字段，
+    初始值统一为空列表 []（仅补缺，不覆盖已有值）。
+    若 config 不存在则不处理，保持 article.yaml 可为空。
+    """
+    cfg_path = Path(".aws-article/config.yaml")
+    if not cfg_path.is_file():
+        _info("未发现 .aws-article/config.yaml，跳过预设字段初始化")
+        return
+
+    try:
+        cfg_data = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        _info("读取 .aws-article/config.yaml 失败，跳过预设字段初始化")
+        return
+    if not isinstance(cfg_data, dict):
+        _info(".aws-article/config.yaml 不是 YAML 对象，跳过预设字段初始化")
+        return
+
+    try:
+        art_data = yaml.safe_load(article_yaml_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        _info("读取 article.yaml 失败，跳过预设字段初始化")
+        return
+    if not isinstance(art_data, dict):
+        _info("article.yaml 不是 YAML 对象，跳过预设字段初始化")
+        return
+
+    changed = False
+    for key in PRESET_FIELDS:
+        if key in cfg_data and key not in art_data:
+            art_data[key] = []
+            changed = True
+
+    if changed:
+        article_yaml_path.write_text(
+            yaml.safe_dump(art_data, allow_unicode=True, sort_keys=False),
+            encoding="utf-8",
+        )
+        _ok(f"已补齐预设字段（初始为空）: {article_yaml_path}")
+    else:
+        _info("预设字段已齐全或 config 未声明对应字段，跳过写入")
+
+
 def _merge_article_yaml(existing_text: str, title: str, author: str, digest: str) -> str:
     """
     朴素合并：逐行替换常见键；若不存在则在末尾追加。
@@ -168,6 +225,7 @@ def main():
     merged = _merge_article_yaml(text, args.title or "", args.author or "", args.digest or "")
     article_yaml_path.write_text(merged, encoding="utf-8")
     _ok(f"已写入: {article_yaml_path}")
+    _ensure_preset_fields(article_yaml_path)
 
     links = _parse_links(args.links or "")
     if links:
