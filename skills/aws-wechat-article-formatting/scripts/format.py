@@ -9,7 +9,7 @@
 2. skill 内置 references/presets/themes/<主题名>.yaml
 
 用法：
-    python format.py <article.md>                      主题：合并配置中 default_format_preset（须为 YAML 列表），否则 default；多候选须本篇改为单元素列表
+    python format.py <article.md>                      主题：仅读取本篇 article.yaml 的 default_format_preset（须为 YAML 列表），否则 default
     python format.py <article.md> --theme grace         显式指定主题（覆盖配置）
     python format.py <article.md> --theme my-brand      使用自定义主题
     python format.py <article.md> --color "#0F4C81"     覆盖主色
@@ -229,6 +229,11 @@ def _merge_format_context(draft_dir: Path) -> dict:
             continue
         merged[k] = v
     return merged
+
+
+def _load_article_context(draft_dir: Path) -> dict:
+    """仅加载本篇 article.yaml（用于本篇已选预设读取）。"""
+    return _safe_yaml_dict(draft_dir / "article.yaml")
 
 
 # ── 嵌入元素 ─────────────────────────────────────────────────
@@ -500,21 +505,21 @@ def _preformat_markdown(text: str) -> str:
     """预格式化 Markdown：修复中文排版常见问题。"""
 
     # 中英文之间加空格
-    text = re.sub(r'([\u4e00-\u9fff])([A-Za-z0-9])', r'\1 \2', text)
-    text = re.sub(r'([A-Za-z0-9])([\u4e00-\u9fff])', r'\1 \2', text)
+    text = re.sub(r"([\u4e00-\u9fff])([A-Za-z0-9])", r"\1 \2", text)
+    text = re.sub(r"([A-Za-z0-9])([\u4e00-\u9fff])", r"\1 \2", text)
 
     # 中文与数字之间加空格
-    text = re.sub(r'([\u4e00-\u9fff])(\d)', r'\1 \2', text)
-    text = re.sub(r'(\d)([\u4e00-\u9fff])', r'\1 \2', text)
+    text = re.sub(r"([\u4e00-\u9fff])(\d)", r"\1 \2", text)
+    text = re.sub(r"(\d)([\u4e00-\u9fff])", r"\1 \2", text)
 
     # ASCII 引号 → 中文引号（简单启发式）
-    text = re.sub(r'"([^"]*?)"', r'「\1」', text)
+    text = re.sub(r'"([^"]*?)"', r"「\1」", text)
 
     # 连续多个空行 → 最多两个
-    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
 
     # 修复加粗标记中的空格问题（清理 **..** 配对内侧空格，不动外侧）
-    text = re.sub(r'\*\* *(.+?) *\*\*', r'**\1**', text)
+    text = re.sub(r"\*\* *(.+?) *\*\*", r"**\1**", text)
 
     return text
 
@@ -863,7 +868,7 @@ def main():
     parser.add_argument(
         "--theme",
         default=None,
-        help="主题名；省略则用 config.yaml+本篇 YAML 合并后的 default_format_preset，再无则 default",
+        help="主题名；省略则仅读取本篇 article.yaml 的 default_format_preset，再无则 default",
     )
     parser.add_argument("--color", help="覆盖主色（如 #0F4C81）")
     parser.add_argument("--font-size", help="覆盖字号（如 16px）")
@@ -891,12 +896,13 @@ def main():
 
     draft_dir = input_path.parent
     fmt_ctx = _merge_format_context(draft_dir)
+    article_ctx = _load_article_context(draft_dir)
 
     if args.theme is None:
-        preset = _coerce_single_preset("default_format_preset", fmt_ctx.get("default_format_preset"))
+        preset = _coerce_single_preset("default_format_preset", article_ctx.get("default_format_preset"))
         theme_name = preset if preset else "default"
         if preset:
-            _info(f"主题来自合并配置 default_format_preset: {theme_name}")
+            _info(f"主题来自本篇 article.yaml 的 default_format_preset: {theme_name}")
     else:
         theme_name = args.theme
 

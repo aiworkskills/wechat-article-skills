@@ -38,6 +38,14 @@ def _err(msg: str) -> NoReturn:
 
 
 def _repo_root() -> Path:
+    """自脚本目录向上查找 `.aws-article/config.yaml`；多处存在时取最上层目录（常见：工作区根下的配置）。"""
+    here = Path(__file__).resolve().parent
+    outermost: Path | None = None
+    for d in here.parents:
+        if (d / ".aws-article" / "config.yaml").is_file():
+            outermost = d
+    if outermost is not None:
+        return outermost
     return Path(__file__).resolve().parents[3]
 
 
@@ -63,8 +71,6 @@ def _parse_env(path: Path) -> dict[str, str]:
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
-        if line.startswith("export "):
-            line = line[7:].strip()
         if "=" not in line:
             continue
         k, v = line.split("=", 1)

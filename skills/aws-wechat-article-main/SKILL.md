@@ -36,6 +36,8 @@ if ((Test-Path -LiteralPath ".aws-article\config.yaml") -and (Test-Path -Literal
 
 ⛔ 输出为 `missing`（任一文件不存在）→ 按 [首次引导](references/first-time-setup.md) 创建或补全：可参考 **`{baseDir}/references/config.example.yaml`** 得到 **`config.yaml`**，在仓库根创建 **`aws.env`**（仅密钥与微信 `WECHAT_N_APPID` / `WECHAT_N_APPSECRET` 等，键名可与 `{baseDir}/references/env.example.yaml` 对照）。
 
+**初始化约束**：新建 **`.aws-article/config.yaml`** 时，`publish_method` 默认必须为 **`draft`**；除非用户明确指定不接微信，否则禁止初始化或改写为 `none`。
+
 ### 第 2 步：校验配置内容（`validate_env.py`）
 
 两文件均存在后，在仓库根运行：
@@ -77,7 +79,7 @@ python {baseDir}/scripts/validate_env.py
 - **输出约束**：该场景下除”环境检查结果”可按实际失败项替换外，其余引导文案须与首次引导保持一致。
 - 用户补全并落盘后，智能体协助重跑 **`validate_env.py`**；若用户明确声明本次例外，按首次引导与本节约束继续处理。涉及 **`aws.env`** 的密钥仍由用户本地粘贴更安全，避免无必要重复口述 `AppSecret`。
 
-> **模型未配置例外**：写作模型未配置时（`validate_env.py` 退出码 0 + 警告），**不适用**上述「禁止自作主张」约束——Agent 可自动通过 `write.py prompt` 获取相同提示词后代写，**无须**「本次例外」确认。图片模型同理，但仅在 Agent 支持图片生成（传入 `--agent-image-capable`）时才降为警告；不支持时图片模型仍为阻断级。须告知用户当前使用的方式。
+> **模型未配置例外**：写作模型默认阻断；仅当**用户明确同意**由 Agent 代写并传入 `--agent-writing-approved` 时，写作模型未配置才降为警告。图片模型同理，仅在**用户明确同意**使用 Agent 代生图并传入 `--agent-image-capable` 时降为警告；未获用户明确同意时，模型未配置均按阻断处理。须告知用户当前使用的方式。
 
 > **单步子 skill**：用户只触发某一子能力（如仅排版、仅审稿）且**未走本总览流水线**时，仍以各子 skill 内说明为准；**一条龙 / 完整流程 / 从选题到发布** 必须满足本节 BLOCKING 与上条「禁止自作主张」。
 
@@ -107,10 +109,10 @@ python {baseDir}/scripts/validate_env.py
 
 ### 1) 配置自检（必做）
 
-- 按上文 **配置检查** 完成：**`config.yaml` 与 `aws.env` 均存在** → 运行 **`validate_env.py`**（若 Agent 支持图片生成则加 `--agent-image-capable`）**且退出码 0**。**退出码 1** 时按 [首次引导](references/first-time-setup.md) 补全环境，或设 **`none`** / 用户 **本次例外**。
+- 按上文 **配置检查** 完成：**`config.yaml` 与 `aws.env` 均存在** → 运行 **`validate_env.py`**（默认不加 `--agent-image-capable`）**且退出码 0**。**退出码 1** 时按 [首次引导](references/first-time-setup.md) 补全环境；仅当用户**明确表示不接微信**时才可设 **`none`**；走**本次例外**需用户明确书面确认。
 - **`validate_env.py` 退出码 0 后，必须立即执行「第 2.5 步目录创建」**（可复用 [首次引导第 2 步](references/first-time-setup.md) 命令）；该步完成前，**禁止**进入「2) 全局账号约束」与任何写稿流程。
-- **退出码 0 + 模型警告**：流程**不阻断**，可直接进入下一步。写作模型未配置时 Agent 通过 `write.py prompt` 获取相同提示词后代写；图片模型未配置（且加了 `--agent-image-capable`）时由 Agent 代生成。
-- **智能体须自判图片能力**：运行 `validate_env.py` 前判断自身是否支持图片生成。若支持则加 `--agent-image-capable`；否则不加（图片模型未配置将阻断）。
+- **退出码 0 + 模型警告**：流程**不阻断**，可直接进入下一步。模型警告仅在用户已明确同意并传入对应参数时出现：写作模型用 `--agent-writing-approved`，图片模型用 `--agent-image-capable`。
+- **禁止擅自加参数**：未获用户明确同意前，禁止自行追加 `--agent-image-capable` 或宣称可按代生图模式继续。
 - **退出码 1（微信不完整）时**：只展示 [首次引导](references/first-time-setup.md) 中的 **配置选项**，**不要**在同一轮回复里再问「写哪篇 / 继续哪篇草稿 / 新选题」等；须等配置闭环（重跑校验通过或「本次例外」已书面确认）后，**再**进入下方 **「2) 全局账号约束」**。
 - **`validate_env.py` 不检查** `article_category`、`target_reader`、`default_author`；须在 **「2) 全局账号约束」** 中单独检查并落盘。
 

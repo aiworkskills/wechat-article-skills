@@ -157,7 +157,7 @@ Prompt 构建：[references/image-styles/prompt-construction.md](references/imag
 
 0. **已在「正文配图来源优先级」中用尽素材库 / 用户图**：本节不再对**该图位**重复生图（封面仍须单独按上款处理）。
 1. **缺图时优先：调用专用生图 API**（`scripts/image_create.py`）— 依赖 **`config.yaml` 的 `image_model` + `aws.env` 的 `IMAGE_MODEL_API_KEY`**
-2. **自动降级：模型未配置**（退出码 2、stderr 含 `[NO_MODEL]`）且当前 Agent 支持图片生成 → Agent 读取 `imgs/prompts/*.md` 中的 prompt + frontmatter（size/quality），用自身多模态能力按**相同 prompt** 生图 → 告知用户 `ℹ️ 图片模型未配置，本次由当前对话模型直接生图（使用相同配图方案）` → **无须**「本次例外」确认（已在 `validate_env.py --agent-image-capable` 中降级为 warning）→ 生成后**正常执行第 7 步**（插入文章）
+2. **自动降级：模型未配置**（退出码 2、stderr 含 `[NO_MODEL]`）且当前 Agent 支持图片生成、并已获用户明确同意代生图 → Agent 读取 `imgs/prompts/*.md` 中的 prompt + frontmatter（size/quality），用自身多模态能力按**相同 prompt** 生图 → 告知用户 `ℹ️ 图片模型未配置，本次由当前对话模型直接生图（使用相同配图方案）` → 生成后**正常执行第 7 步**（插入文章）
 3. **故障降级**（退出码 1）→ 按本节下方「调用失败」表格分类处理
 4. **用户供图：跳过生图** — 当 `image_source=user` 或用户明确”使用我上传的图片”时，不调用 `image_create.py`，改为”读图分析 + 写稿引用 + 重排版”
 
@@ -169,7 +169,7 @@ Prompt 构建：[references/image-styles/prompt-construction.md](references/imag
 
 **⛔ 故障降级（退出码 1）时的终点**：只做到第 4 步（或第 5 步）。产出 `imgs/prompts/*.md` 与方案；**不执行**「替换 article 中的 placeholder」或「修复 HTML」。若 `imgs/README.md` 尚不存在或需补充当前方案的说明，可创建/更新（如何配置 **`aws.env` / `config.yaml`**、如何跑 `image_create.py batch`、如何在 `article.html` 中替换）；若已存在且已涵盖当前方案，**不必重写**。
 
-**注意**：退出码 2（模型未配置）且 Agent 支持图片生成时，**不受上述终点限制**——Agent 降级生图后继续执行第 7 步。
+**注意**：退出码 2（模型未配置）且 Agent 支持图片生成、并已获用户明确同意代生图时，**不受上述终点限制**——Agent 降级生图后继续执行第 7 步。
 
 **调用专用 API 时**（在**仓库根**执行，`{baseDir}` 按上表解析；路径按本篇 `imgs/` 调整）：
 
@@ -191,7 +191,7 @@ python {baseDir}/scripts/image_create.py batch drafts/YYYYMMDD-slug/imgs/prompts
 
 | 类型 | 判断线索 | 智能体动作 |
 |------|----------|------------|
-| **未配置** | 退出码 2、`[NO_MODEL]` | Agent 支持图片生成（已通过 `validate_env.py --agent-image-capable`）→ 读取 `imgs/prompts/*.md` 中的 prompt + frontmatter（size/quality），用自身多模态能力按相同 prompt 生图，保存到 `imgs/`，告知用户 `ℹ️ 图片模型未配置，本次由当前对话模型直接生图（使用相同配图方案）`，**无须**「本次例外」确认，**正常继续第 7 步**。Agent 不支持图片生成 → 仅保留 prompts，告知用户须配置图片模型。 |
+| **未配置** | 退出码 2、`[NO_MODEL]` | Agent 支持图片生成且用户明确同意代生图 → 读取 `imgs/prompts/*.md` 中的 prompt + frontmatter（size/quality），用自身多模态能力按相同 prompt 生图并继续第 7 步。Agent 不支持图片生成，或 Agent 代生图失败 → 明确告知“我当前不能完成生图”，给用户二选一：**配置图片模型后重试**，或**本篇不配图继续**（保留 prompts 并在结果中标注无配图）。 |
 | **网络类** | `URLError`、`网络错误（可重试）`、超时、临时 502/503 | **必须自动再试 1 次**（可短暂等待后重跑同一命令）。**第二次仍为网络类** → 可降级为 **Agent 多模态生图** 或仅保留 prompts；**须明确告知**用户本次未走专用 API。 |
 | **配置/凭证类** | 401/403、图片模型配置不完整、`【配置/认证】` | **不要**静默降级。**列出须检查项**（**`config.yaml` 的 `image_model`**、**`aws.env` 的 `IMAGE_MODEL_API_KEY`**、端点、权限），请用户改正后重跑。用户**明确打字**接受本次仅用 Agent/仅 prompts 时，再按 main「本次例外」处理。 |
 | **业务/参数类** | `【请求参数】`、400、返回体提示 model/size 不支持 | 将响应摘要给用户；可改 **`config.yaml` 或 env** 中的 model/尺寸后再试；仍失败则与用户商定是否 Agent 生图。 |

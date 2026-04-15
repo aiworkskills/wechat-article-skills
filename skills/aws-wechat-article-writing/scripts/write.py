@@ -95,8 +95,6 @@ def _parse_dotenv(content: str) -> dict[str, str]:
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
-        if line.startswith("export "):
-            line = line[7:].strip()
         if "=" not in line:
             continue
         key, _, val = line.partition("=")

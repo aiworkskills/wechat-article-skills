@@ -2,15 +2,16 @@
 """
 校验 `.aws-article/config.yaml` 与仓库根 `aws.env` 中的配置是否完整。
 
-写作模型（可选，未配置时产生警告，不阻断——Agent 可代写）：
+写作模型（默认阻断）：
   - config.yaml → writing_model：base_url、model（provider 可选）
   - aws.env → WRITING_MODEL_API_KEY
+  - 仅当用户已明确同意由 Agent 代写（传入 --agent-writing-approved）：未配置降为警告
 
 图片模型（条件可选）：
   - config.yaml → image_model：base_url、model（provider 可选）
   - aws.env → IMAGE_MODEL_API_KEY
-  - 当 Agent 具备图片生成能力时（传入 --agent-image-capable）：未配置仅为警告
-  - 当 Agent 不具备图片生成能力时（默认）：未配置为阻断级错误
+  - 仅当用户明确同意由 Agent 代生图且传入 --agent-image-capable：未配置降为警告
+  - 未获用户明确同意（即使 Agent 具备生图能力）或未传参时：未配置为阻断级错误
 
 微信公众号（阻断级；**例外**：`config.yaml` 顶层 **`publish_method: none`** 时跳过本组）：
   - config.yaml：wechat_accounts（≥1）、wechat_api_base、wechat_{i}_name（i=1..N）
@@ -19,6 +20,7 @@
 用法（仓库根）：
     python skills/aws-wechat-article-main/scripts/validate_env.py
     python skills/aws-wechat-article-main/scripts/validate_env.py --agent-image-capable
+    python skills/aws-wechat-article-main/scripts/validate_env.py --agent-writing-approved
     python skills/aws-wechat-article-main/scripts/validate_env.py --config .aws-article/config.yaml --env aws.env
 """
 from __future__ import annotations
@@ -34,8 +36,6 @@ def _parse_dotenv(content: str) -> dict[str, str]:
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
-        if line.startswith("export "):
-            line = line[7:].strip()
         if "=" not in line:
             continue
         key, _, val = line.partition("=")
@@ -136,6 +136,12 @@ def main() -> int:
         default=False,
         help="当前 Agent 具备图片生成能力；传入时图片模型未配置仅为警告，否则为阻断",
     )
+    parser.add_argument(
+        "--agent-writing-approved",
+        action="store_true",
+        default=False,
+        help="用户已明确同意由 Agent 代写；传入时写作模型未配置仅为警告，否则为阻断",
+    )
     args = parser.parse_args()
     config_path: Path = args.config
     env_path: Path = args.env
@@ -184,12 +190,15 @@ def main() -> int:
     warnings: list[str] = []
 
     if not _writing_ok(cfg, env_map):
-        warnings.append("写作模型未配置（将由 Agent 代写）")
+        if args.agent_writing_approved:
+            warnings.append("写作模型配置不完整")
+        else:
+            bad.append("写作模型配置不完整")
     if not _image_ok(cfg, env_map):
         if args.agent_image_capable:
-            warnings.append("图片模型未配置（将由 Agent 代生成）")
+            warnings.append("图片模型配置不完整")
         else:
-            bad.append("图片模型配置不完整（当前 Agent 不支持图片生成，须配置外部模型）")
+            bad.append("图片模型配置不完整")
 
     pm = str(cfg.get("publish_method") or "").strip().lower()
     skip_wechat = pm == "none"

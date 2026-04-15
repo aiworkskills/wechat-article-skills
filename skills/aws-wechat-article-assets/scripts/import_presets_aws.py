@@ -33,6 +33,7 @@ except ImportError:
 
 PRESET_SUBDIRS = (
     "closing-blocks",
+    "cover-styles",
     "formatting",
     "image-styles",
     "sticker-styles",
