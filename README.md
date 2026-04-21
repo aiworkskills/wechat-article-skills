@@ -1,311 +1,171 @@
-# 微信公众号 AI 运营助手 Skill
+**简体中文** | [English](README_EN.md)
 
-一套运行在 [OpenClaw](https://openclaw.ai)、Cursor、Claude Code 等 AI 编程工具上的 **AI Skills**，覆盖微信公众号内容生产全流程：选题、写稿、审稿、排版、配图、发布。
+# 微信公众号 AI 运营助手
 
-你只需要用自然语言描述需求，Skill 自动调度 AI 完成每一步。
+> 开源公众号运营数字员工。选好风格，说一句话，AI 自动完成选题、写作、排版、配图到发布的全部流程。**不用懂设计，不用会代码。**
 
----
+[![License](https://img.shields.io/github/license/aiworkskills/wechat-article-skills)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/aiworkskills/wechat-article-skills?style=social)](https://github.com/aiworkskills/wechat-article-skills/stargazers)
+[![Release](https://img.shields.io/github/v/release/aiworkskills/wechat-article-skills)](https://github.com/aiworkskills/wechat-article-skills/releases)
+[![Platforms](https://img.shields.io/badge/platforms-13%2B%20Claw%20%7C%20Claude%20Code%20%7C%20Cursor%20%7C%20Codex-blue)](#支持的-ai-编程工具)
 
-## 更新日志
-
-### 2026-04-03 · 素材管理与预设包导入
-
-新增 **assets skill**，支持用户图片批量入库（自动生成元数据描述文件），以及 `.aws` 预设包一键导入——将主题、风格、结构模板等打包分享给其他账号，导入时自动合并到 `.aws-article/presets/`，已有 config 不覆盖而是输出差异。同步更新 config 示例和各 skill 文档。
-
-### 2026-04-02 · 技能与脚本维护
-
-更新各 skill 指令细节，忽略本地 `config.yaml` 避免误提交，清理脚本兼容性问题。
-
-### 2026-03-31 · 脚本迁移与发布入口统一
-
-完成所有 Python 脚本从 shared 到各 skill 目录的迁移，统一发布配置入口——`article_init.py` 迁入 publish skill，消除脚本散落在多处的问题。
-
-### 2026-03-20 · 多平台安装 + 配置校验
-
-- `install-skills.sh` 支持 OpenClaw / Cursor / Claude Code / Codex 四平台一键安装，新增 ClawHub manifests
-- 预设目录规范化，配置校验流程与发布、写作模块对齐
-- 优化主技能与子技能的路由逻辑，减少误触发
-
-### 2026-03-18 · 架构升级与体验优化
-
-- 统一三层文件架构：全局 `config.yaml` → 本篇 `article.yaml` → 对话中临时指定
-- 提取共享层，消除 Skill 间重复逻辑；新增 sticker skill（贴图 / 多图推送）
-- 嵌入元素支持：公众号名片 + 小程序卡片 + 往期文章，排版时自动转为微信标签
-- 6 种预设类型的 schema + 自动发现机制，放入目录即生效
-- 渐进式披露重构：精简 SKILL.md 只保留核心指令，详细说明移入 references
-- 所有 skill 加入配置检查阻断，无 config 时必须先完成首次引导
-- 优化全部 8 个 skill 的触发词，减少误触发
-
-### 2026-03-17 · 发布能力完善
-
-- 实现 publish skill 的微信公众号 API 发布，凭证从 `config.yaml` 读取
-- 支持自定义 API 转发地址，解决公众号固定 IP 白名单限制
-- 封面标记不进正文 HTML，封面通过 API 单独上传
-- 图片上传前自动压缩（封面 ≤ 10 MB，正文 ≤ 1 MB）
-- 多账号发布支持，发布时指定账号即可
-
-### 2026-03-16 · 审稿 skill 重写
-
-- 写作规范联动检查，敏感词 / 错别字 / 配图完整性逐项扫描
-- 结果分三级（🔴 必须改 / 🟡 建议改 / 🟢 通过），必改项触发修改循环
-- 支持自定义审稿规则
-
-### 2026-03-15 · 排版 skill 重写
-
-- 新增 `format.py` 实现 Markdown → 微信 HTML 转换
-- 4 套内置主题（经典蓝 / 优雅紫 / 暖橙 / 极简黑）
-- 支持用户自定义主题导入，YAML 文件放入目录即刻可用
-- 脚本不再硬编码主题，全部从 YAML 动态读取
-
-### 2026-03-14 · 配图 skill 重写
-
-- 14 种视觉风格 × 6 种图片类型的 Type × Style 二维体系
-- 写作阶段自动标记配图位置，配图时直接使用
-- 信息图支持 10 种高级布局（九宫格、漏斗、冰山、金字塔、时间线等）
-- 图片生成后端对接，优先专用图片模型
-
-### 2026-03-13 · 写作 skill 重写
-
-- 接入 DeepSeek / GPT / Qwen / Gemini 等第三方模型，也支持当前 AI 直写
-- 简化配置为 `base_url` + `api_key` + `model` 三项，去掉 provider 概念
-- 优先用专用写作 API，未配置则降级为当前模型并告知用户
-- 支持用户自定义写作规范（`.aws-article/writing-spec.md`）
-
-### 2026-03-12 · 选题 skill 重写
-
-- 四种输入模式：有明确话题 / 有方向没话题 / 完全没方向 / 系列策划
-- 调研驱动，搜索热点和竞品文章后再推荐选题
-
-### 2026-03-01 · 项目优化
-
-优化 8 个 skill 基础框架。全面优化各 skill 的中文描述、OpenClaw 元数据、一条龙模式路由。
+![aiworkskills 首页](https://aiworkskills.cn/images/sp/aiworkskills%E9%A6%96%E9%A1%B5.png)
 
 ---
 
-## 项目介绍
+## 📚 教程与案例
 
-这是一套为微信公众号运营者打造的 AI Skill 集合。安装到 OpenClaw、Cursor、Claude Code 等支持 Skill 的 AI 工具后，用自然语言对话即可驱动选题到发布的完整流程。
-
-每个环节被封装成独立的 Skill 模块，AI 按流程依次调度——你只需要确认和调整，不用手动跑脚本或记命令。
-
-**它能做什么：**
-
-- **选题** — 搜索热点、分析竞品文章、规划系列选题，输出带标题候选和大纲的选题卡片
-- **写作** — 调用第三方大模型或当前 AI 生成全文，遵循你定义的写作规范，自动标记需要配图的位置
-- **审稿** — 敏感词扫描、错别字纠正、写作规范比对、配图完整性检查；结果分三级（🔴 必须改 / 🟡 建议改 / 🟢 通过），有必改项时自动进入修改循环
-- **排版** — 将 Markdown 转为微信公众号可直接粘贴的内联样式 HTML
-- **配图** — AI 根据文章内容匹配视觉风格，生成封面和正文插图
-- **发布** — 调用微信公众号 API，上传图片和正文，创建草稿或直接群发
-
-每一步完成后暂停等你确认，不会自动跳到下一步。全程可以随时打断、修改、重来。
+- 📖 [如何用好 aiworkskills 平台？从配置到发文一文读懂](https://mp.weixin.qq.com/s/rcnq_gg3XXRwJ7ovQtBo1A) · 官方使用指南
+- 🔧 [WorkBuddy 如何使用 AI Work Skills 运行公众号](https://mp.weixin.qq.com/s/GQjCY5UsArV9XI5AyoxWZQ) · WorkBuddy 组合案例
+- ⚡ [QClaw + aiworkskills 一键运营公众号](https://mp.weixin.qq.com/s/xLUJBc2bbrJvgeAesbhsFA) · QClaw 组合案例
 
 ---
 
-## 个性化配置
+## 🚀 3 分钟上手（零代码）
 
-每个公众号都有自己的定位和审美。这套 Skill 提供多个维度的配置，让输出匹配你的品牌风格。
+推荐路径：用可视化配置台 **[aiworkskills.cn](https://aiworkskills.cn/)** 填表，导出预设包给 AI。
 
-### 排版主题
+```
+① 装 AI 编程工具  →  ② 克隆本仓库  →  ③ 网页填表配置  →  ④ 导出 .aws  →  ⑤ 说一句话开始
+```
 
-内置 4 套排版主题，也可以创建 YAML 文件定义自己的主题。
-
-| 主题 | 风格特征 |
-|------|---------|
-| `default` | 经典蓝 · 左边框小标题，专业沉稳 |
-| `grace` | 优雅紫 · 圆角色块，柔和细腻 |
-| `modern` | 暖橙 · 胶囊圆角，活力醒目 |
-| `simple` | 极简黑 · 最少装饰，留白为主 |
-
-![排版主题示例 1](https://aiworkskills.cn/截图/排版主题1.png)
-
-![排版主题示例 2](https://aiworkskills.cn/截图/排版主题2.png)
-
-![排版主题示例 3](https://aiworkskills.cn/截图/排版主题3.png)
-
-![排版主题示例 4](https://aiworkskills.cn/截图/排版主题4.png)
-
-### 封面风格
-
-14 种视觉风格（扁平矢量、水彩、赛博朋克、国潮、3D 渲染等）搭配 6 种图片类型（封面、信息图、氛围图、流程图、对比图、框架图），自由组合。
-
-![封面风格示例](https://aiworkskills.cn/截图/封面风格.png)
-
-### 文章配图
-
-写作阶段自动在正文中标记配图位置，配图阶段 AI 逐张生成。风格可以跟封面一致，也可以单独设置。
-
-![文章配图示例 1](https://aiworkskills.cn/截图/文章配图1.png)
-
-![文章配图示例 2](https://aiworkskills.cn/截图/文章配图2.png)
-
-### 其他可配置项
-
-| 配置项 | 说明 |
-|--------|------|
-| **标题风格** | 悬念型、情绪型、干货型、故事型等预设，控制标题生成方向 |
-| **文章结构** | 清单体、教程型、故事型等结构模板，约束全文骨架 |
-| **文末区块** | 关注引导、作者介绍、往期推荐等固定结尾，保持一致性 |
-| **写作规范** | 自定义禁用词、句式偏好、品牌用语，AI 写作时严格遵守 |
-| **贴图风格** | 多图推送的视觉风格预设，统一系列图片调性 |
-| **账号调性** | 轻松 / 正式 / 专业 / 幽默 / 犀利，贯穿选题到成文 |
-
-所有预设放在 `.aws-article/presets/` 对应子目录下，每个目录有 `README.md` 说明格式，按格式创建文件即可生效。
+1. **装一个 AI 编程工具** — QClaw / WorkBuddy / Cursor / Claude Code 等（完整列表见下）
+2. **克隆仓库**
+   ```bash
+   git clone https://github.com/aiworkskills/wechat-article-skills.git
+   ```
+3. **去 [aiworkskills.cn](https://aiworkskills.cn/) 填表**：账号 → 策略 → 文风 → 视觉 → 发布，5 步完成
+4. **点导出，下载 `.aws` 预设包**，扔给 AI：「帮我导入这个预设包」
+5. **开写** — 对 AI 说：「帮我写一篇公众号文章」，选题到发布全流程跑完
 
 ---
 
-## 如何使用
+## 🌐 支持生态
 
-### 安装
+### 支持的 AI 编程工具
+
+![支持平台](https://aiworkskills.cn/images/sp/%E6%94%AF%E6%8C%81%E5%B9%B3%E5%8F%B0.png)
+
+基于 **OpenClaw 标准**，兼容 13+ Claw 系列工具：
+
+> QClaw · ArkClaw · JVSClaw · WorkBuddy · Linclaw · NemoClaw · AutoClaw · MaxClaw · KimiClaw · DuClaw · PowerClaw · ZeroClaw
+
+同时支持 **Claude Code · Cursor · Codex** 等主流 AI 编程工具。
+
+### 支持的大模型
+
+> DeepSeek · 通义千问 · 智谱 GLM · Kimi · 豆包 · 文心一言 · 讯飞星火 · 腾讯混元 · MiniMax · 百川 · 阶跃星辰 · 零一万物 · GPT · Claude
+
+兼容所有 **OpenAI 接口**大模型，API Key 本地存储不上传。
+
+---
+
+## ✨ 9 个 Skill 分工
+
+| Skill | 能力 | 你这样说 |
+|-------|------|---------|
+| **主流程** | 串联全流程 | 「帮我写一篇公众号文章」 |
+| **选题** | 调研热点，推荐 3–5 个选题卡片 | 「帮我找几个选题」 |
+| **写作** | 调用大模型 / AI 直写，遵循文风规范 | 「写一篇 AI 入门」 |
+| **审稿** | 敏感词 / 错别字 / 规范比对，三级结果 | 「审一下这篇」 |
+| **排版** | Markdown → 微信 HTML，4 套主题 | 「排版」 |
+| **配图** | 14 种视觉风格 × 6 种图片类型 | 「配个图」 |
+| **发布** | 微信 API 直发，多账号，自动压缩 | 「发布」 |
+| **贴图** | 多图推送独立流程 | 「做一组贴图」 |
+| **素材** | 图库管理 + `.aws` 预设包导入导出 | 「导入这个预设」 |
+
+每一步暂停等你确认，不会自动跳转。全程可以打断、修改、重来。
+
+---
+
+## 📸 可视化配置一览
+
+所有配置在 [aiworkskills.cn](https://aiworkskills.cn/) 填表完成。
+
+<details>
+<summary><b>账号定位与目标读者</b> — 一次性说清 AI 你是谁、写给谁</summary>
+
+![账号与读者](https://aiworkskills.cn/images/sp/%E8%B4%A6%E5%8F%B7%E4%B8%8E%E8%AF%BB%E8%80%85%E9%85%8D%E7%BD%AE.png)
+
+</details>
+
+<details>
+<summary><b>视觉呈现</b> — 排版主题 + 封面/配图风格预设</summary>
+
+![视觉呈现](https://aiworkskills.cn/images/sp/%E8%A7%86%E8%A7%89%E5%91%88%E7%8E%B0%E9%85%8D%E7%BD%AE.png)
+
+</details>
+
+<details>
+<summary><b>排版主题</b> — 4 套内置主题（经典蓝 / 优雅紫 / 暖橙 / 极简黑），也可以 YAML 自定义</summary>
+
+![排版主题](https://aiworkskills.cn/images/sp/%E6%8E%92%E7%89%88%E9%A3%8E%E6%A0%BC%E9%A2%84%E8%AE%BE.png)
+
+</details>
+
+<details>
+<summary><b>配图风格</b> — 14+ 视觉风格，对应不同内容类型</summary>
+
+![配图风格](https://aiworkskills.cn/images/sp/%E6%94%AF%E6%8C%81%E7%9A%84%E6%96%87%E7%AB%A0%E9%85%8D%E5%9B%BE%E9%A3%8E%E6%A0%BC.png)
+
+</details>
+
+<details>
+<summary><b>封面风格</b> — 多种封面视觉语言，和内容定位一一对应</summary>
+
+![封面风格](https://aiworkskills.cn/images/sp/%E6%94%AF%E6%8C%81%E7%9A%84%E5%B0%81%E9%9D%A2%E9%85%8D%E5%9B%BE%E9%A3%8E%E6%A0%BC.png)
+
+</details>
+
+<details>
+<summary><b>发布设置</b> — 微信 API、敏感词、文末嵌入元素</summary>
+
+![发布配置](https://aiworkskills.cn/images/sp/%E5%8F%91%E5%B8%83%E9%85%8D%E7%BD%AE.png)
+
+</details>
+
+---
+
+## 🛠️ 开发者路径（自己编辑 YAML）
+
+如果你更习惯直接改配置，跳过 aiworkskills.cn：
 
 ```bash
 git clone https://github.com/aiworkskills/wechat-article-skills.git
+cd wechat-article-skills
+bash scripts/install-skills.sh              # 安装到 .cursor / .claude
+cp .aws-article/config.example.yaml .aws-article/config.yaml
+# 编辑 config.yaml（账号/文风/排版）和 aws.env（API Key）
 ```
 
-克隆后在 AI 编程工具中打开项目目录即可使用：
-
-- **OpenClaw**：直接将项目目录作为 Skill 仓库导入
-- **Claude Code**：在项目目录下启动，自动加载 `.claude/rules/` 中的 Skill
-- **Cursor**：打开项目目录，Skill 从 `.cursor/skills/` 自动加载
-
-### 首次配置
-
-安装后对 AI 说「帮我写一篇公众号文章」，会自动进入首次配置引导。
-
-需要你确认的只有 3 项：
-
-1. **账号类型** — 科技 / 职场 / 情感 / 教育 / 生活方式...
-2. **目标读者** — 一线互联网人 / 大学生 / 宝妈 / 中小企业主...
-3. **语气调性** — 轻松 / 正式 / 专业 / 幽默 / 犀利...
-
-其余配置项都有默认值，后续可以随时调整。
-
-API 密钥单独管理：在仓库根目录创建 `aws.env`，键名参照 `skills/aws-wechat-article-main/references/env.example.yaml`。
-
-### 日常使用
-
-不需要记命令，用自然语言说就行：
-
-| 你说 | AI 做什么 |
-|------|----------|
-| 「帮我写一篇公众号文章」 | 从选题到发布的完整流程 |
-| 「帮我找几个选题」 | 搜索热点，推荐 3–5 个选题方向 |
-| 「写一篇 AI 入门的文章」 | 调研 → 确定角度 → 生成全文 |
-| 「做个 AI 工具系列」 | 规划系列主线 → 拆分每篇 → 逐篇执行 |
-| 「审一下这篇稿子」 | 敏感词 / 错别字 / 写作规范 / 配图检查 |
-| 「排版」 | Markdown → 微信 HTML |
-| 「配个图」 | 匹配风格，生成封面和正文插图 |
-| 「发布」 | 上传到公众号草稿箱 |
-| 「做一组贴图」 | 多图推送的独立创作流程 |
-
-也可以只跑某一步：「帮这篇排版一下」「只做封面」「审稿不用配图」。
-
-### 完整流程演示
-
-```
-你：帮我一条龙写一篇 AI 相关的文章
-
-AI：[搜索热点 → 推荐 5 个选题]
-    请选择编号，或提出调整意见。
-
-你：选 2
-
-AI：[调用 DeepSeek 生成初稿，约 2000 字]
-    初稿已生成，请确认或提修改意见。
-
-你：开头再吸引一点
-
-AI：[修改开头 → 重新展示]
-
-你：通过，继续
-
-AI：[审稿] 🔴 第 3 段「帐号」→「账号」  🟡 第 5 段表达偏 AI 味
-    → 已自动修正必改项，建议项请确认
-
-你：都改了，继续
-
-AI：[排版 → HTML 已保存]
-    [配图 → 封面 + 2 张正文插图已生成]
-    [发布前检查 → 上传到草稿箱]
-    ✅ 草稿创建成功，去公众号后台预览确认
-```
+- 字段含义：[first-time-setup.md](skills/aws-wechat-article-main/references/first-time-setup.md)
+- 三层配置体系：全局 `config.yaml` → 本篇 `article.yaml` → 对话中临时指定
+- 6 种预设扩展点：`.aws-article/presets/{structures,closing-blocks,title-styles,formatting,cover-styles,sticker-styles}/`
 
 ---
 
-## 模型配置
+## 📋 更新日志
 
-### 为什么需要配置模型
+完整变更历史见 [CHANGELOG.md](CHANGELOG.md)。最近几次：
 
-这套 Skill 运行在 Claude Code / Cursor 等 AI 编程工具上——这些工具本身就是一个大模型。**但写文章和生成图片用的是另外两个专用模型**，原因是：
+- **2026-04-03** · 新增 assets skill：图片入库 + `.aws` 预设包导入导出
+- **2026-03-31** · 脚本迁移与发布入口统一
+- **2026-03-20** · 四平台一键安装 + 配置校验对齐
+- **2026-03-18** · 三层文件架构升级 + 嵌入元素支持
 
-- **写作模型**：你可能偏好用 DeepSeek 写中文、用 GPT-4o 写英文、用 Qwen 省成本——不同模型写出来的风格和质量差异很大。配一个专用的写作模型，让你自由选择最适合你的那个。
-- **图片模型**：封面和配图需要调用图片生成 API（如 DALL-E、通义万相等），这不是文本模型能做的事。
+---
 
-两个模型都不配也能用——AI 会用自己的能力直写文章，只是没有专用模型效果好，且无法生成图片。
+## 🏠 社区
 
-### 配置方式
+- 💬 [GitHub Discussions](https://github.com/aiworkskills/wechat-article-skills/discussions) — 使用问题、最佳实践
+- 🐛 [Issues](https://github.com/aiworkskills/wechat-article-skills/issues) — Bug 反馈、功能建议
+- 🌐 [aiworkskills.cn](https://aiworkskills.cn/) — 可视化配置台
 
-模型配置分两个文件：
+---
 
-| 文件 | 放什么 | 位置 |
-|------|--------|------|
-| `.aws-article/config.yaml` | 模型地址和名称 | 仓库内 |
-| `aws.env` | API 密钥 | 仓库根 |
+## Star History
 
-密钥和配置分开存放，`aws.env` 已在 `.gitignore` 中，不会被提交。
-
-### 写作模型
-
-在 `.aws-article/config.yaml` 中填写：
-
-```yaml
-writing_model:
-  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
-  model: "qwen-plus"
-  temperature: 0.7
-  max_tokens: 4000
-```
-
-在 `aws.env` 中填写密钥：
-
-```
-WRITING_MODEL_API_KEY=sk-xxxxxxxxxxxxxxxx
-```
-
-支持任何 OpenAI 兼容的 API 端点，包括：
-
-| 服务商 | base_url 示例 | model 示例 |
-|--------|--------------|-----------|
-| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-plus` / `qwen-max` |
-| DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat` |
-| OpenAI | `https://api.openai.com/v1` | `gpt-4o` / `gpt-4o-mini` |
-| 豆包 | `https://ark.cn-beijing.volces.com/api/v3` | 你的推理接入点 ID |
-
-### 图片模型
-
-在 `.aws-article/config.yaml` 中填写：
-
-```yaml
-image_model:
-  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
-  model: "wanx-v1"
-  default_size: "1024x1024"
-  default_quality: "standard"
-```
-
-在 `aws.env` 中填写密钥：
-
-```
-IMAGE_MODEL_API_KEY=sk-xxxxxxxxxxxxxxxx
-```
-
-### 不想配置？
-
-完全可以。首次引导时告诉 AI「不配置模型」，它会：
-
-- **写作**：由当前 AI（Claude / GPT）直接写，效果取决于你用的编程工具
-- **配图**：跳过自动生成，你可以手动上传图片
-
-后续随时可以补配。
+[![Star History Chart](https://api.star-history.com/svg?repos=aiworkskills/wechat-article-skills&type=Date)](https://star-history.com/#aiworkskills/wechat-article-skills&Date)
 
 ---
 

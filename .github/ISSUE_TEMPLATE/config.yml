@@ -1,0 +1,13 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 使用问题与讨论
+    url: https://github.com/aiworkskills/wechat-article-skills/discussions
+    about: 使用过程中的疑问、配置咨询、最佳实践分享，建议先来 Discussions 发帖
+
+  - name: 📖 项目文档
+    url: https://github.com/aiworkskills/wechat-article-skills#readme
+    about: 安装、配置、使用方法请先查阅 README
+
+  - name: 🌐 可视化配置台
+    url: https://aiworkskills.cn/
+    about: 不熟悉 YAML？用网页填表完成配置
