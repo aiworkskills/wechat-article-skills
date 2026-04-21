@@ -82,7 +82,7 @@
 
 所有配置在 [aiworkskills.cn](https://aiworkskills.cn/) 填表完成。
 
-<details>
+<details open>
 <summary><b>账号定位与目标读者</b> — 一次性说清 AI 你是谁、写给谁</summary>
 
 ![账号与读者](https://aiworkskills.cn/images/sp/%E8%B4%A6%E5%8F%B7%E4%B8%8E%E8%AF%BB%E8%80%85%E9%85%8D%E7%BD%AE.png)
