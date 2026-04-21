@@ -9,7 +9,7 @@
 [![Release](https://img.shields.io/github/v/release/aiworkskills/wechat-article-skills)](https://github.com/aiworkskills/wechat-article-skills/releases)
 [![Platforms](https://img.shields.io/badge/platforms-13%2B%20Claw%20%7C%20Claude%20Code%20%7C%20Cursor%20%7C%20Codex-blue)](#支持的-ai-编程工具)
 
-![aiworkskills 首页](https://aiworkskills.cn/images/sp/aiworkskills%E9%A6%96%E9%A1%B5.png)
+
 
 ---
 
@@ -24,7 +24,7 @@
 ## 🚀 3 分钟上手（零代码）
 
 推荐路径：用可视化配置台 **[aiworkskills.cn](https://aiworkskills.cn/)** 填表，导出预设包给 AI。
-
+![aiworkskills 首页](https://aiworkskills.cn/images/sp/aiworkskills%E9%A6%96%E9%A1%B5.png)
 ```
 ① 装 AI 编程工具  →  ② 克隆本仓库  →  ③ 网页填表配置  →  ④ 导出 .aws  →  ⑤ 说一句话开始
 ```
