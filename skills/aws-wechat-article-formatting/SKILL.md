@@ -1,9 +1,51 @@
 ---
 name: aws-wechat-article-formatting
-description: 给公众号文章排版，转换为可直接粘贴到微信后台的格式，支持多套主题。当用户提到「排版」「版式」「美化」「格式化」「字号」「段落样式」「换个主题」「转 HTML」「弄好看点」「调整格式」时使用。
+description: 公众号排版｜微信排版｜微信公众号排版｜公众号文章排版｜Markdown 转 HTML｜微信 HTML｜公众号主题｜段落样式｜排版主题｜typography｜WeChat typeset｜WeChat formatting — 公众号一键排版工具，Markdown 文稿转微信后台可粘贴 HTML，多主题、多字号、段落样式切换，所见即所得。面向公众号编辑、独立作者、排版岗。触发词：「排版」「版式」「美化」「格式化」「字号」「段落样式」「换个主题」「转 HTML」「弄好看点」「调整格式」。
 ---
 
 # 排版
+
+**公众号一键排版** —— Markdown 转微信后台可粘贴 HTML，多主题、多字号、所见即所得。
+
+> **套件说明** · 本 skill 属 `aws-wechat-article-*` 一条龙套件（共 9 个 slug，入口 `aws-wechat-article-main`）。跨 skill 的相对引用依赖同一 `skills/` 目录，建议一并 `clawhub install` 全套。源码：<https://github.com/aiworkskills/wechat-article-skills>
+
+## 前置依赖 ⛔ 套件必须装齐
+
+`aws-wechat-article-*` 一条龙套件的 9 个 skill 互相引用首次引导、环境校验与规则文档。**单独安装任一 skill 无法正常工作**，必须装齐 9 个：
+
+```
+aws-wechat-article-main
+aws-wechat-article-topics
+aws-wechat-article-writing
+aws-wechat-article-review
+aws-wechat-article-formatting
+aws-wechat-article-images
+aws-wechat-article-publish
+aws-wechat-article-assets
+aws-wechat-sticker
+```
+
+**Agent：进入下方工作流前，先检查当前 `skills/` 目录下上述 9 个子目录是否都存在。**
+
+**若任一缺失** → 停止本 skill 工作流，**不得**尝试代替用户跑脚本或继续；按下述话术回复用户：
+
+> 本套件需 9 个 skill 都装齐才能使用。检测到缺少：`<列出缺失项>`。请执行：
+>
+> ```bash
+> # macOS / Linux / Git Bash
+> for slug in aws-wechat-article-main aws-wechat-article-topics aws-wechat-article-writing aws-wechat-article-review aws-wechat-article-formatting aws-wechat-article-images aws-wechat-article-publish aws-wechat-article-assets aws-wechat-sticker; do
+>   clawhub install "$slug"
+> done
+> ```
+>
+> ```powershell
+> # Windows PowerShell
+> 'aws-wechat-article-main','aws-wechat-article-topics','aws-wechat-article-writing','aws-wechat-article-review','aws-wechat-article-formatting','aws-wechat-article-images','aws-wechat-article-publish','aws-wechat-article-assets','aws-wechat-sticker' | ForEach-Object { clawhub install $_ }
+> ```
+>
+> 装完再回本 skill 让我继续。
+
+**9 个全部存在** → 按下方工作流继续。
 
 ## 路由
 

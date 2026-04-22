@@ -8,12 +8,20 @@
 
 运行前若缺少 `.aws-article` 则创建；若缺少 `.aws-article/tmp` 则创建。每次执行前若 `tmp` 已存在则整目录删除再解压；合并完成后保留解压内容供核对，下次执行会再次清空 `tmp` 再解压。
 
-合并规则：对每个预设子目录内文件，按相对路径写入目标；同名则覆盖，新文件则新增。
+合并规则（以服务端为准的「替换式」）：
+  - 对每个预设子目录，若**包内存在**该子目录，则**先清空本地 `.aws-article/presets/<同名>/`** 再写入包内内容——确保新包移除的旧文件不会残留；
+  - 若包内**不存在**某子目录，本地对应子目录**保持不动**（不受本次导入影响）。
 不包含密钥：包内 config 仅为运营配置模板（仓库内密钥在 aws.env）。
+
+bundle 输入支持两种形态：
+  - 本地 `.aws` 文件路径；
+  - 白名单 HTTPS URL：`https://` 开头，host 为 `aiworkskills.cn` 或其子域，路径以 `.aws` 结尾。
+    下载缓存到 `.aws-article/downloads/<原文件名>`（不受 tmp 清空影响，供事后核对）。
 
 用法（仓库根）：
   python skills/aws-wechat-article-assets/scripts/import_presets_aws.py path/to/bundle.aws
   python skills/aws-wechat-article-assets/scripts/import_presets_aws.py path/to/bundle.aws --dry-run
+  python skills/aws-wechat-article-assets/scripts/import_presets_aws.py https://aiworkskills.cn/bundles/brand-a.aws
 """
 
 from __future__ import annotations
@@ -22,9 +30,12 @@ import argparse
 import json
 import shutil
 import sys
+import urllib.error
+import urllib.request
 import zipfile
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 try:
     import yaml
@@ -42,6 +53,48 @@ PRESET_SUBDIRS = (
 )
 
 SKIP_NAMES = frozenset({"__MACOSX", ".DS_Store"})
+
+ALLOWED_HOST_EXACT = "aiworkskills.cn"
+ALLOWED_HOST_SUFFIX = ".aiworkskills.cn"
+DOWNLOAD_TIMEOUT_SEC = 30
+
+
+def _is_url(s: str) -> bool:
+    return s.startswith(("http://", "https://"))
+
+
+def _validate_url(url: str, allow_any_host: bool) -> None:
+    p = urlparse(url)
+    if p.scheme != "https":
+        _err(f"仅允许 https:// 下载预设包，收到: {p.scheme}://")
+    host = (p.hostname or "").lower()
+    if not allow_any_host:
+        if host != ALLOWED_HOST_EXACT and not host.endswith(ALLOWED_HOST_SUFFIX):
+            _err(f"域名不在白名单（仅 aiworkskills.cn 及其子域）: {host}")
+    if not Path(p.path).name.endswith(".aws"):
+        _err("URL 路径须以 .aws 结尾")
+
+
+def _download_bundle(url: str, repo: Path) -> Path:
+    downloads = repo / ".aws-article" / "downloads"
+    downloads.mkdir(parents=True, exist_ok=True)
+    fname = Path(urlparse(url).path).name or "bundle.aws"
+    local = downloads / fname
+    tmp_out = local.with_suffix(local.suffix + ".part")
+    req = urllib.request.Request(url, headers={"User-Agent": "aws-wechat-article-assets/1.0"})
+    _info(f"下载中: {url}")
+    try:
+        with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT_SEC) as resp, open(tmp_out, "wb") as out:
+            shutil.copyfileobj(resp, out)
+    except urllib.error.HTTPError as e:
+        _err(f"HTTP {e.code} 下载失败: {url}")
+    except urllib.error.URLError as e:
+        _err(f"网络错误: {e.reason}")
+    shutil.move(str(tmp_out), str(local))
+    if not zipfile.is_zipfile(local):
+        _err(f"下载内容不是有效 ZIP（已保留 {local} 供排查）")
+    _ok(f"已下载: {local.as_posix()}")
+    return local
 
 
 def _err(msg: str) -> None:
@@ -157,19 +210,31 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="导入 .aws 预设包到 .aws-article/presets；config 仅首次复制，已有则 stdout 输出差异 JSON"
     )
-    parser.add_argument("bundle", help="路径：.aws 文件（ZIP）")
+    parser.add_argument("bundle", help="路径或 URL：本地 .aws 文件，或 https://aiworkskills.cn/**/*.aws")
     parser.add_argument("--dry-run", action="store_true", help="只打印将执行的操作，不写盘")
     parser.add_argument("--repo", default=".", help="仓库根（默认当前目录）")
+    parser.add_argument(
+        "--allow-any-host",
+        action="store_true",
+        help="调试用，放宽域名白名单（仍强制 https）；不建议生产使用",
+    )
     args = parser.parse_args()
 
-    bundle = Path(args.bundle).resolve()
+    repo = _find_repo_root(Path(args.repo))
+    _ensure_aws_article_dir(repo)
+
+    raw = args.bundle
+    if _is_url(raw):
+        _validate_url(raw, args.allow_any_host)
+        bundle = _download_bundle(raw, repo)
+    else:
+        bundle = Path(raw).resolve()
+
     if not bundle.is_file():
         _err(f"文件不存在: {bundle}")
     if not zipfile.is_zipfile(bundle):
         _err(f"不是有效的 ZIP 包（.aws 须为 zip）: {bundle}")
 
-    repo = _find_repo_root(Path(args.repo))
-    _ensure_aws_article_dir(repo)
     presets_root = repo / ".aws-article" / "presets"
     config_dest = repo / ".aws-article" / "config.yaml"
     staging = _staging_dir(repo)
@@ -198,8 +263,14 @@ def main() -> None:
             continue
         dest = presets_root / name
         if args.dry_run:
-            _info(f"合并预设目录: {name} -> {dest.as_posix()}")
+            if dest.exists():
+                _info(f"替换预设目录（先清空后合并）: {name} -> {dest.as_posix()}")
+            else:
+                _info(f"新增预设目录: {name} -> {dest.as_posix()}")
         else:
+            if dest.exists():
+                shutil.rmtree(dest)
+                _info(f"已清空本地预设目录: {dest.as_posix()}")
             dest.mkdir(parents=True, exist_ok=True)
         n = _merge_preset_dir(src, dest, args.dry_run)
         total_files += n

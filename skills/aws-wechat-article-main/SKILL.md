@@ -1,9 +1,51 @@
 ---
 name: aws-wechat-article-main
-description: 微信公众号全流程编排入口，按固定顺序调度子能力：选题→写稿→审稿→排版→配图→终审→发布。当用户意图涉及多步或整条链时走本 skill，而非直连子 skill。触发词：「帮我写篇公众号文章」「我想发一篇」「帮我出一篇」「帮我搞定一篇」「帮我做一期」「发篇文章」「发到公众号」「今天写什么好」「有什么好写的」「帮我想想发什么」「写一篇关于XX的」「再来一篇」「继续上次的」「接着写」「你能帮我做什么」「怎么用」。也包括较正式的说法：「一条龙」「完整流程」「从头做」「公众号运营」。仅当用户明确只要某一步产物（如只排版、只审稿）时才跳过本 skill 直连对应子能力。
+description: 公众号运营｜微信公众号｜AI 写稿｜公众号排版｜公众号审稿｜公众号配图｜公众号发布｜一条龙｜自媒体运营｜WeChat Official Account｜content pipeline｜AIGC — 公众号 AI 一条龙运营总控入口，选题→写稿→审稿→排版→配图→发布串联 8 个子 skill，单条指令完成整篇图文从 0 到上架。面向公众号小编、自媒体、品牌内容。触发词：「帮我写篇公众号文章」「我想发一篇」「帮我发一篇」「一条龙」「完整流程」「从头做」「公众号运营」「今天写什么好」「有什么好写的」「再来一篇」「继续上次的」「接着写」等。仅当用户明确只要某一步（如仅排版、仅审稿）才跳过本入口直连子 skill。
 ---
 
 # 公众号运营总览
+
+**一键式公众号 AI 内容流水线** —— 从选题到上架 8 个子 skill 串联，公众号小编 / 自媒体 / 品牌内容团队一键产出整篇图文。
+
+> **套件说明** · `aws-wechat-article-*` 是公众号一条龙套件，共 9 个 slug：`aws-wechat-article-main / topics / writing / review / formatting / images / publish / assets`，外加 `aws-wechat-sticker`。跨 skill 的相对引用依赖同一 `skills/` 根目录；推荐 `clawhub sync` 或逐个 `clawhub install` 一次性全装。源码：<https://github.com/aiworkskills/wechat-article-skills>
+
+## 前置依赖 ⛔ 套件必须装齐
+
+`aws-wechat-article-*` 一条龙套件的 9 个 skill 互相引用首次引导、环境校验与规则文档。**单独安装任一 skill 无法正常工作**，必须装齐 9 个：
+
+```
+aws-wechat-article-main
+aws-wechat-article-topics
+aws-wechat-article-writing
+aws-wechat-article-review
+aws-wechat-article-formatting
+aws-wechat-article-images
+aws-wechat-article-publish
+aws-wechat-article-assets
+aws-wechat-sticker
+```
+
+**Agent：进入下方工作流前，先检查当前 `skills/` 目录下上述 9 个子目录是否都存在。**
+
+**若任一缺失** → 停止本 skill 工作流，**不得**尝试代替用户跑脚本或继续；按下述话术回复用户：
+
+> 本套件需 9 个 skill 都装齐才能使用。检测到缺少：`<列出缺失项>`。请执行：
+>
+> ```bash
+> # macOS / Linux / Git Bash
+> for slug in aws-wechat-article-main aws-wechat-article-topics aws-wechat-article-writing aws-wechat-article-review aws-wechat-article-formatting aws-wechat-article-images aws-wechat-article-publish aws-wechat-article-assets aws-wechat-sticker; do
+>   clawhub install "$slug"
+> done
+> ```
+>
+> ```powershell
+> # Windows PowerShell
+> 'aws-wechat-article-main','aws-wechat-article-topics','aws-wechat-article-writing','aws-wechat-article-review','aws-wechat-article-formatting','aws-wechat-article-images','aws-wechat-article-publish','aws-wechat-article-assets','aws-wechat-sticker' | ForEach-Object { clawhub install $_ }
+> ```
+>
+> 装完再回本 skill 让我继续。
+
+**9 个全部存在** → 按下方工作流继续。
 
 **Agent 执行**：确定本 SKILL.md 所在目录为 `{baseDir}`。
 

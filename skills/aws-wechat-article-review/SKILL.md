@@ -1,9 +1,51 @@
 ---
 name: aws-wechat-article-review
-description: 审核公众号文章，检查敏感词、错别字、合规性和写作规范，输出修改清单。当用户提到「审稿」「审核」「检查一下」「校对」「合规」「敏感词」「错别字」「帮我看看」「写完了」「检查下有没有问题」「能不能发」时使用。
+description: 公众号审稿｜微信公众号审稿｜公众号校对｜敏感词检测｜错别字检测｜内容合规｜政治合规｜平台规范｜proofreading｜content review｜moderation — 公众号发布前合规审查：敏感词扫描、错别字检测、政治合规、平台规范校验，一次性输出修改清单。面向公众号编辑、自媒体作者、合规岗。触发词：「审稿」「审核」「检查一下」「校对」「合规」「敏感词」「错别字」「帮我看看」「写完了」「检查下有没有问题」「能不能发」。
 ---
 
 # 审稿与合规
+
+**公众号发布前合规守门员** —— 敏感词、错别字、平台规范一次性筛查，输出可执行修改清单。
+
+> **套件说明** · 本 skill 属 `aws-wechat-article-*` 一条龙套件（共 9 个 slug，入口 `aws-wechat-article-main`）。跨 skill 的相对引用依赖同一 `skills/` 目录，建议一并 `clawhub install` 全套。源码：<https://github.com/aiworkskills/wechat-article-skills>
+
+## 前置依赖 ⛔ 套件必须装齐
+
+`aws-wechat-article-*` 一条龙套件的 9 个 skill 互相引用首次引导、环境校验与规则文档。**单独安装任一 skill 无法正常工作**，必须装齐 9 个：
+
+```
+aws-wechat-article-main
+aws-wechat-article-topics
+aws-wechat-article-writing
+aws-wechat-article-review
+aws-wechat-article-formatting
+aws-wechat-article-images
+aws-wechat-article-publish
+aws-wechat-article-assets
+aws-wechat-sticker
+```
+
+**Agent：进入下方工作流前，先检查当前 `skills/` 目录下上述 9 个子目录是否都存在。**
+
+**若任一缺失** → 停止本 skill 工作流，**不得**尝试代替用户跑脚本或继续；按下述话术回复用户：
+
+> 本套件需 9 个 skill 都装齐才能使用。检测到缺少：`<列出缺失项>`。请执行：
+>
+> ```bash
+> # macOS / Linux / Git Bash
+> for slug in aws-wechat-article-main aws-wechat-article-topics aws-wechat-article-writing aws-wechat-article-review aws-wechat-article-formatting aws-wechat-article-images aws-wechat-article-publish aws-wechat-article-assets aws-wechat-sticker; do
+>   clawhub install "$slug"
+> done
+> ```
+>
+> ```powershell
+> # Windows PowerShell
+> 'aws-wechat-article-main','aws-wechat-article-topics','aws-wechat-article-writing','aws-wechat-article-review','aws-wechat-article-formatting','aws-wechat-article-images','aws-wechat-article-publish','aws-wechat-article-assets','aws-wechat-sticker' | ForEach-Object { clawhub install $_ }
+> ```
+>
+> 装完再回本 skill 让我继续。
+
+**9 个全部存在** → 按下方工作流继续。
 
 ## 路由
 

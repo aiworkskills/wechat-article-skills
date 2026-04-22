@@ -1,9 +1,51 @@
 ---
 name: aws-wechat-article-writing
-description: 写公众号文章或改写已有内容，可调用第三方模型生成初稿。当用户提到「写文章」「写正文」「写稿」「出稿」「改写」「润色」「续写」「写个初稿」「帮我写」「公众号风格」「把提纲写成文章」「开头结尾」「用 DeepSeek 写」「用 GPT 写」时使用。注意：需要用户明确知道写什么的时候才能直接使用，否则先通过aws-wechat-article-topics获取文章的基本信息。
+description: 公众号写稿｜微信公众号写稿｜AI 写作｜长文写作｜公众号文章｜文章润色｜改写续写｜公众号风格｜AIGC｜article generation｜content creation｜DeepSeek｜GPT｜Claude — 公众号长文 AI 写作，从话题或提纲生成完整初稿，支持改写、续写、润色、开头结尾优化，可调 DeepSeek / GPT / Claude 或由 Agent 代写。面向自媒体作者、公众号运营、品牌文案。触发词：「写文章」「写正文」「写稿」「出稿」「改写」「润色」「续写」「写个初稿」「帮我写」「公众号风格」「把提纲写成文章」「开头结尾」「用 DeepSeek 写」「用 GPT 写」。前置：需先通过 aws-wechat-article-topics 获取文章基本信息。
 ---
 
 # 长文写作
+
+**公众号长文 AI 写作引擎** —— 从提纲或话题生成完整初稿，支持改写、续写、润色，多模型可切。
+
+> **套件说明** · 本 skill 属 `aws-wechat-article-*` 一条龙套件（共 9 个 slug，入口 `aws-wechat-article-main`）。跨 skill 的相对引用依赖同一 `skills/` 目录，建议一并 `clawhub install` 全套。源码：<https://github.com/aiworkskills/wechat-article-skills>
+
+## 前置依赖 ⛔ 套件必须装齐
+
+`aws-wechat-article-*` 一条龙套件的 9 个 skill 互相引用首次引导、环境校验与规则文档。**单独安装任一 skill 无法正常工作**，必须装齐 9 个：
+
+```
+aws-wechat-article-main
+aws-wechat-article-topics
+aws-wechat-article-writing
+aws-wechat-article-review
+aws-wechat-article-formatting
+aws-wechat-article-images
+aws-wechat-article-publish
+aws-wechat-article-assets
+aws-wechat-sticker
+```
+
+**Agent：进入下方工作流前，先检查当前 `skills/` 目录下上述 9 个子目录是否都存在。**
+
+**若任一缺失** → 停止本 skill 工作流，**不得**尝试代替用户跑脚本或继续；按下述话术回复用户：
+
+> 本套件需 9 个 skill 都装齐才能使用。检测到缺少：`<列出缺失项>`。请执行：
+>
+> ```bash
+> # macOS / Linux / Git Bash
+> for slug in aws-wechat-article-main aws-wechat-article-topics aws-wechat-article-writing aws-wechat-article-review aws-wechat-article-formatting aws-wechat-article-images aws-wechat-article-publish aws-wechat-article-assets aws-wechat-sticker; do
+>   clawhub install "$slug"
+> done
+> ```
+>
+> ```powershell
+> # Windows PowerShell
+> 'aws-wechat-article-main','aws-wechat-article-topics','aws-wechat-article-writing','aws-wechat-article-review','aws-wechat-article-formatting','aws-wechat-article-images','aws-wechat-article-publish','aws-wechat-article-assets','aws-wechat-sticker' | ForEach-Object { clawhub install $_ }
+> ```
+>
+> 装完再回本 skill 让我继续。
+
+**9 个全部存在** → 按下方工作流继续。
 
 ## 路由
 
