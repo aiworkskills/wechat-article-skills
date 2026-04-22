@@ -21,8 +21,8 @@ series/
 CLAUDE.md
 AGENTS.md
 
-# 安装/初始化脚本
-scripts/
+# 安装/初始化脚本（仅仓库根；各 skill 下的 scripts/ 属代码，需跟踪）
+/scripts/
 
 # Python
 __pycache__/
