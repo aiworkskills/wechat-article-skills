@@ -1,6 +1,8 @@
 ---
 name: aws-wechat-article-formatting
-description: 公众号排版｜微信排版｜微信公众号排版｜公众号文章排版｜Markdown 转 HTML｜微信 HTML｜公众号主题｜段落样式｜排版主题｜typography｜WeChat typeset｜WeChat formatting — 公众号一键排版工具，Markdown 文稿转微信后台可粘贴 HTML，多主题、多字号、段落样式切换，所见即所得。面向公众号编辑、独立作者、排版岗。触发词：「排版」「版式」「美化」「格式化」「字号」「段落样式」「换个主题」「转 HTML」「弄好看点」「调整格式」。
+description: 公众号排版｜Markdown 转 HTML｜排版主题｜段落样式 — 公众号一键排版工具，Markdown 文稿转微信后台可粘贴 HTML，多主题、多字号、段落样式切换，所见即所得。面向公众号编辑、独立作者、排版岗。触发词：「排版」「版式」「美化」「格式化」「字号」「段落样式」「换个排版主题」「换个版式」「转 HTML」「弄好看点」「调整格式」。换预设包/品牌包/整套主题配色请走 aws-wechat-article-assets；需要多环节串联（写+审+排+配图+发）请走 aws-wechat-article-main。
+homepage: https://aiworkskills.cn
+url: https://github.com/aiworkskills/wechat-article-skills
 ---
 
 # 排版

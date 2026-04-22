@@ -1,6 +1,8 @@
 ---
 name: aws-wechat-article-assets
-description: 公众号素材｜微信公众号素材｜素材库｜stock images｜预设包｜.aws 预设包｜主题包｜品牌包｜配色字体｜content assets｜media library｜design presets｜aiworkskills.cn — 公众号素材库与预设包管理：图片入库到 stock 目录（中文名 + 同名 .md），导入 .aws ZIP 预设包（本地文件或 `https://aiworkskills.cn/**/*.aws` URL）合并主题/配色/字体配置到 `.aws-article/presets/`；`config.yaml` 仅本地不存在时从包内复制，已存在则 stdout 输出差异 JSON 不覆盖。面向内容运营、品牌团队、设计支持岗。触发词：「素材库入库」「stock images」「上传图到素材库」「.aws」「预设包」「导入预设」「主题包」「aiworkskills.cn 链接」「.aws 下载地址」。
+description: 公众号素材｜素材库｜预设包｜.aws 预设包｜主题包｜品牌包｜aiworkskills.cn — 公众号素材库与预设包管理：图片入库到 stock 目录（中文名 + 同名 .md），导入 .aws ZIP 预设包（本地文件或 `https://aiworkskills.cn/**/*.aws` URL）合并主题/配色/字体配置到 `.aws-article/presets/`；`config.yaml` 仅本地不存在时从包内复制，已存在则 stdout 输出差异 JSON 不覆盖。面向内容运营、品牌团队、设计支持岗。触发词：「素材库入库」「stock images」「上传图到素材库」「.aws」「预设包」「导入预设」「主题包」「aiworkskills.cn 链接」「.aws 下载地址」。
+homepage: https://aiworkskills.cn
+url: https://github.com/aiworkskills/wechat-article-skills
 ---
 
 # 公众号素材与预设（Assets）

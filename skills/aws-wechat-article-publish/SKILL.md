@@ -1,6 +1,8 @@
 ---
 name: aws-wechat-article-publish
-description: 公众号发布｜微信公众号发布｜公众号草稿箱｜公众号群发｜公众号推送｜图文推送｜微信 API｜WeChat API｜公众号自动发布｜content publishing｜wechat automation — 公众号 API 发布工具，图文入草稿箱或直接群发，支持封面素材上传、发布前检查与 draft/published 模式切换。面向公众号运营、自动化内容团队、开发者。触发词：「发布」「提交」「群发」「推送」「发出去」「上传到公众号」「发到公众号」「可以发了吗」「发布前检查」。
+description: 公众号发布｜公众号草稿箱｜公众号群发｜图文推送｜微信 API｜wechat automation｜WeChat API automation｜auto publish｜scheduled publish — 公众号 API 发布工具，图文入草稿箱或直接群发，支持封面素材上传、发布前检查与 draft/published 模式切换。面向公众号运营、自动化内容团队、开发者。触发词：「发布」「提交」「群发」「推送」「发出去」「上传到公众号」「发到公众号」「可以发了吗」「发布前检查」。需要多环节串联（写+审+排+配图+发）请走 aws-wechat-article-main。
+homepage: https://aiworkskills.cn
+url: https://github.com/aiworkskills/wechat-article-skills
 ---
 
 # 发布

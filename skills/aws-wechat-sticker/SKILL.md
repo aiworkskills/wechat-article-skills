@@ -1,6 +1,8 @@
 ---
 name: aws-wechat-sticker
-description: 公众号贴图｜微信贴图｜微信公众号贴图｜九宫格｜多图推送｜图片消息｜图文消息｜发组图｜表情包｜sticker｜image post｜nine grid — 贴图与多图推送：从创意构思、AI 生图到公众号图片消息发布全流程，含九宫格自动排布、多图压缩、图文消息打包。面向公众号运营、自媒体、IP 账号。触发词：「贴图」「多图推送」「发组图」「图片消息」「九宫格」「做一组图」「图片帖子」「发几张图」「图文消息」。
+description: 公众号贴图｜九宫格｜多图推送｜图片消息｜表情包 — 贴图与多图推送：从创意构思、AI 生图到公众号图片消息发布全流程，含九宫格自动排布、多图压缩、组图打包。面向公众号运营、自媒体、IP 账号。触发词：「贴图」「多图推送」「发组图」「图片消息」「九宫格」「做一组图」「图片帖子」「发几张图」「不写正文发图」「只发图不写字」。是文章内配图/封面请走 aws-wechat-article-images；需要多环节串联（写+审+排+配图+发）请走 aws-wechat-article-main。
+homepage: https://aiworkskills.cn
+url: https://github.com/aiworkskills/wechat-article-skills
 ---
 
 # 贴图 / 多图推送

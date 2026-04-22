@@ -1,6 +1,8 @@
 ---
 name: aws-wechat-article-writing
-description: 公众号写稿｜微信公众号写稿｜AI 写作｜长文写作｜公众号文章｜文章润色｜改写续写｜公众号风格｜AIGC｜article generation｜content creation｜DeepSeek｜GPT｜Claude — 公众号长文 AI 写作，从话题或提纲生成完整初稿，支持改写、续写、润色、开头结尾优化，可调 DeepSeek / GPT / Claude 或由 Agent 代写。面向自媒体作者、公众号运营、品牌文案。触发词：「写文章」「写正文」「写稿」「出稿」「改写」「润色」「续写」「写个初稿」「帮我写」「公众号风格」「把提纲写成文章」「开头结尾」「用 DeepSeek 写」「用 GPT 写」。前置：需先通过 aws-wechat-article-topics 获取文章基本信息。
+description: 公众号写稿｜长文写作｜文章润色｜改写续写 — 公众号长文 AI 写作，从话题或提纲生成完整初稿，支持改写、续写、润色、开头结尾优化，可调 DeepSeek / GPT / Claude 或由 Agent 代写。面向自媒体作者、公众号运营、品牌文案。触发词（**单独触发仅限对已有稿子的修改**）：「改写」「润色」「续写」「续一段」「往下写」「接着这段写」「重写开头」「改结尾」「调整语气」「这段润色下」「把这段改活泼点」「优化用词」「用 GPT 重写」「用 DeepSeek 重写」。新写一篇请走 aws-wechat-article-main（main 内部会调用本 skill 生成初稿）；需要多环节串联（写+审+排+配图+发）也走 main。
+homepage: https://aiworkskills.cn
+url: https://github.com/aiworkskills/wechat-article-skills
 ---
 
 # 长文写作
