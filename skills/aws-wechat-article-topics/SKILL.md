@@ -3,6 +3,12 @@ name: aws-wechat-article-topics
 description: 公众号选题｜爆款标题｜热点追踪｜系列策划 — 公众号 AI 选题与标题生成，覆盖热点调研、选题策划、起标题、写摘要、系列排期。面向自媒体编辑、内容运营。触发词（**单独触发仅限对已有标题/摘要的修改**）：「改标题」「换个标题」「重起标题」「优化标题」「标题再想想」「换个标题试试」「改摘要」「重写摘要」「优化摘要」「摘要再优化下」。新做选题、起新标题、策划系列/内容日历、追热点都请走 aws-wechat-article-main；需要多环节串联（写+审+排+配图+发）也走 main。
 homepage: https://aiworkskills.cn
 url: https://github.com/aiworkskills/wechat-article-skills
+metadata:
+  openclaw:
+    requires:
+      env: []
+      bins:
+        - python3
 ---
 
 # 选题与标题
@@ -11,43 +17,24 @@ url: https://github.com/aiworkskills/wechat-article-skills
 
 > **套件说明** · 本 skill 属 `aws-wechat-article-*` 一条龙套件（共 9 个 slug，入口 `aws-wechat-article-main`）。跨 skill 的相对引用依赖同一 `skills/` 目录，建议一并 `clawhub install` 全套。源码：<https://github.com/aiworkskills/wechat-article-skills>
 
-## 前置依赖 ⛔ 套件必须装齐
+## 能力披露（Capabilities）
 
-`aws-wechat-article-*` 一条龙套件的 9 个 skill 互相引用首次引导、环境校验与规则文档。**单独安装任一 skill 无法正常工作**，必须装齐 9 个：
+本 skill 主要由 Agent 驱动（对话式选题调研、标题生成），脚本层仅用于更新本篇元数据。
 
-```
-aws-wechat-article-main
-aws-wechat-article-topics
-aws-wechat-article-writing
-aws-wechat-article-review
-aws-wechat-article-formatting
-aws-wechat-article-images
-aws-wechat-article-publish
-aws-wechat-article-assets
-aws-wechat-sticker
-```
+- **凭证**：无
+- **网络**：Agent 可能使用 `web_search` / `web_fetch`（Claude Code 内置能力，非本 skill 脚本层发起）
+- **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、可选 `.aws-article/assets/stock/references/*.md`
+- **文件写**：本篇目录下 `topic-card.md`、`research.md`；更新本篇 `article.yaml`
+- **shell**：可能调用同仓库的 `python3 {baseDir}/../aws-wechat-article-publish/scripts/article_init.py`
 
-**Agent：进入下方工作流前，先检查当前 `skills/` 目录下上述 9 个子目录是否都存在。**
+## 配套 skill（informational）
 
-**若任一缺失** → 停止本 skill 工作流，**不得**尝试代替用户跑脚本或继续；按下述话术回复用户：
+本 skill 是 `aws-wechat-article-*` 一条龙公众号套件的**选题环节**（入口 `aws-wechat-article-main`）。工作流中的若干步骤会读取同级 `../aws-wechat-article-main/references/*.md` 等共享文档（首次引导、env/config 示例等）。
 
-> 本套件需 9 个 skill 都装齐才能使用。检测到缺少：`<列出缺失项>`。请执行：
->
-> ```bash
-> # macOS / Linux / Git Bash
-> for slug in aws-wechat-article-main aws-wechat-article-topics aws-wechat-article-writing aws-wechat-article-review aws-wechat-article-formatting aws-wechat-article-images aws-wechat-article-publish aws-wechat-article-assets aws-wechat-sticker; do
->   clawhub install "$slug"
-> done
-> ```
->
-> ```powershell
-> # Windows PowerShell
-> 'aws-wechat-article-main','aws-wechat-article-topics','aws-wechat-article-writing','aws-wechat-article-review','aws-wechat-article-formatting','aws-wechat-article-images','aws-wechat-article-publish','aws-wechat-article-assets','aws-wechat-sticker' | ForEach-Object { clawhub install $_ }
-> ```
->
-> 装完再回本 skill 让我继续。
+- **套件完整装齐到同一 `skills/` 根目录**时，跨 skill 引用都能读到。
+- **单独安装本 skill** 时，跨 skill 引用的步骤会在读取阶段遇到 `file not found`；本 skill 内的纯本地步骤仍可用。
 
-**9 个全部存在** → 按下方工作流继续。
+完整 9 slug 清单见 [源码仓库](https://github.com/aiworkskills/wechat-article-skills)。
 
 ## 路由
 

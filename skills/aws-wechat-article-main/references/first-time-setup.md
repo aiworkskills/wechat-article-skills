@@ -66,14 +66,18 @@ python skills/aws-wechat-article-main/scripts/validate_env.py --agent-writing-ap
 环境检查结果：公众号配置不完整
 
 1. **微信配置（必填）**：填好微信配置后，我才能帮您将文章发送到草稿箱。  
-2. **配置方式**：您可直接把缺失配置发给我，我来帮您写入并复检；也可前往我们的平台 **`https://aiworkskills.cn/`** 自行配置。  
+2. **配置方式（二选一，**不要把密钥粘贴到聊天里**）**：
+   - **方式 A（推荐）**：在仓库根用编辑器打开 **`aws.env`** 填入 `WECHAT_1_APPID` / `WECHAT_1_APPSECRET` 等，并在 **`.aws-article/config.yaml`** 填入 `wechat_accounts` / `wechat_api_base` / `wechat_1_name` 等非密钥项，保存后告诉我「已填好」我来复检。
+   - **方式 B**：前往平台 **`https://aiworkskills.cn/`** 在网页上配。
 
 **B. 仅模型相关未配置**，这一类**必须**使用这个话术：
 
 环境检查结果：按本次 `failed` 实际输出填写（例如：`图片模型配置不完整`）
 
 1. **<失败项对应模型>配置（选填）**：配置claude、GPT、banana等专用模型有助于生成更好的文章；若您不想配置，我将使用相同的写作约束亲自执行后续流程。  
-2. **配置方式**：您可直接把模型缺失配置发给我，我来帮您写入并复检；也可前往平台 **`https://aiworkskills.cn/`** 自行配置。  
+2. **配置方式（二选一，**不要把密钥粘贴到聊天里**）**：
+   - **方式 A（推荐）**：在仓库根用编辑器打开 **`aws.env`** 填入 `*_API_KEY`，并在 **`.aws-article/config.yaml`** 填入 `base_url` / `model` 等非密钥项，保存后告诉我「已填好」我来复检。
+   - **方式 B**：前往平台 **`https://aiworkskills.cn/`** 在网页上配。
 
 **C. 公众号 + 模型同时未配置**，这一类**必须**使用这个话术：
 
@@ -81,13 +85,20 @@ python skills/aws-wechat-article-main/scripts/validate_env.py --agent-writing-ap
 
 1. **微信配置（必填）**：填好微信配置后，我才能帮您将文章发送到草稿箱。  
 2. **<失败项对应模型>配置（选填）**：配置claude、GPT、banana等专用模型有助于生成更好的文章；若您不想配置，我将使用相同的写作约束亲自执行后续流程。  
-3. **配置方式**：您可直接把缺失配置发给我，我来帮您写入并复检；也可前往我们的平台 **`https://aiworkskills.cn/`** 自行配置（更多结构预设、配图预设等高级配置也在该平台）。  
+3. **配置方式（二选一，推荐任一个，**不要把密钥粘贴到聊天里**）**：
+   - **方式 A（推荐）**：在仓库根用编辑器打开 **`aws.env`** 自行填入密钥（见下方字段说明），保存后告诉我「已填好」我来复检。
+   - **方式 B**：前往平台 **`https://aiworkskills.cn/`** 在网页 UI 配置（含写作/生图模型、微信公众号、结构/配图预设等）。
 
 **用户追问「怎么配置？」时（按当前失败项回复）**
 
-- 仅公众号未配置：**「你可以把账号ID、账号密钥、api地址、微信名给我，我帮你配好。」**
-- 仅模型相关未配置：按当前模型项说明所需字段（`base_url`、`model`、`API_KEY`）。
-- 公众号与模型都未配置：先收微信，再收模型，写入后统一复检。
+- 仅公众号未配置：
+  > 公众号需要 `WECHAT_1_APPID`、`WECHAT_1_APPSECRET`（在 `aws.env`），以及 `wechat_accounts`、`wechat_1_name`、`wechat_api_base`（在 `config.yaml`）。  
+  > **请在编辑器里自己填到 aws.env 和 config.yaml；不要在这里把密钥复制给我**。填完告诉我「已填好」我跑 `validate_env.py` 复检。或者去 `https://aiworkskills.cn/` 在网页上配。
+- 仅模型相关未配置：
+  > 按当前模型项所需字段（`base_url`、`model` 在 `config.yaml`；`*_API_KEY` 在 `aws.env`）。**请在编辑器里自己填，不要在对话里提供密钥。**
+- 公众号与模型都未配置：**同上两条合并提示**，请用户编辑两份文件后回来。
+
+**原则**：Agent **不向用户索取密钥**、**不代替用户粘贴密钥到文件**。密钥只由用户在本地编辑器中写入 `aws.env`；validate_env 只做非空校验，不读值外发。
 
 **额外操作**：若用户明确表示仅仅不配置微信账号，可将 **`config.yaml`** 中 **`publish_method`** 设为 **`none`**，不发布到草稿箱。（改后须在仓库根重跑 **`python skills/aws-wechat-article-main/scripts/validate_env.py`** 方生效。这句话不输出给用户）
 

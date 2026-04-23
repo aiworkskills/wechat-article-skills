@@ -41,14 +41,13 @@ def _err(msg: str):
 
 
 def _load_yaml_example() -> str:
-    """优先加载 .aws-article/article.example.yaml 的内容，找不到则给出最小模板。"""
-    example_path_candidates = [
-        Path(".aws-article/article.example.yaml"),
-        Path.home() / ".aws-article" / "article.example.yaml",
-    ]
-    for p in example_path_candidates:
-        if p.exists():
-            return p.read_text(encoding="utf-8")
+    """优先加载仓库内 .aws-article/article.example.yaml 的内容，找不到则给出最小模板。
+
+    仅在当前仓库根 `.aws-article/` 下查找；不再回退到用户主目录，避免读取仓库外的文件。
+    """
+    repo_example = Path(".aws-article/article.example.yaml")
+    if repo_example.exists():
+        return repo_example.read_text(encoding="utf-8")
     # 最小可用模板
     return (
         "# 文章元数据\n"

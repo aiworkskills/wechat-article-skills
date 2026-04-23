@@ -3,6 +3,15 @@ name: aws-wechat-article-publish
 description: 公众号发布｜公众号草稿箱｜公众号群发｜图文推送｜微信 API｜wechat automation｜WeChat API automation｜auto publish｜scheduled publish — 公众号 API 发布工具，图文入草稿箱或直接群发，支持封面素材上传、发布前检查与 draft/published 模式切换。面向公众号运营、自动化内容团队、开发者。触发词：「发布」「提交」「群发」「推送」「发出去」「上传到公众号」「发到公众号」「可以发了吗」「发布前检查」。需要多环节串联（写+审+排+配图+发）请走 aws-wechat-article-main。
 homepage: https://aiworkskills.cn
 url: https://github.com/aiworkskills/wechat-article-skills
+metadata:
+  openclaw:
+    requires:
+      env:
+        - WECHAT_1_APPID
+        - WECHAT_1_APPSECRET
+      bins:
+        - python3
+    primaryEnv: aws.env
 ---
 
 # 发布
@@ -11,43 +20,28 @@ url: https://github.com/aiworkskills/wechat-article-skills
 
 > **套件说明** · 本 skill 属 `aws-wechat-article-*` 一条龙套件（共 9 个 slug，入口 `aws-wechat-article-main`）。跨 skill 的相对引用依赖同一 `skills/` 目录，建议一并 `clawhub install` 全套。源码：<https://github.com/aiworkskills/wechat-article-skills>
 
-## 前置依赖 ⛔ 套件必须装齐
+## 能力披露（Capabilities）
 
-`aws-wechat-article-*` 一条龙套件的 9 个 skill 互相引用首次引导、环境校验与规则文档。**单独安装任一 skill 无法正常工作**，必须装齐 9 个：
+本 skill 调 `publish.py` **直连微信公众号官方 API** 发布图文。**会把本篇 `article.html` 与 `imgs/*` 文件作为 POST body 上传到微信服务器。** 具体行为：
 
-```
-aws-wechat-article-main
-aws-wechat-article-topics
-aws-wechat-article-writing
-aws-wechat-article-review
-aws-wechat-article-formatting
-aws-wechat-article-images
-aws-wechat-article-publish
-aws-wechat-article-assets
-aws-wechat-sticker
-```
+- **凭证读取**：`aws.env` 的 `WECHAT_{N}_APPID` / `WECHAT_{N}_APPSECRET`（多槽位支持 N≥1）
+- **凭证外发**：`APPID` / `APPSECRET` 以 query string 形式发给 `api.weixin.qq.com/cgi-bin/token` 换 `access_token`；后续请求带 `access_token` query string。微信返回的 `access_token` 在进程内存短期缓存，**不落盘**
+- **内容外发**：本篇封面、正文插图以 multipart upload 发给 `material/add_material`；`article.html` 正文与标题/摘要以 JSON POST 发给 `draft/add`、`freepublish/submit`
+- **网络目标**：默认 `api.weixin.qq.com`；用户可在 `WECHAT_{N}_API_BASE` / `config.yaml.wechat_api_base` 自配反代
+- **文件读**：仓库内 `.aws-article/config.yaml`、`aws.env`、本篇 `article.yaml`、`article.html`、`imgs/*`
+- **文件写**：仅本篇 `article.yaml` 的状态字段（`media_id`、`publish_id`、`publish_completed`）
+- **shell**：仅 `python3 {baseDir}/scripts/publish.py`、`getdraft.py`、`article_init.py`
 
-**Agent：进入下方工作流前，先检查当前 `skills/` 目录下上述 9 个子目录是否都存在。**
+**建议**：首次运行用 `publish_method: draft` 只入草稿箱确认效果，再切 `published` 真正群发。
 
-**若任一缺失** → 停止本 skill 工作流，**不得**尝试代替用户跑脚本或继续；按下述话术回复用户：
+## 配套 skill（informational）
 
-> 本套件需 9 个 skill 都装齐才能使用。检测到缺少：`<列出缺失项>`。请执行：
->
-> ```bash
-> # macOS / Linux / Git Bash
-> for slug in aws-wechat-article-main aws-wechat-article-topics aws-wechat-article-writing aws-wechat-article-review aws-wechat-article-formatting aws-wechat-article-images aws-wechat-article-publish aws-wechat-article-assets aws-wechat-sticker; do
->   clawhub install "$slug"
-> done
-> ```
->
-> ```powershell
-> # Windows PowerShell
-> 'aws-wechat-article-main','aws-wechat-article-topics','aws-wechat-article-writing','aws-wechat-article-review','aws-wechat-article-formatting','aws-wechat-article-images','aws-wechat-article-publish','aws-wechat-article-assets','aws-wechat-sticker' | ForEach-Object { clawhub install $_ }
-> ```
->
-> 装完再回本 skill 让我继续。
+本 skill 是 `aws-wechat-article-*` 一条龙公众号套件的**发布环节**（入口 `aws-wechat-article-main`）。工作流中的若干步骤会读取同级 `../aws-wechat-article-main/references/*.md` 等共享文档（首次引导、articlescreening schema、env/config 示例等）。
 
-**9 个全部存在** → 按下方工作流继续。
+- **套件完整装齐到同一 `skills/` 根目录**时，跨 skill 引用都能读到。
+- **单独安装本 skill** 时，跨 skill 引用的步骤会在读取阶段遇到 `file not found`；但 `publish.py`、`getdraft.py`、`article_init.py` 这几个脚本本身可独立运行（只要 `aws.env` 与 `.aws-article/config.yaml` 就绪）。
+
+完整 9 slug 清单见 [源码仓库](https://github.com/aiworkskills/wechat-article-skills)。
 
 通过微信公众号 API 将排版稿写入**草稿箱**或再**提交发布**（由 **`config.yaml`** 的 **`publish_method`** 与命令行 **`--publish`** 控制）。
 

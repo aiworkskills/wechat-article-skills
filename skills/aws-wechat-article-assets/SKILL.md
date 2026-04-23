@@ -3,6 +3,12 @@ name: aws-wechat-article-assets
 description: 公众号素材｜素材库｜预设包｜.aws 预设包｜主题包｜品牌包｜aiworkskills.cn — 公众号素材库与预设包管理：图片入库到 stock 目录（中文名 + 同名 .md），导入 .aws ZIP 预设包（本地文件或 `https://aiworkskills.cn/**/*.aws` URL）合并主题/配色/字体配置到 `.aws-article/presets/`；`config.yaml` 仅本地不存在时从包内复制，已存在则 stdout 输出差异 JSON 不覆盖。面向内容运营、品牌团队、设计支持岗。触发词：「素材库入库」「stock images」「上传图到素材库」「.aws」「预设包」「导入预设」「主题包」「aiworkskills.cn 链接」「.aws 下载地址」。
 homepage: https://aiworkskills.cn
 url: https://github.com/aiworkskills/wechat-article-skills
+metadata:
+  openclaw:
+    requires:
+      env: []
+      bins:
+        - python3
 ---
 
 # 公众号素材与预设（Assets）
@@ -11,43 +17,27 @@ url: https://github.com/aiworkskills/wechat-article-skills
 
 > **套件说明** · 本 skill 属 `aws-wechat-article-*` 一条龙套件（共 9 个 slug，入口 `aws-wechat-article-main`）。跨 skill 的相对引用依赖同一 `skills/` 目录，建议一并 `clawhub install` 全套。源码：<https://github.com/aiworkskills/wechat-article-skills>
 
-## 前置依赖 ⛔ 套件必须装齐
+## 能力披露（Capabilities）
 
-`aws-wechat-article-*` 一条龙套件的 9 个 skill 互相引用首次引导、环境校验与规则文档。**单独安装任一 skill 无法正常工作**，必须装齐 9 个：
+本 skill 管理本地素材与预设包，可选从 `aiworkskills.cn` 域下载 `.aws` 预设包（ZIP 格式）。
 
-```
-aws-wechat-article-main
-aws-wechat-article-topics
-aws-wechat-article-writing
-aws-wechat-article-review
-aws-wechat-article-formatting
-aws-wechat-article-images
-aws-wechat-article-publish
-aws-wechat-article-assets
-aws-wechat-sticker
-```
+- **凭证**：无
+- **网络**：可选 `https://*.aiworkskills.cn/**/*.aws` 下载预设包。**白名单强制**：仅 HTTPS + `aiworkskills.cn` 子域，非白名单会**直接报错退出**。调试参数 `--allow-any-host` 可放宽但不推荐生产使用
+- **文件读**：用户指定的本地图片路径或 `.aws` 文件
+- **文件写**：仓库内 `.aws-article/assets/stock/images/*`（图片 + 同名 `.md`）、`.aws-article/presets/<子目录>/*`（预设文件）、`.aws-article/downloads/*.aws`（下载缓存）、`.aws-article/tmp/*`（解压临时目录）
+- **归档**：解压 `.aws` 扩展名的 ZIP 到 `.aws-article/tmp/`，按白名单子目录合并到 `.aws-article/presets/`。**已内置 ZIP slip 防御**：逐项校验 ZIP 成员路径，拒绝含绝对路径、`..` 段或解析后指向解压目录外的路径，任一违反立即退出不写入任何文件
+- **shell**：仅 `python3 {baseDir}/scripts/stock_image_ingest.py`、`import_presets_aws.py`
 
-**Agent：进入下方工作流前，先检查当前 `skills/` 目录下上述 9 个子目录是否都存在。**
+所有写入限制在仓库根下的 `.aws-article/` 内。
 
-**若任一缺失** → 停止本 skill 工作流，**不得**尝试代替用户跑脚本或继续；按下述话术回复用户：
+## 配套 skill（informational）
 
-> 本套件需 9 个 skill 都装齐才能使用。检测到缺少：`<列出缺失项>`。请执行：
->
-> ```bash
-> # macOS / Linux / Git Bash
-> for slug in aws-wechat-article-main aws-wechat-article-topics aws-wechat-article-writing aws-wechat-article-review aws-wechat-article-formatting aws-wechat-article-images aws-wechat-article-publish aws-wechat-article-assets aws-wechat-sticker; do
->   clawhub install "$slug"
-> done
-> ```
->
-> ```powershell
-> # Windows PowerShell
-> 'aws-wechat-article-main','aws-wechat-article-topics','aws-wechat-article-writing','aws-wechat-article-review','aws-wechat-article-formatting','aws-wechat-article-images','aws-wechat-article-publish','aws-wechat-article-assets','aws-wechat-sticker' | ForEach-Object { clawhub install $_ }
-> ```
->
-> 装完再回本 skill 让我继续。
+本 skill 是 `aws-wechat-article-*` 一条龙公众号套件的**素材与预设环节**（入口 `aws-wechat-article-main`）。
 
-**9 个全部存在** → 按下方工作流继续。
+- **单独安装可用**：素材入库 / `.aws` 预设导入两个脚本都不依赖兄弟 skill，只要 `.aws-article/` 目录就能工作。
+- 其他 skill 读取 `.aws-article/assets/stock/images/` 和 `.aws-article/presets/` 里由本 skill 管理的资源，属套件协同；需结合写稿/配图/排版等 skill 使用。
+
+完整 9 slug 清单见 [源码仓库](https://github.com/aiworkskills/wechat-article-skills)。
 
 | 能力 | 说明 |
 |------|------|

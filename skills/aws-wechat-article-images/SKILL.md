@@ -3,6 +3,14 @@ name: aws-wechat-article-images
 description: 公众号封面｜公众号配图｜公众号插图｜AI 生图 — 公众号 AI 封面与配图生成，按文章标题与内容自动匹配画风，一稿多方案，多风格预设可复用。面向公众号编辑、自媒体、品牌设计。触发词：「封面」「配图」「插图」「生成图片」「给文章加图」「做个封面」「文章插图」「配个图」。不写正文只发一组图请走 aws-wechat-sticker；需要多环节串联（写+审+排+配图+发）请走 aws-wechat-article-main。
 homepage: https://aiworkskills.cn
 url: https://github.com/aiworkskills/wechat-article-skills
+metadata:
+  openclaw:
+    requires:
+      env:
+        - IMAGE_MODEL_API_KEY
+      bins:
+        - python3
+    primaryEnv: aws.env
 ---
 
 # 配图
@@ -11,43 +19,28 @@ url: https://github.com/aiworkskills/wechat-article-skills
 
 > **套件说明** · 本 skill 属 `aws-wechat-article-*` 一条龙套件（共 9 个 slug，入口 `aws-wechat-article-main`）。跨 skill 的相对引用依赖同一 `skills/` 目录，建议一并 `clawhub install` 全套。源码：<https://github.com/aiworkskills/wechat-article-skills>
 
-## 前置依赖 ⛔ 套件必须装齐
+## 能力披露（Capabilities）
 
-`aws-wechat-article-*` 一条龙套件的 9 个 skill 互相引用首次引导、环境校验与规则文档。**单独安装任一 skill 无法正常工作**，必须装齐 9 个：
+本 skill 调 `image_create.py` **调外部图像 API** 生成封面与正文配图。**会把图片提示词（可能含文章主题片段）发给用户配置的图像生成端点。** 具体行为：
 
-```
-aws-wechat-article-main
-aws-wechat-article-topics
-aws-wechat-article-writing
-aws-wechat-article-review
-aws-wechat-article-formatting
-aws-wechat-article-images
-aws-wechat-article-publish
-aws-wechat-article-assets
-aws-wechat-sticker
-```
+- **凭证读取**：`aws.env` 的 `IMAGE_MODEL_API_KEY`
+- **凭证外发**：该 key 以 `Authorization: Bearer` 头发送到 `image_model.base_url` 指定端点（常见为 DALL-E、gpt-image 兼容 `/v1/images/generations`，或多模态模型 `/v1/chat/completions`，具体由用户配置）
+- **内容外发**：每张图片的 prompt（文本）作为 JSON POST body 发送；prompt 内容来自本篇 `imgs/prompts/*.md`（可能包含文章标题、章节摘要）
+- **下图 SSRF 防御**：若 API 响应返回图片 URL（而非 base64），脚本**仅允许下载 http/https 公网地址**；内网 / 环回 / 链路本地 / 保留地址全部拒绝（防止恶意或被劫持的模型端点把脚本当作 SSRF 跳板）
+- **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`article.md`、`imgs/prompts/*.md`、可选 `.aws-article/assets/stock/images/*`
+- **文件写**：本篇 `imgs/*.{png,webp}`、可选 `img_analysis.md`
+- **shell**：仅 `python3 {baseDir}/scripts/image_create.py`、`user_image_prepare.py`
 
-**Agent：进入下方工作流前，先检查当前 `skills/` 目录下上述 9 个子目录是否都存在。**
+**建议**：用专用 key（最低权限、独立计费），避免使用 account 级 master key。
 
-**若任一缺失** → 停止本 skill 工作流，**不得**尝试代替用户跑脚本或继续；按下述话术回复用户：
+## 配套 skill（informational）
 
-> 本套件需 9 个 skill 都装齐才能使用。检测到缺少：`<列出缺失项>`。请执行：
->
-> ```bash
-> # macOS / Linux / Git Bash
-> for slug in aws-wechat-article-main aws-wechat-article-topics aws-wechat-article-writing aws-wechat-article-review aws-wechat-article-formatting aws-wechat-article-images aws-wechat-article-publish aws-wechat-article-assets aws-wechat-sticker; do
->   clawhub install "$slug"
-> done
-> ```
->
-> ```powershell
-> # Windows PowerShell
-> 'aws-wechat-article-main','aws-wechat-article-topics','aws-wechat-article-writing','aws-wechat-article-review','aws-wechat-article-formatting','aws-wechat-article-images','aws-wechat-article-publish','aws-wechat-article-assets','aws-wechat-sticker' | ForEach-Object { clawhub install $_ }
-> ```
->
-> 装完再回本 skill 让我继续。
+本 skill 是 `aws-wechat-article-*` 一条龙公众号套件的**配图环节**（入口 `aws-wechat-article-main`）。工作流中的若干步骤会读取同级 `../aws-wechat-article-main/references/*.md` 等共享文档（首次引导、env/config 示例、articlescreening schema 等）。
 
-**9 个全部存在** → 按下方工作流继续。
+- **套件完整装齐到同一 `skills/` 根目录**时，跨 skill 引用都能读到。
+- **单独安装本 skill** 时，跨 skill 引用的步骤会在读取阶段遇到 `file not found`；本 skill 内的生图脚本仍可用。
+
+完整 9 slug 清单见 [源码仓库](https://github.com/aiworkskills/wechat-article-skills)。
 
 ## 路由
 

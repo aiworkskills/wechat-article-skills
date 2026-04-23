@@ -111,14 +111,20 @@ def _ok(msg: str) -> None:
 
 
 def _find_repo_root(start: Path) -> Path:
+    """仓库根 = `--repo` 参数指向的目录（默认当前工作目录）。
+
+    不再向上遍历父目录；若传入路径不是预期的仓库根（需要存在 `.aws-article` 或 `.git`），
+    直接报错退出，避免对非预期目录进行读写。
+    """
     cur = start.resolve()
-    for p in [cur] + list(cur.parents):
-        if (p / ".aws-article").is_dir():
-            return p
-    for p in [cur] + list(cur.parents):
-        if (p / ".git").is_dir():
-            return p
-    _err("未找到仓库根（向上查找含 .aws-article 或 .git 的目录失败）。请在仓库根目录执行。")
+    if not cur.is_dir():
+        _err(f"指定的仓库根不是目录：{cur}")
+    if (cur / ".aws-article").is_dir() or (cur / ".git").is_dir():
+        return cur
+    _err(
+        f"{cur} 不像仓库根（未检测到 .aws-article 或 .git 目录）。\n"
+        "请传入 --repo 指向真正的仓库根，或在仓库根下运行。"
+    )
 
 
 def _ensure_aws_article_dir(repo: Path) -> None:
@@ -145,6 +151,31 @@ def _reset_staging(staging: Path) -> None:
         _info(f"清空暂存目录: {staging.as_posix()}")
         shutil.rmtree(staging, ignore_errors=False)
     staging.mkdir(parents=True, exist_ok=True)
+
+
+def _safe_extractall(zf: zipfile.ZipFile, dest: Path) -> None:
+    """安全解压：防御 ZIP slip（路径穿越）攻击。
+
+    标准 `zf.extractall` 不校验成员路径，恶意 ZIP 可通过 `../` 或绝对路径
+    让解压结果落在 `dest` 以外。本实现逐项校验：
+      1. 拒绝绝对路径；
+      2. 拒绝含 `..` 段的路径；
+      3. 解析目标绝对路径后，验证仍位于 `dest` 内。
+    任一项违反即立即退出，不写入任何文件。
+    """
+    dest_resolved = dest.resolve()
+    for name in zf.namelist():
+        member_path = Path(name)
+        if member_path.is_absolute():
+            _err(f"ZIP 内含绝对路径（可能的路径穿越攻击），已拒绝解压: {name}")
+        if ".." in member_path.parts:
+            _err(f"ZIP 内含 '..' 段（可能的路径穿越攻击），已拒绝解压: {name}")
+        target = (dest / name).resolve()
+        try:
+            target.relative_to(dest_resolved)
+        except ValueError:
+            _err(f"ZIP 内路径指向解压目录外（可能的路径穿越攻击），已拒绝解压: {name}")
+    zf.extractall(dest)
 
 
 def _resolve_package_root(extracted: Path) -> Path:
@@ -241,7 +272,7 @@ def main() -> None:
 
     _reset_staging(staging)
     with zipfile.ZipFile(bundle, "r") as zf:
-        zf.extractall(staging)
+        _safe_extractall(zf, staging)
 
     root = _resolve_package_root(staging)
     _info(f"解压目录: {staging.as_posix()}")

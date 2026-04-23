@@ -36,14 +36,20 @@ def _ok(msg: str) -> None:
 
 
 def _find_repo_root(start: Path) -> Path:
+    """仓库根 = `--repo` 参数指向的目录（默认当前工作目录）。
+
+    不再向上遍历父目录；若传入路径不是预期的仓库根（需要存在 `.aws-article` 或 `.git`），
+    直接报错退出，避免对非预期目录进行读写。
+    """
     cur = start.resolve()
-    for p in [cur] + list(cur.parents):
-        if (p / ".aws-article").is_dir():
-            return p
-    for p in [cur] + list(cur.parents):
-        if (p / ".git").is_dir():
-            return p
-    _err("未找到仓库根（向上查找含 .aws-article 或 .git 的目录失败）。请在仓库根目录执行。")
+    if not cur.is_dir():
+        _err(f"指定的仓库根不是目录：{cur}")
+    if (cur / ".aws-article").is_dir() or (cur / ".git").is_dir():
+        return cur
+    _err(
+        f"{cur} 不像仓库根（未检测到 .aws-article 或 .git 目录）。\n"
+        "请传入 --repo 指向真正的仓库根，或在仓库根下运行。"
+    )
 
 
 def _ensure_aws_article_dir(repo: Path) -> None:

@@ -3,6 +3,12 @@ name: aws-wechat-article-review
 description: 公众号审稿｜公众号校对｜敏感词检测｜内容合规 — 公众号发布前合规审查：敏感词扫描、错别字检测、政治合规、平台规范校验，一次性输出修改清单。面向公众号编辑、自媒体作者、合规岗。触发词：「审稿」「审核」「校对」「合规」「敏感词」「错别字」「稿子检查一下」「稿子帮我看看」「稿子写完了」「文章检查一下」「检查下有没有问题」「能不能发」「发布前检查」。需要多环节串联（写+审+排+配图+发）请走 aws-wechat-article-main。
 homepage: https://aiworkskills.cn
 url: https://github.com/aiworkskills/wechat-article-skills
+metadata:
+  openclaw:
+    requires:
+      env: []
+      bins:
+        - python3
 ---
 
 # 审稿与合规
@@ -11,43 +17,26 @@ url: https://github.com/aiworkskills/wechat-article-skills
 
 > **套件说明** · 本 skill 属 `aws-wechat-article-*` 一条龙套件（共 9 个 slug，入口 `aws-wechat-article-main`）。跨 skill 的相对引用依赖同一 `skills/` 目录，建议一并 `clawhub install` 全套。源码：<https://github.com/aiworkskills/wechat-article-skills>
 
-## 前置依赖 ⛔ 套件必须装齐
+## 能力披露（Capabilities）
 
-`aws-wechat-article-*` 一条龙套件的 9 个 skill 互相引用首次引导、环境校验与规则文档。**单独安装任一 skill 无法正常工作**，必须装齐 9 个：
+本 skill 为**纯本地规则/清单审稿**，零网络、零凭证、不调用任何外部脚本。
 
-```
-aws-wechat-article-main
-aws-wechat-article-topics
-aws-wechat-article-writing
-aws-wechat-article-review
-aws-wechat-article-formatting
-aws-wechat-article-images
-aws-wechat-article-publish
-aws-wechat-article-assets
-aws-wechat-sticker
-```
+- **凭证**：无
+- **网络**：无
+- **文件读**：仓库内 `.aws-article/config.yaml`、`.aws-article/writing-spec.md`（如有）、`.aws-article/presets/review-rules.yaml`（如有）、本篇 `draft.md` / `article.html` / `article.yaml`
+- **文件写**：本篇 `article.md` 定稿、审稿记录
+- **shell**：无（不调用任何脚本）
 
-**Agent：进入下方工作流前，先检查当前 `skills/` 目录下上述 9 个子目录是否都存在。**
+> 往期推荐链接的**自动补齐**由 [publish skill](../aws-wechat-article-publish/SKILL.md) 处理（那里才有微信 API 凭证与 `getdraft.py`）；本 skill 只做「若 `embeds.related_articles.manual` 非空则按其排占位符」与「若为空则在审稿输出中提示需 publish 补齐或手填」，**不直接调任何网络脚本**。
 
-**若任一缺失** → 停止本 skill 工作流，**不得**尝试代替用户跑脚本或继续；按下述话术回复用户：
+## 配套 skill（informational）
 
-> 本套件需 9 个 skill 都装齐才能使用。检测到缺少：`<列出缺失项>`。请执行：
->
-> ```bash
-> # macOS / Linux / Git Bash
-> for slug in aws-wechat-article-main aws-wechat-article-topics aws-wechat-article-writing aws-wechat-article-review aws-wechat-article-formatting aws-wechat-article-images aws-wechat-article-publish aws-wechat-article-assets aws-wechat-sticker; do
->   clawhub install "$slug"
-> done
-> ```
->
-> ```powershell
-> # Windows PowerShell
-> 'aws-wechat-article-main','aws-wechat-article-topics','aws-wechat-article-writing','aws-wechat-article-review','aws-wechat-article-formatting','aws-wechat-article-images','aws-wechat-article-publish','aws-wechat-article-assets','aws-wechat-sticker' | ForEach-Object { clawhub install $_ }
-> ```
->
-> 装完再回本 skill 让我继续。
+本 skill 是 `aws-wechat-article-*` 一条龙公众号套件的**审稿环节**（入口 `aws-wechat-article-main`）。工作流中的若干步骤会读取同级 `../aws-wechat-article-main/references/*.md` 等共享文档（首次引导、writing-spec、articlescreening schema 等）。
 
-**9 个全部存在** → 按下方工作流继续。
+- **套件完整装齐到同一 `skills/` 根目录**时，跨 skill 引用都能读到。
+- **单独安装本 skill** 时，跨 skill 引用的步骤会在读取阶段遇到 `file not found`；本 skill 内的纯本地规则/清单审稿仍可用。
+
+完整 9 slug 清单见 [源码仓库](https://github.com/aiworkskills/wechat-article-skills)。
 
 ## 路由
 
@@ -169,9 +158,10 @@ aws-wechat-sticker
 - **前三类（名片 / 小程序文字链 / 小程序卡片）**：若对应列表**未配置或为空或无非空关键字段**，**不追加**该类占位符，无需处理。
 - **往期 `{embed:link:…}`**：
   - 若合并后 **`manual` 已有** `name` + `url`：在文末追加对应占位符，**最多 3 条**（超过则只保留 3 条，优先与本文主题最相关的条目或按列表顺序取前 3）。
-  - 若合并后 **`manual` 缺失或为空**：在**仓库根**执行  
-    `python {baseDir}/../aws-wechat-article-publish/scripts/getdraft.py published-fields`  
-    输出为 JSON 数组（每项含 `title`、`digest`、`url`）。结合**本文主题与摘要**，从已发布正式文章中**选取至多 3 篇**相关条目；将选中项写入**本篇** `article.yaml` 的 **`embeds.related_articles.manual`**（每项 `name`（与占位一致、简短可读）+ `url`），再在 `article.md` 文末追加 `{embed:link:name}`。**勿改**全局 `config.yaml` 仅为本篇补链接。若命令失败（无凭证、网络、接口错误）或用户书面声明跳过往期：**不伪造** `manual`，可省略该类占位并在审稿说明中注明原因。
+  - 若合并后 **`manual` 缺失或为空**：**本 skill 不自动补齐**（以保持 review 纯本地、无网络、无凭证）。处理方式：
+    1. 首选由用户手动把已发表文章的 `name` + `url` 写入本篇 `article.yaml` 的 `embeds.related_articles.manual`（每项至多 3 条）；
+    2. 或在**进入 [publish skill](../aws-wechat-article-publish/SKILL.md)** 时，由 publish 在发布前调用 `getdraft.py published-fields` 自动补齐（publish 才有微信 API 凭证与网络能力）；
+    3. 若用户声明跳过往期：**不伪造** `manual`，在审稿说明中注明「本篇跳过往期推荐」，`{embed:link:…}` 占位省略即可。
 
 字段含义与示例见 **`{baseDir}/../aws-wechat-article-main/references/config.example.yaml`** 的 `embeds` 注释及 **[topics SKILL](../aws-wechat-article-topics/SKILL.md)** 文末「推荐链接」说明；排版脚本据此生成 `article.html`。
 

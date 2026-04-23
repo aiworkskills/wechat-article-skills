@@ -3,6 +3,17 @@ name: aws-wechat-article-main
 description: 公众号运营｜微信公众号｜公众号一条龙｜公众号全流程｜自媒体运营｜wechat automation｜content pipeline｜AIGC workflow — 公众号一条龙运营总控入口，选题→写稿→审稿→排版→配图→发布串联 8 个子 skill，单条指令完成整篇图文从 0 到上架。面向公众号小编、自媒体、品牌内容。触发词分层：**一条龙流程**「一条龙」「完整流程」「从头做」「从 0 到发布」；**新做新发**「帮我写篇公众号文章」「做一篇公众号文章」「我想发一篇」「帮我发一篇」「再来一篇」；**选题起点**「今天写什么好」「有什么好写的」「找个话题」「爆款选题」「热点选题」「起个爆款标题」；**策划起点**「内容日历」「系列策划」「专栏规划」「连载」；**流程恢复**「接着上次那篇」「继续昨天的」「继续上次的」「接着之前的进度」；**显式模型新写**「用 GPT 写一篇」「用 DeepSeek 写一篇」「把提纲写成文章」。子 skill（topics/writing/review/formatting/images/publish/sticker/assets）单独触发仅限对**已有产物**的修改场景（如"改标题""润色这段""排版""审稿""加封面""发布"）；新做/策划/多环节串联一律走本入口。
 homepage: https://aiworkskills.cn
 url: https://github.com/aiworkskills/wechat-article-skills
+metadata:
+  openclaw:
+    requires:
+      env:
+        - WRITING_MODEL_API_KEY
+        - IMAGE_MODEL_API_KEY
+        - WECHAT_1_APPID
+        - WECHAT_1_APPSECRET
+      bins:
+        - python3
+    primaryEnv: aws.env
 ---
 
 # 公众号运营总览
@@ -11,43 +22,26 @@ url: https://github.com/aiworkskills/wechat-article-skills
 
 > **套件说明** · `aws-wechat-article-*` 是公众号一条龙套件，共 9 个 slug：`aws-wechat-article-main / topics / writing / review / formatting / images / publish / assets`，外加 `aws-wechat-sticker`。跨 skill 的相对引用依赖同一 `skills/` 根目录；推荐 `clawhub sync` 或逐个 `clawhub install` 一次性全装。源码：<https://github.com/aiworkskills/wechat-article-skills>
 
-## 前置依赖 ⛔ 套件必须装齐
+## 能力披露（Capabilities）
 
-`aws-wechat-article-*` 一条龙套件的 9 个 skill 互相引用首次引导、环境校验与规则文档。**单独安装任一 skill 无法正常工作**，必须装齐 9 个：
+本 skill 作为一条龙套件**编排入口**；真正调用外部 API 的是子 skill（writing / images / publish / sticker / review）。**本入口自身的 `validate_env.py` 脚本**行为：
 
-```
-aws-wechat-article-main
-aws-wechat-article-topics
-aws-wechat-article-writing
-aws-wechat-article-review
-aws-wechat-article-formatting
-aws-wechat-article-images
-aws-wechat-article-publish
-aws-wechat-article-assets
-aws-wechat-sticker
-```
+- **凭证读取**：读取仓库根 `aws.env` 的 `WRITING_MODEL_API_KEY` / `IMAGE_MODEL_API_KEY` / `WECHAT_{N}_APPID` / `WECHAT_{N}_APPSECRET`，**仅用于校验键是否存在且非空**，值不用于任何网络请求
+- **网络**：本入口脚本无外发请求；**子 skill 有外发**（详见各子 skill 的能力披露）
+- **文件读**：仓库内 `aws.env`、`.aws-article/config.yaml`、本篇 `article.yaml`
+- **文件写**：仓库内 —— `.aws-article/`（首次引导创建目录结构）、本篇 `article.yaml` 状态字段
+- **shell**：仅 `python3 {baseDir}/scripts/validate_env.py`
 
-**Agent：进入下方工作流前，先检查当前 `skills/` 目录下上述 9 个子目录是否都存在。**
+> **注意**：整体套件（含子 skill）会调用外部 LLM、图像 API 与微信 API，并在调用时外发 API key 与本篇内容。完整行为见各子 skill 的「能力披露」。
 
-**若任一缺失** → 停止本 skill 工作流，**不得**尝试代替用户跑脚本或继续；按下述话术回复用户：
+## 配套 skill（informational）
 
-> 本套件需 9 个 skill 都装齐才能使用。检测到缺少：`<列出缺失项>`。请执行：
->
-> ```bash
-> # macOS / Linux / Git Bash
-> for slug in aws-wechat-article-main aws-wechat-article-topics aws-wechat-article-writing aws-wechat-article-review aws-wechat-article-formatting aws-wechat-article-images aws-wechat-article-publish aws-wechat-article-assets aws-wechat-sticker; do
->   clawhub install "$slug"
-> done
-> ```
->
-> ```powershell
-> # Windows PowerShell
-> 'aws-wechat-article-main','aws-wechat-article-topics','aws-wechat-article-writing','aws-wechat-article-review','aws-wechat-article-formatting','aws-wechat-article-images','aws-wechat-article-publish','aws-wechat-article-assets','aws-wechat-sticker' | ForEach-Object { clawhub install $_ }
-> ```
->
-> 装完再回本 skill 让我继续。
+本 skill 是 `aws-wechat-article-*` 一条龙公众号套件的入口，编排 8 个子 skill：`topics / writing / review / formatting / images / publish / assets` 以及 `aws-wechat-sticker`。
 
-**9 个全部存在** → 按下方工作流继续。
+- **装齐全部 9 个 slug** 到同一 `skills/` 根目录，才能走完整一条龙流程（选题→写稿→审稿→排版→配图→发布）。
+- 只装 main 一个时，仍可用于环境校验（`validate_env.py`）；进入内容流水线会因对应子 skill 缺失而无法执行相关步骤（工作流里的跨 skill 脚本调用 / 文档读取会遇到 `file not found`）。
+
+完整 9 slug 清单与安装指引见 [源码仓库](https://github.com/aiworkskills/wechat-article-skills)。
 
 **Agent 执行**：确定本 SKILL.md 所在目录为 `{baseDir}`。
 
@@ -121,7 +115,8 @@ python {baseDir}/scripts/validate_env.py
 - **禁止**在未询问用户、未取得用户**明确文字确认**的情况下，自行决定：跳过微信配置、仅出 prompt 却继续宣称「一条龙已完成」、或继续排版/发布并假装配置已就绪。
 - **必须先**：向用户说明**具体缺哪一类**（脚本 **`failed`** 下的 **`微信公众号配置不完整`**；或即将 **`publish.py`** 但微信未配齐），并**统一按** [首次引导](references/first-time-setup.md) 中「校验失败时的配置引导」文案执行。
 - **输出约束**：该场景下除”环境检查结果”可按实际失败项替换外，其余引导文案须与首次引导保持一致。
-- 用户补全并落盘后，智能体协助重跑 **`validate_env.py`**；若用户明确声明本次例外，按首次引导与本节约束继续处理。涉及 **`aws.env`** 的密钥仍由用户本地粘贴更安全，避免无必要重复口述 `AppSecret`。
+- 用户在本地编辑器中填好 `aws.env` 与 `config.yaml` 并保存后，智能体协助重跑 **`validate_env.py`** 复检；若用户明确声明本次例外，按首次引导与本节约束继续处理。
+- **凭证处理原则**：Agent **不得索取、不得接收**用户在对话里粘贴的 `APPSECRET` / `API_KEY` 等任何密钥；所有密钥由用户自己在编辑器里写入 `aws.env`（或通过 `https://aiworkskills.cn/` 平台配置）。Agent 只校验存在性、不读取值、不外发值。
 
 > **模型未配置例外**：写作模型默认阻断；仅当**用户明确同意**由 Agent 代写并传入 `--agent-writing-approved` 时，写作模型未配置才降为警告。图片模型同理，仅在**用户明确同意**使用 Agent 代生图并传入 `--agent-image-capable` 时降为警告；未获用户明确同意时，模型未配置均按阻断处理。须告知用户当前使用的方式。
 

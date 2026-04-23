@@ -3,6 +3,16 @@ name: aws-wechat-sticker
 description: 公众号贴图｜九宫格｜多图推送｜图片消息｜表情包 — 贴图与多图推送：从创意构思、AI 生图到公众号图片消息发布全流程，含九宫格自动排布、多图压缩、组图打包。面向公众号运营、自媒体、IP 账号。触发词：「贴图」「多图推送」「发组图」「图片消息」「九宫格」「做一组图」「图片帖子」「发几张图」「不写正文发图」「只发图不写字」。是文章内配图/封面请走 aws-wechat-article-images；需要多环节串联（写+审+排+配图+发）请走 aws-wechat-article-main。
 homepage: https://aiworkskills.cn
 url: https://github.com/aiworkskills/wechat-article-skills
+metadata:
+  openclaw:
+    requires:
+      env:
+        - IMAGE_MODEL_API_KEY
+        - WECHAT_1_APPID
+        - WECHAT_1_APPSECRET
+      bins:
+        - python3
+    primaryEnv: aws.env
 ---
 
 # 贴图 / 多图推送
@@ -11,43 +21,26 @@ url: https://github.com/aiworkskills/wechat-article-skills
 
 > **套件说明** · 本 skill 属 `aws-wechat-article-*` 一条龙套件（共 9 个 slug，入口 `aws-wechat-article-main`）。跨 skill 的相对引用依赖同一 `skills/` 目录，建议一并 `clawhub install` 全套。源码：<https://github.com/aiworkskills/wechat-article-skills>
 
-## 前置依赖 ⛔ 套件必须装齐
+## 能力披露（Capabilities）
 
-`aws-wechat-article-*` 一条龙套件的 9 个 skill 互相引用首次引导、环境校验与规则文档。**单独安装任一 skill 无法正常工作**，必须装齐 9 个：
+本 skill 编排贴图与多图推送，调用同套件的 `image_create.py`（images）生图；可选调用 `publish.py` 发布。**会把图片 prompt 发给外部图像 API；若走发布路径，会把图片作为 POST body 上传到微信 API。** 具体行为：
 
-```
-aws-wechat-article-main
-aws-wechat-article-topics
-aws-wechat-article-writing
-aws-wechat-article-review
-aws-wechat-article-formatting
-aws-wechat-article-images
-aws-wechat-article-publish
-aws-wechat-article-assets
-aws-wechat-sticker
-```
+- **凭证读取**：`aws.env` 的 `IMAGE_MODEL_API_KEY`；走发布时额外读取 `WECHAT_{N}_APPID` / `WECHAT_{N}_APPSECRET`
+- **凭证外发**：`IMAGE_MODEL_API_KEY` 以 `Authorization: Bearer` 头发送到 `image_model.base_url` 外部端点；`WECHAT_{N}_APPID/APPSECRET` 用于换 `access_token` 后调用微信 API
+- **内容外发**：图片 prompt 发给图像 API；图片文件（PNG/WEBP）发给微信 `material/add_material` / `draft/add`
+- **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`imgs/prompts/*.md`
+- **文件写**：本篇 `imgs/*.{png,webp}`、`imgs/outline.md`、`article.yaml` 状态字段
+- **shell**：`python3 {baseDir}/../aws-wechat-article-images/scripts/image_create.py`；可选 `python3 {baseDir}/../aws-wechat-article-publish/scripts/publish.py`
 
-**Agent：进入下方工作流前，先检查当前 `skills/` 目录下上述 9 个子目录是否都存在。**
+## 配套 skill（informational）
 
-**若任一缺失** → 停止本 skill 工作流，**不得**尝试代替用户跑脚本或继续；按下述话术回复用户：
+本 skill 属 `aws-wechat-article-*` 一条龙公众号套件的**贴图/多图推送专用分支**（入口 `aws-wechat-article-main`）。工作流中的生图步骤与发布步骤依赖同套件其他 slug 提供的能力。
 
-> 本套件需 9 个 skill 都装齐才能使用。检测到缺少：`<列出缺失项>`。请执行：
->
-> ```bash
-> # macOS / Linux / Git Bash
-> for slug in aws-wechat-article-main aws-wechat-article-topics aws-wechat-article-writing aws-wechat-article-review aws-wechat-article-formatting aws-wechat-article-images aws-wechat-article-publish aws-wechat-article-assets aws-wechat-sticker; do
->   clawhub install "$slug"
-> done
-> ```
->
-> ```powershell
-> # Windows PowerShell
-> 'aws-wechat-article-main','aws-wechat-article-topics','aws-wechat-article-writing','aws-wechat-article-review','aws-wechat-article-formatting','aws-wechat-article-images','aws-wechat-article-publish','aws-wechat-article-assets','aws-wechat-sticker' | ForEach-Object { clawhub install $_ }
-> ```
->
-> 装完再回本 skill 让我继续。
+- **至少需要同时安装** `aws-wechat-article-images`（用于生图）；若要走发布链路，建议再装 `aws-wechat-article-publish`。
+- **套件完整装齐到同一 `skills/` 根目录**时，跨 skill 引用都能读到。
+- **单独安装本 skill** 时，生图/发布相关步骤会在执行阶段遇到缺失文件；本 skill 内的选题规划、图序、风格约定等本地步骤仍可用。
 
-**9 个全部存在** → 按下方工作流继续。
+完整 9 slug 清单见 [源码仓库](https://github.com/aiworkskills/wechat-article-skills)。
 
 ## 路由
 

@@ -28,15 +28,63 @@ Agent 可读取 `imgs/prompts/*.md` 中的 prompt 文件后用自身多模态能
 import argparse
 import base64
 import binascii
+import ipaddress
 import json
 import re
+import socket
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
 import yaml
+
+
+def _is_safe_download_url(url: str) -> tuple[bool, str]:
+    """SSRF 防御：校验从 API 响应里拿到的 URL 是否可安全下载。
+
+    拒绝：
+      - 非 http/https scheme
+      - 空 hostname
+      - 解析到内网 / 环回 / 链路本地 / 保留 / 多播 地址（防止 IP/DNS rebinding）
+    返回 `(is_safe, reason)`；is_safe=False 时 reason 含拒绝原因。
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except Exception as e:
+        return False, f"URL 解析失败: {e}"
+    if parsed.scheme not in ("http", "https"):
+        return False, f"仅允许 http/https，拒绝 {parsed.scheme}://"
+    hostname = parsed.hostname
+    if not hostname:
+        return False, "URL 缺少 hostname"
+    try:
+        addrinfo = socket.getaddrinfo(hostname, None)
+        ips = {info[4][0] for info in addrinfo}
+    except Exception as e:
+        return False, f"无法解析 hostname {hostname}: {e}"
+    for ip_str in ips:
+        try:
+            ip = ipaddress.ip_address(ip_str)
+        except ValueError:
+            return False, f"无效 IP: {ip_str}"
+        if ip.is_loopback or ip.is_private or ip.is_link_local or ip.is_unspecified or ip.is_reserved or ip.is_multicast:
+            return False, f"拒绝访问内网/保留地址: {hostname} → {ip}"
+    return True, ""
+
+
+def _safe_urlopen_download(url: str, timeout: int = 60):
+    """下载专用 urlopen：对 URL 做 SSRF 校验后再下载；不合规抛 URLError。
+
+    专用于下载 API 响应中返回的图片 URL；POST 到用户配置端点的调用不经过此函数，
+    那类请求由用户自己控制 `image_model.base_url`。
+    """
+    ok, reason = _is_safe_download_url(url)
+    if not ok:
+        raise urllib.error.URLError(f"SSRF 防御拒绝: {reason}")
+    return urllib.request.urlopen(url, timeout=timeout)
 
 
 def _err(msg: str):
@@ -246,7 +294,7 @@ def _image_bytes_from_openai_like_result(result: dict, url: str) -> bytes:
         if img_url:
             _info("下载图片...")
             try:
-                with urllib.request.urlopen(img_url, timeout=60) as r:
+                with _safe_urlopen_download(img_url, timeout=60) as r:
                     return r.read()
             except urllib.error.HTTPError as e:
                 error_body = e.read().decode("utf-8", errors="replace")
@@ -275,7 +323,7 @@ def _image_bytes_from_openai_like_result(result: dict, url: str) -> bytes:
                 if s.startswith("http://") or s.startswith("https://"):
                     _info("下载图片...")
                     try:
-                        with urllib.request.urlopen(s, timeout=60) as r:
+                        with _safe_urlopen_download(s, timeout=60) as r:
                             return r.read()
                     except urllib.error.HTTPError as e:
                         error_body = e.read().decode("utf-8", errors="replace")
@@ -287,7 +335,7 @@ def _image_bytes_from_openai_like_result(result: dict, url: str) -> bytes:
                     u = m.group(0).rstrip(").,;")
                     _info("下载图片...")
                     try:
-                        with urllib.request.urlopen(u, timeout=60) as r:
+                        with _safe_urlopen_download(u, timeout=60) as r:
                             return r.read()
                     except urllib.error.HTTPError as e:
                         error_body = e.read().decode("utf-8", errors="replace")
@@ -303,7 +351,7 @@ def _image_bytes_from_openai_like_result(result: dict, url: str) -> bytes:
                         if u:
                             _info("下载图片...")
                             try:
-                                with urllib.request.urlopen(u, timeout=60) as r:
+                                with _safe_urlopen_download(u, timeout=60) as r:
                                     return r.read()
                             except urllib.error.HTTPError as e:
                                 error_body = e.read().decode("utf-8", errors="replace")
@@ -314,7 +362,7 @@ def _image_bytes_from_openai_like_result(result: dict, url: str) -> bytes:
                     if u and (u.startswith("http://") or u.startswith("https://")):
                         _info("下载图片...")
                         try:
-                            with urllib.request.urlopen(u, timeout=60) as r:
+                            with _safe_urlopen_download(u, timeout=60) as r:
                                 return r.read()
                         except urllib.error.HTTPError as e:
                             error_body = e.read().decode("utf-8", errors="replace")
@@ -513,7 +561,7 @@ def _generate_image_qwen(model_cfg: dict, prompt: str, size: str = None,
                 if img_url:
                     _info("下载图片...")
                     try:
-                        with urllib.request.urlopen(img_url, timeout=60) as r:
+                        with _safe_urlopen_download(img_url, timeout=60) as r:
                             return r.read()
                     except urllib.error.HTTPError as e:
                         error_body = e.read().decode("utf-8", errors="replace")
@@ -528,7 +576,7 @@ def _generate_image_qwen(model_cfg: dict, prompt: str, size: str = None,
             if img_url:
                 _info("下载图片...")
                 try:
-                    with urllib.request.urlopen(img_url, timeout=60) as r:
+                    with _safe_urlopen_download(img_url, timeout=60) as r:
                         return r.read()
                 except urllib.error.HTTPError as e:
                     error_body = e.read().decode("utf-8", errors="replace")

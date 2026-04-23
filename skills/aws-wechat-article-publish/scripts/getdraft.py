@@ -38,15 +38,19 @@ def _err(msg: str) -> NoReturn:
 
 
 def _repo_root() -> Path:
-    """自脚本目录向上查找 `.aws-article/config.yaml`；多处存在时取最上层目录（常见：工作区根下的配置）。"""
-    here = Path(__file__).resolve().parent
-    outermost: Path | None = None
-    for d in here.parents:
-        if (d / ".aws-article" / "config.yaml").is_file():
-            outermost = d
-    if outermost is not None:
-        return outermost
-    return Path(__file__).resolve().parents[3]
+    """定位仓库根：要求脚本在当前工作目录（`Path.cwd()`）下能读到 `.aws-article/config.yaml`。
+
+    不再向上遍历脚本的父目录、也不再 fallback 到脚本所在的固定父路径，
+    避免在非预期的工作区触发配置读取。
+    """
+    cwd = Path.cwd().resolve()
+    if (cwd / ".aws-article" / "config.yaml").is_file():
+        return cwd
+    raise SystemExit(
+        "未在当前工作目录下找到 .aws-article/config.yaml。\n"
+        f"当前目录：{cwd}\n"
+        "请在仓库根（含 .aws-article/config.yaml 的目录）下运行本脚本。"
+    )
 
 
 def _load_yaml(path: Path) -> dict:

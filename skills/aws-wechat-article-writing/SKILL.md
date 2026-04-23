@@ -3,6 +3,14 @@ name: aws-wechat-article-writing
 description: 公众号写稿｜长文写作｜文章润色｜改写续写 — 公众号长文 AI 写作，从话题或提纲生成完整初稿，支持改写、续写、润色、开头结尾优化，可调 DeepSeek / GPT / Claude 或由 Agent 代写。面向自媒体作者、公众号运营、品牌文案。触发词（**单独触发仅限对已有稿子的修改**）：「改写」「润色」「续写」「续一段」「往下写」「接着这段写」「重写开头」「改结尾」「调整语气」「这段润色下」「把这段改活泼点」「优化用词」「用 GPT 重写」「用 DeepSeek 重写」。新写一篇请走 aws-wechat-article-main（main 内部会调用本 skill 生成初稿）；需要多环节串联（写+审+排+配图+发）也走 main。
 homepage: https://aiworkskills.cn
 url: https://github.com/aiworkskills/wechat-article-skills
+metadata:
+  openclaw:
+    requires:
+      env:
+        - WRITING_MODEL_API_KEY
+      bins:
+        - python3
+    primaryEnv: aws.env
 ---
 
 # 长文写作
@@ -11,43 +19,28 @@ url: https://github.com/aiworkskills/wechat-article-skills
 
 > **套件说明** · 本 skill 属 `aws-wechat-article-*` 一条龙套件（共 9 个 slug，入口 `aws-wechat-article-main`）。跨 skill 的相对引用依赖同一 `skills/` 目录，建议一并 `clawhub install` 全套。源码：<https://github.com/aiworkskills/wechat-article-skills>
 
-## 前置依赖 ⛔ 套件必须装齐
+## 能力披露（Capabilities）
 
-`aws-wechat-article-*` 一条龙套件的 9 个 skill 互相引用首次引导、环境校验与规则文档。**单独安装任一 skill 无法正常工作**，必须装齐 9 个：
+本 skill 调用 `write.py` 生成文章初稿，**会把文章内容发送给用户配置的 LLM 端点**。使用前请阅读以下全部行为说明：
 
-```
-aws-wechat-article-main
-aws-wechat-article-topics
-aws-wechat-article-writing
-aws-wechat-article-review
-aws-wechat-article-formatting
-aws-wechat-article-images
-aws-wechat-article-publish
-aws-wechat-article-assets
-aws-wechat-sticker
-```
+- **凭证读取**：`write.py` 读取仓库根 `aws.env` 的 `WRITING_MODEL_API_KEY`
+- **凭证外发**：该 API key 以 `Authorization: Bearer <key>` 头**发送到**用户在 `config.yaml.writing_model.base_url` 配置的外部端点（常见为 DeepSeek / OpenAI / Anthropic 等 Chat Completions 兼容 API）。**请使用专用 key 并配置可信端点或内部代理**
+- **内容外发**：Prompt 内包含本篇 `article.yaml` / `topic-card.md` / 合并配置 / 用户通过 `--reference` 指定的参考文档 `.md` 全文 → 整体 POST 给上述端点
+- **文件读（仓库内）**：`.aws-article/config.yaml`、本篇 `article.yaml`、`topic-card.md`、`.aws-article/assets/stock/references/*.md`
+- **文件读（仓库外）**：若仓库内 `.aws-article/` 缺失，`write.py` 会从用户家目录 `~/.aws-article/` 读取 `writing-spec.md` 与 `presets/`（**只读预设，不读凭证**）
+- **文件写**：仅本篇目录下 `draft.md`、`article.md`
+- **shell**：仅 `python3 {baseDir}/scripts/write.py`
 
-**Agent：进入下方工作流前，先检查当前 `skills/` 目录下上述 9 个子目录是否都存在。**
+可使用 `write.py prompt` 子命令**只输出 prompt JSON 不调用 LLM**，由 Agent 代写 —— 想避免把内容发给第三方时用这条路径。
 
-**若任一缺失** → 停止本 skill 工作流，**不得**尝试代替用户跑脚本或继续；按下述话术回复用户：
+## 配套 skill（informational）
 
-> 本套件需 9 个 skill 都装齐才能使用。检测到缺少：`<列出缺失项>`。请执行：
->
-> ```bash
-> # macOS / Linux / Git Bash
-> for slug in aws-wechat-article-main aws-wechat-article-topics aws-wechat-article-writing aws-wechat-article-review aws-wechat-article-formatting aws-wechat-article-images aws-wechat-article-publish aws-wechat-article-assets aws-wechat-sticker; do
->   clawhub install "$slug"
-> done
-> ```
->
-> ```powershell
-> # Windows PowerShell
-> 'aws-wechat-article-main','aws-wechat-article-topics','aws-wechat-article-writing','aws-wechat-article-review','aws-wechat-article-formatting','aws-wechat-article-images','aws-wechat-article-publish','aws-wechat-article-assets','aws-wechat-sticker' | ForEach-Object { clawhub install $_ }
-> ```
->
-> 装完再回本 skill 让我继续。
+本 skill 是 `aws-wechat-article-*` 一条龙公众号套件的**写稿环节**（入口 `aws-wechat-article-main`）。工作流中的若干步骤会读取同级 `../aws-wechat-article-main/references/*.md` 等共享文档（首次引导、env/config 示例、articlescreening schema 等）。
 
-**9 个全部存在** → 按下方工作流继续。
+- **套件完整装齐到同一 `skills/` 根目录**时，跨 skill 引用都能读到。
+- **单独安装本 skill** 时，跨 skill 引用的步骤会在读取阶段遇到 `file not found`；本 skill 内的纯本地步骤仍可用。
+
+完整 9 slug 清单见 [源码仓库](https://github.com/aiworkskills/wechat-article-skills)。
 
 ## 路由
 
