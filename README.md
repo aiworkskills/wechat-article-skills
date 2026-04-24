@@ -53,7 +53,7 @@ Claw 会自动把仓库拉到本地、把 9 个技能全部挂进对话，全程
 
 ```bash
 clawhub install aws-wechat-article-main       # 必装 · 一条龙总控
-clawhub install aws-wechat-article-assets     # 必装 · 素材库 / .aws 预设包
+clawhub install aws-wechat-article-assets     # 必装 · 业务资料库 / .aws 预设包
 clawhub install aws-wechat-article-topics
 clawhub install aws-wechat-article-writing
 clawhub install aws-wechat-article-review
@@ -116,11 +116,10 @@ cd wechat-article-skills
 │   ├── cover-styles/               #   封面风格
 │   ├── image-styles/               #   配图风格
 │   └── sticker-styles/             #   贴图风格
-├── assets/                         # 4 类素材
-│   ├── brand/                      #   品牌素材
-│   ├── covers/                     #   封面库
-│   ├── stock/images/               #   图库入库
-│   └── stock/references/           #   图库说明
+├── products/                       # 用户业务资料库（按产品名分目录，AI 写第一份业务介绍时自动建）
+│   └── {产品名}/                   #   每个产品一个独立目录
+│       ├── 项目介绍.md             #     业务介绍 .md 直挂产品根（命名按行业）
+│       └── images/                 #     业务配图（含同名说明 .md）
 └── tmp/
 ```
 
@@ -158,9 +157,11 @@ cd wechat-article-skills
 | **配图** | 14 种视觉风格 × 6 种图片类型 | 「配个图」 |
 | **发布** | 微信 API 直发，多账号，自动压缩 | 「发布」 |
 | **贴图** | 多图推送独立流程（小绿书内侧中） | 「做一组贴图」 |
-| **素材** | 图库管理 + `.aws` 预设包导入导出 | 「导入这个预设」 |
+| **素材** | **业务资料库**（按产品名分目录）+ 图库 + `.aws` 预设包导入导出 | 「导入这个预设」「保存为产品介绍」 |
 
 每一步都会暂停等你确认，不会自动跳走。全程可以打断、修改、重来。
+
+> **业务资料库（新）**：写涉及自家业务的文章前 AI 自动查 `.aws-article/products/{产品名}/`；聊出来的产品介绍也会引导你存进去，下次直接复用——AI 不用每次重新问"你是干什么的"。
 
 ---
 
@@ -319,6 +320,7 @@ IMAGE_MODEL_API_KEY=sk-...
 
 完整变更历史见 [CHANGELOG.md](CHANGELOG.md)。最近几次：
 
+- **2026-04-24** · 引入 `products/{产品名}/` 业务资料库（读+写双向流程）；`stock_image_ingest.py` → `product_image_ingest.py`（破坏性，含老用户迁移命令）
 - **2026-04-22** · assets skill 支持 `.aws` 永久 URL 导入；强化 skill 描述与套件完整性校验
 - **2026-04-15** · 排版 skill 目录结构整理，同步各 skill 与脚本更新
 - **2026-04-03** · 新增 assets skill：图片入库 + `.aws` 预设包导入导出

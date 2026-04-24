@@ -27,7 +27,7 @@ metadata:
 - **凭证外发**：该 key 以 `Authorization: Bearer` 头发送到 `image_model.base_url` 指定端点（常见为 DALL-E、gpt-image 兼容 `/v1/images/generations`，或多模态模型 `/v1/chat/completions`，具体由用户配置）
 - **内容外发**：每张图片的 prompt（文本）作为 JSON POST body 发送；prompt 内容来自本篇 `imgs/prompts/*.md`（可能包含文章标题、章节摘要）
 - **下图 SSRF 防御**：若 API 响应返回图片 URL（而非 base64），脚本**仅允许下载 http/https 公网地址**；内网 / 环回 / 链路本地 / 保留地址全部拒绝（防止恶意或被劫持的模型端点把脚本当作 SSRF 跳板）
-- **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`article.md`、`imgs/prompts/*.md`、可选 `.aws-article/assets/stock/images/*`
+- **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`article.md`、`imgs/prompts/*.md`、`.aws-article/products/{产品名}/images/*`（业务配图库，本篇涉及用户业务时优先复用）
 - **文件写**：本篇 `imgs/*.{png,webp}`、可选 `img_analysis.md`
 - **shell**：仅 `python3 {baseDir}/scripts/image_create.py`、`user_image_prepare.py`
 
@@ -80,8 +80,8 @@ metadata:
 
 | 类型 | 要求 |
 |------|------|
-| **封面** | **必须**通过 **`image_create.py`** 生成（`generate` 或 `batch` 读 `imgs/prompts/*.md`），产出并保存为文章目录下的 **`cover.png`**（或 `cover.jpg` / `cover.jpeg` / `cover.webp`）。**禁止**将 `.aws-article/assets/stock/images/`（或其它素材库文件）**直接复制**为 `cover.*` 充当封面。**例外**：用户**明确上传**封面文件并声明「封面只用这一张」时，可跳过脚本，须在 **`img_analysis.md`** 与审稿记录中注明「用户指定封面」。 |
-| **正文** | **可直接使用参考资料库**：`.aws-article/assets/stock/images/`（先读同名 `.md` 再复制到本篇 `imgs/` 或引用路径），见下文「正文配图来源优先级」。缺图时再走 **`image_create.py`** 或 Agent 降级生图。 |
+| **封面** | **必须**通过 **`image_create.py`** 生成（`generate` 或 `batch` 读 `imgs/prompts/*.md`），产出并保存为文章目录下的 **`cover.png`**（或 `cover.jpg` / `cover.jpeg` / `cover.webp`）。**禁止**将 `.aws-article/products/{产品名}/images/`（或其它素材库文件）**直接复制**为 `cover.*` 充当封面。**例外**：用户**明确上传**封面文件并声明「封面只用这一张」时，可跳过脚本，须在 **`img_analysis.md`** 与审稿记录中注明「用户指定封面」。 |
+| **正文** | **优先使用业务配图库**：`.aws-article/products/{相关产品}/images/`（先读同名 `.md` 再复制到本篇 `imgs/` 或引用路径），见下文「正文配图来源优先级」。缺图时再走 **`image_create.py`** 或 Agent 降级生图。 |
 
 > 说明：全局 `config.yaml` 的 **`image_source: user`** 表示「正文以用户/素材引用为主」；**不豁免**上述「封面须脚本生成」规则，除非用户同时提供了封面文件并声明仅用该封面。
 
@@ -100,13 +100,13 @@ metadata:
 
 ### 正文配图来源优先级（Agent）⛔
 
-**仅适用于正文插图**（不含封面；封面见上文「封面 vs 正文」）。**在**为正文 `placeholder` 调用 `image_create.py`、写入 `imgs/prompts/` **之前**，须先判断是否可用**本地素材库**，避免教程类、产品界面类文章「有截图资源却重新生成」：
+**仅适用于正文插图**（不含封面；封面见上文「封面 vs 正文」）。**在**为正文 `placeholder` 调用 `image_create.py`、写入 `imgs/prompts/` **之前**，须先判断是否可用**本地业务配图库**，避免**业务相关文章**（教程 / 产品介绍 / 案例 / 自家界面截图）「有现成业务配图却重新生成」：
 
-1. **仓库素材库（参考资料库）**：列出并阅读 **`.aws-article/assets/stock/images/`** 下 **同名 `.md`**（含路径与画面说明），按主题匹配后，在 `article.md` 中直接引用对应 **`.png` / `.webp`**（或复制到本篇 `imgs/` 再引用）。**与正文严格相关才用**，避免硬凑。
+1. **仓库业务配图库**：若本篇涉及用户业务，先 `ls .aws-article/products/`，进入相关产品的 **`images/`** 子目录，列出并阅读 **同名 `.md`**（含路径与画面说明），按主题匹配后，在 `article.md` 中直接引用对应 **`.png` / `.webp`**（或复制到本篇 `imgs/` 再引用）。**与正文严格相关才用**，避免硬凑。
 2. **用户上传 / 本篇 `image_source: user`**：用户提供的图或上述引用策略，走「用户供图模式」与 `img_analysis.md`（正文部分）。
 3. **仍缺图或须原创插画**：再进入 **Type × Style**、`imgs/prompts/` 与 **`image_create.py`**（或 Agent 降级生图）。
 
-> 说明：素材库属「仓库内预设资源」，**不必**等用户手动上传才查；与「用户供图模式」并列，而非仅附属于后者。
+> 说明：业务配图库属「仓库内业务资源」，**不必**等用户手动上传才查；与「用户供图模式」并列，而非仅附属于后者。
 
 ### 第1步：环境检查 + 本篇约束与文章
 
@@ -117,7 +117,7 @@ metadata:
 
 ### 第2步：解析配图标记
 
-提取所有 `![类型：描述](placeholder)`。`实证` 类型提示用户提供素材或从 `.aws-article/assets/` 搜索。
+提取所有 `![类型：描述](placeholder)`。`实证` 类型提示用户提供素材或从 `.aws-article/products/{相关产品}/images/` 搜索（业务配图库）。
 
 ### 用户供图模式（新增分支）
 
@@ -146,7 +146,7 @@ metadata:
 
 **可用素材库**（与上文「配图来源优先级」一致）：
 
-- `.aws-article/assets/stock/images/`：本地参考/产品截图目录；**优先读同名 `.md` 再选图**。若已用素材库满足正文，可不再走生图 API。
+- `.aws-article/products/{产品名}/images/`：业务配图库（产品截图、品牌素材等）；本篇涉及用户业务时**优先读同名 `.md` 再选图**。若已用业务配图满足正文，可不再走生图 API。
 
 ### 第3步：确定风格
 

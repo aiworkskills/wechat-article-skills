@@ -62,7 +62,7 @@ cover_style: 简约             # Broad preference alongside cover presets; mini
 image_density: 每节一图       # In-article image density (one per section / moderate / few / optional)
 caption_style: 有图注         # Caption style (with captions / no captions / key images only)
 multi_image_count: 6          # Default image count for multi-image scenarios (for generation or layout reference)
-# Assets (covers, brand header/footer images, etc.) go in .aws-article/assets/
+# Business assets (product intros, screenshots, brand images) go in .aws-article/products/{product-name}/
 
 # ── Review ──
 review_required:              # Required review checks (checked items appear in self-check / review report)

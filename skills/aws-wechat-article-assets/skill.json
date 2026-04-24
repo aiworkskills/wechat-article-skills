@@ -2,10 +2,10 @@
   "name": "aws-wechat-article-assets",
   "version": "0.2.0",
   "author": "aiworkskills",
-  "description": "图片入库 stock/images + 同名 md；导入 .aws 预设包合并 presets，config.yaml 仅首次复制、已有则输出差异。",
+  "description": "用户业务资料库（按产品名分目录于 .aws-article/products/{产品名}/，介绍 .md 直挂产品根 + images/ 配图含同名 .md）+ 预设包管理；业务图入库 product_image_ingest.py（--product 必填）；导入 .aws 预设包合并 presets，config.yaml 仅首次复制、已有则输出差异。",
   "license": "MIT",
   "homepage": "https://github.com/aiworkskills/wechat-article-skills",
-  "tags": ["wechat", "公众号", "assets", "stock-images", "presets"],
+  "tags": ["wechat", "公众号", "assets", "products", "business-assets", "presets"],
   "permissions": ["filesystem", "shell"],
   "entryPoint": {
     "type": "natural",

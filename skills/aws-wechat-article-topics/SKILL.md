@@ -23,7 +23,7 @@ metadata:
 
 - **凭证**：无
 - **网络**：Agent 可能使用 `web_search` / `web_fetch`（Claude Code 内置能力，非本 skill 脚本层发起）
-- **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、可选 `.aws-article/assets/stock/references/*.md`
+- **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`.aws-article/products/{产品名}/*.md`（业务介绍 .md，直接挂在产品根；选题涉及用户业务时必读）
 - **文件写**：本篇目录下 `topic-card.md`、`research.md`；更新本篇 `article.yaml`
 - **shell**：可能调用同仓库的 `python3 {baseDir}/../aws-wechat-article-publish/scripts/article_init.py`
 
@@ -102,7 +102,7 @@ metadata:
 
 **须先读** **`.aws-article/config.yaml`**：选题边界、`topic_direction`、`update_frequency`、账号定位等以其为准。若本篇目录已存在 **`article.yaml`**（例如已定题），可一并读取已有 **`title` / `digest`** 等，避免与后序冲突。尚无本篇文件时，以用户当次说明与 skill 默认为准。
 
-- 专业场景参考：`.aws-article/assets/stock/references/`（本地参考文档目录，含产品介绍、行业案例与术语资料，可供选题参考）**你可以读取文件夹内容自行选择是否使用**（如果需要使用，需严格匹配选题方向后使用）
+- 业务资料库：**若选题涉及用户自身业务（产品/软件/服务）**，先 `ls .aws-article/products/`，进入相关产品目录**必读**根下 `*.md`（业务介绍）寻找契合自家业务的选题角度；与业务无关的选题方向则不强求查阅
 
 使用 `web_search` 搜索 + `web_fetch` 深入阅读，为选题提供数据支撑。
 

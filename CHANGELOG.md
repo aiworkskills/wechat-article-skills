@@ -6,6 +6,47 @@
 
 ---
 
+## [2026-04-24] — 业务资料库结构（Breaking）
+
+### Breaking changes
+
+- **目录结构**：`.aws-article/assets/` 整体废除（含 `stock/`、`brand/`、`covers/`），改用 `.aws-article/products/{产品名}/`：业务介绍 `.md` 直挂产品根，业务配图归 `images/` 子目录。语义从"通用素材库"收窄为"用户自家业务资料库"
+- **脚本重命名**：`stock_image_ingest.py` → `product_image_ingest.py`；新增**必填**参数 `--product <产品名>`，写入路径为 `.aws-article/products/{产品名}/images/`，产品目录不存在自动创建
+- **`write.py --reference` 路径白名单收紧**：仅接受 `.aws-article/products/<产品名>/<文件名>.md`（直接挂在产品根，不在 `images/` 下）；老路径 `assets/stock/references/*.md` 直接报错
+
+### 新增
+
+- **业务介绍 .md 双向流程**：AI 与用户对话产出业务介绍内容时，主动引导用户保存到 `products/{产品名}/`；用户说"保存为产品介绍"等也直接保存。无需新脚本，AI 用 Write 工具直接落库（详见 [assets skill](skills/aws-wechat-article-assets/SKILL.md)「一、业务介绍 .md 入库」）
+- **assets SKILL.md** 新增「设计意图」与「业务介绍 .md 入库」两章节
+- **writing / topics / images / main SKILL.md + CLAUDE.md** 一致地补强"涉及用户业务必查 `products/`"读规则；writing 额外补"写后识别"双向回写
+
+### 老用户迁移
+
+```bash
+# 1. 确认产品名
+PRODUCT="你的产品名"
+
+# 2. 创建新结构
+mkdir -p ".aws-article/products/$PRODUCT/images"
+
+# 3. 迁移老内容（按需）
+mv .aws-article/assets/stock/references/*.md ".aws-article/products/$PRODUCT/" 2>/dev/null || true
+mv .aws-article/assets/stock/images/* ".aws-article/products/$PRODUCT/images/" 2>/dev/null || true
+
+# 4. 删空目录
+rm -rf .aws-article/assets/
+
+# 5. 更新 .gitignore：把 .aws-article/assets/ 改为 .aws-article/products/
+
+# 6. 同名 .md 内的图片路径批量替换
+find ".aws-article/products/$PRODUCT" -name "*.md" -exec \
+  sed -i.bak "s|.aws-article/assets/stock/images/|.aws-article/products/$PRODUCT/images/|g; \
+              s|.aws-article/assets/stock/references/|.aws-article/products/$PRODUCT/|g" {} +
+find ".aws-article/products/$PRODUCT" -name "*.md.bak" -delete
+```
+
+---
+
 ## [2026-04-03] — 素材管理与预设包导入
 
 ### 新增

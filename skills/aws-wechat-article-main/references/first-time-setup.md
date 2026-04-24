@@ -156,11 +156,9 @@ python skills/aws-wechat-article-main/scripts/validate_env.py --agent-writing-ap
 - `.aws-article/presets/cover-styles`
 - `.aws-article/presets/image-styles`
 - `.aws-article/presets/sticker-styles`
-- `.aws-article/assets/brand`
-- `.aws-article/assets/covers`
-- `.aws-article/assets/stock/images`
-- `.aws-article/assets/stock/references`
 - `.aws-article/tmp`
+
+> **业务资料库 `.aws-article/products/{产品名}/`**：**不在首次引导创建**——产品名由用户在写第一份业务介绍时决定，AI 用 Write 工具落库时同时 `mkdir -p` 包括 `images/`，详见 [assets skill 一、业务介绍 .md 入库](../../aws-wechat-article-assets/SKILL.md#一业务介绍-md-入库product-intro)。
 
 可按操作系统执行：
 
@@ -170,8 +168,6 @@ mkdir -p .aws-article/presets/structures .aws-article/presets/closing-blocks \
   .aws-article/presets/title-styles .aws-article/presets/formatting \
   .aws-article/presets/cover-styles .aws-article/presets/image-styles \
   .aws-article/presets/sticker-styles \
-  .aws-article/assets/brand .aws-article/assets/covers \
-  .aws-article/assets/stock/images .aws-article/assets/stock/references \
   .aws-article/tmp
 ```
 
@@ -185,10 +181,6 @@ $dirs = @(
   ".aws-article/presets/cover-styles",
   ".aws-article/presets/image-styles",
   ".aws-article/presets/sticker-styles",
-  ".aws-article/assets/brand",
-  ".aws-article/assets/covers",
-  ".aws-article/assets/stock/images",
-  ".aws-article/assets/stock/references",
   ".aws-article/tmp"
 )
 foreach ($d in $dirs) {

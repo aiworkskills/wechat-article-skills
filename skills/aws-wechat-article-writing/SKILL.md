@@ -26,7 +26,7 @@ metadata:
 - **凭证读取**：`write.py` 读取仓库根 `aws.env` 的 `WRITING_MODEL_API_KEY`
 - **凭证外发**：该 API key 以 `Authorization: Bearer <key>` 头**发送到**用户在 `config.yaml.writing_model.base_url` 配置的外部端点（常见为 DeepSeek / OpenAI / Anthropic 等 Chat Completions 兼容 API）。**请使用专用 key 并配置可信端点或内部代理**
 - **内容外发**：Prompt 内包含本篇 `article.yaml` / `topic-card.md` / 合并配置 / 用户通过 `--reference` 指定的参考文档 `.md` 全文 → 整体 POST 给上述端点
-- **文件读（仓库内）**：`.aws-article/config.yaml`、本篇 `article.yaml`、`topic-card.md`、`.aws-article/assets/stock/references/*.md`
+- **文件读（仓库内）**：`.aws-article/config.yaml`、本篇 `article.yaml`、`topic-card.md`、`.aws-article/products/{产品名}/*.md`（业务介绍 .md，直接挂在产品根）
 - **文件读（仓库外）**：若仓库内 `.aws-article/` 缺失，`write.py` 会从用户家目录 `~/.aws-article/` 读取 `writing-spec.md` 与 `presets/`（**只读预设，不读凭证**）
 - **文件写**：仅本篇目录下 `draft.md`、`article.md`
 - **shell**：仅 `python3 {baseDir}/scripts/write.py`
@@ -63,7 +63,7 @@ metadata:
 - [ ] 第0步：⛔ [首次引导 · 检测顺序](../aws-wechat-article-main/references/first-time-setup.md)
 - [ ] 第1步：⛔ **`.aws-article/config.yaml`** 中 **`article_category`**、**`target_reader`**、**`default_author`**（trim 后）须**均非空**；缺则**逐项问用户**、用户确认后再**写回文件**；**禁止**从 **`article.yaml`** 等擅自抄录（与 [main](../aws-wechat-article-main/SKILL.md)「2) 全局账号约束」一致）；**须先于**续旧/新开
 - [ ] 第2步：⛔ **在不了解**用户要**续写既有草稿**还是**新开一篇**时，**须先询问**并确定本篇 `drafts/…` 目录，**再**进入以下步骤；**禁止**未确认就调用写作脚本（见 [main](../aws-wechat-article-main/SKILL.md)「3) 本篇准备」开头）
-- [ ] 第3步：读取本篇约束与写作规范；**写稿前先按下文「说明文档资源库」判断是否查阅/是否传 `--reference`**
+- [ ] 第3步：读取本篇约束与写作规范；**写稿前先按下文「业务资料库」判断是否查阅/是否传 `--reference`**
 - [ ] 第4步：发布方式（`publish_method`）⛔
 - [ ] 第5步：确定输入与写作方式
 - [ ] 第6步：写作
@@ -127,28 +127,35 @@ metadata:
 
 配置中其它与写稿相关的键（如 `topic_direction`、`forbidden_words`、`heading_density`、`target_word_count`）一并写入约束。
 
-### 说明文档资源库（写稿前）⛔
+### 业务资料库（写稿前 + 写后）⛔
 
-**目的**：减轻垂直领域表述含糊或臆测；默认路径为 **`.aws-article/assets/stock/references/`**（按文件命名存放说明类 Markdown；项目另有约定目录时一并视为同一类资源库）。
+**目的**：`.aws-article/products/{产品名}/` 是用户业务（产品/软件/服务）的原始资料库——业务介绍 `.md` **直接挂在产品根**（如 `项目介绍.md`），`images/` 子目录存业务配图。
 
-写作只有 **两种方式**，说明文档用法如下（二选一，勿混用同一条命令里的职责）。
+**触发口径**：
+
+- **若本篇主题涉及用户自身业务（对外介绍 / 教程 / 案例 / 自家业务安利）**：**必须**先 `ls .aws-article/products/`，对相关产品根下的 `*.md` **必读**，已有同主题文档**优先增量改写**而非另起炉灶。
+- 若本篇主题与用户自身业务无关（行业资讯 / 通用教程等）：**不读**、不强求查阅。
+
+写作只有 **两种方式**，业务资料用法如下（二选一，勿混用同一条命令里的职责）。
 
 #### 方式一：智能体直接写稿
 
-1. **写稿前**：查看资源库（及项目约定目录）里是否有与**本篇主题、选题卡**明显相关的说明文档。
-2. **写作时**：可引用其中内容并转化为账号文风；**没有相关文档就不引用，不阻断写稿**。
-3. **`draft.md`**：凡正文中**实际引用或依据**了某份说明文档的，在**该处表述之后**用括号附上**该文件的仓库相对路径**（路径须真实存在）；**未引用则不必加括号**。
+1. **写稿前**：先 `ls .aws-article/products/`；若本篇涉及某产品业务，**必读**该产品根下相关 `*.md`。
+2. **写作时**：将业务资料转化为账号文风后引用；**与业务无关或无相关文档时不引用，不阻断写稿**。
+3. **`draft.md`**：凡正文中**实际引用或依据**了某份业务介绍的，在**该处表述之后**用括号附上**该文件的仓库相对路径**（路径须真实存在）；**未引用则不必加括号**。
 4. **配图占位（硬性）**：当 **`image_source` 不为 `user`**（合并 `config.yaml` + 本篇 `article.yaml`）时，按 **`image_density`** 生成配图占位；若未配置或为空，默认**每节一图**。格式必须为 `![类型名：画面内容](placeholder)`，每个占位**独占一行**，**封面**占位放在**标题之前**；类型名与细则见 [references/structure-template.md](references/structure-template.md)「配图标记」。
 5. **`article.md` 定稿**：面向读者发布，**正文中不保留**上述括号路径（与审稿/排版约定一致）。
 
 #### 方式二：`write.py` 写稿
 
-1. **运行脚本前**：同样先**查看/判断**资源库是否有与主题相关的 `.md`（判断标准与方式一一致）。
-2. **有相关文档**：在仓库根执行 `write.py` 时传入 **`--reference <路径>`**（可重复，**最多 5 个**；路径须在 `.aws-article/assets/stock/references/` 下，详见脚本与 [usage](references/usage.md)）。脚本将全文注入系统提示「参考资料库」，并约定模型在依据处标注资料路径。
+1. **运行脚本前**：同样先 `ls .aws-article/products/`，判断是否有相关产品的业务介绍 `.md`。
+2. **有相关文档**：在仓库根执行 `write.py` 时传入 **`--reference <路径>`**（可重复，**最多 5 个**；路径须形如 `.aws-article/products/<产品名>/<文件名>.md`——**直接挂在产品根**，**不接受** `images/` 子目录下的图片说明 `.md`，详见脚本与 [usage](references/usage.md)）。脚本将全文注入系统提示「参考资料库」，并约定模型在依据处标注资料路径。
 3. **无相关文档**：**不传 `--reference`**，仅靠选题卡与合并配置写稿即可。
 4. 若写作 API 因上下文/token 超限失败，减少 `--reference` 篇数或换更短文档后重试。
 
-**禁止**：将与主题无关的文档硬塞进正文；伪造说明文档中不存在的事实。
+**写后识别（双向回写）**：若本次写作产生的内容**语义属于用户业务介绍**（不是文章主体而是侧重产品/服务自介），按 [assets skill 一、业务介绍 .md 入库](../aws-wechat-article-assets/SKILL.md#一业务介绍-md-入库product-intro) 引导用户保存到 `.aws-article/products/{产品名}/`，下次写涉及业务的文章会自动用上。
+
+**禁止**：将与主题无关的文档硬塞进正文；伪造业务资料中不存在的事实。
 
 ### 第4步：发布意图（`publish_method`）⛔
 
