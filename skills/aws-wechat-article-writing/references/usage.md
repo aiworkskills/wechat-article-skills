@@ -14,9 +14,9 @@ python skills/aws-wechat-article-writing/scripts/write.py rewrite article.md --i
 # 续写未完成的文章
 python skills/aws-wechat-article-writing/scripts/write.py continue article.md -o article.md
 
-# 参考资料库（最多 5 个路径；须位于 .aws-article/assets/stock/references/ 下）
+# 业务资料库（最多 5 个路径；须形如 .aws-article/products/<产品名>/<文件名>.md，直接挂在产品根）
 python skills/aws-wechat-article-writing/scripts/write.py draft drafts/foo/topic-card.md -o drafts/foo/draft.md \
-  --reference .aws-article/assets/stock/references/aiworkskills说明文档.md
+  --reference .aws-article/products/公众号AI运营助手/项目介绍.md
 ```
 
 ## 模型配置（可选）
@@ -60,7 +60,8 @@ WRITING_MODEL_API_KEY=你的APIKey
 ## 参考资料 `--reference`
 
 - 可与 `draft` / `rewrite` / `continue` / `prompt` 共用；**重复 `--reference <路径>`，最多 5 个**。
-- 路径须落在 **`.aws-article/assets/stock/references/`** 下（脚本会校验）；正文**全文**注入系统提示「参考资料库」，**不设脚本内截断**；若 API 报上下文/token 超限，请减少 `--reference` 篇数或缩短文档后重试。
+- 路径必须形如 **`.aws-article/products/<产品名>/<文件名>.md`**（直接挂在产品根；脚本会校验）。**不接受** `images/` 子目录下的图片说明 `.md`，也**不接受**老路径 `assets/stock/references/`。
+- 正文**全文**注入系统提示「参考资料库」，**不设脚本内截断**；若 API 报上下文/token 超限，请减少 `--reference` 篇数或缩短文档后重试。
 - 模型输出要求：若依据某条资料，须在对应表述后附上与块内 **`资料路径：`** 反引号中**完全一致**的路径。
 
 ## `prompt` 子命令（不调 LLM）
@@ -73,7 +74,7 @@ python skills/aws-wechat-article-writing/scripts/write.py prompt continue articl
 
 # 与 draft 相同，可带 --reference 查看注入后的 system_prompt
 python skills/aws-wechat-article-writing/scripts/write.py prompt draft drafts/foo/topic-card.md \
-  --reference .aws-article/assets/stock/references/aiworkskills说明文档.md
+  --reference .aws-article/products/公众号AI运营助手/项目介绍.md
 ```
 
 输出格式：`{"system_prompt": "...", "user_prompt": "..."}`
@@ -90,4 +91,4 @@ python skills/aws-wechat-article-writing/scripts/write.py prompt draft drafts/fo
 
 ## 脚本行为
 
-脚本将 **合并后的约束** + **`.aws-article/writing-spec.md`**（如有）+ 结构模板注入 system prompt；若传入 **`--reference`**，再将 **`.aws-article/assets/stock/references/`** 下对应 **`.md` 全文** 拼入「参考资料库」区块。输出完整 Markdown 文章（含配图标记）。
+脚本将 **合并后的约束** + **`.aws-article/writing-spec.md`**（如有）+ 结构模板注入 system prompt；若传入 **`--reference`**，再将 **`.aws-article/products/<产品名>/`** 根下对应 **`.md` 全文** 拼入「参考资料库」区块。输出完整 Markdown 文章（含配图标记）。

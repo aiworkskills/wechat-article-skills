@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-将用户上传的图片复制到素材库 `.aws-article/assets/stock/images/`，
+将用户上传的图片复制到业务配图库 `.aws-article/products/{产品名}/images/`，
 按中文主文件名保存；重名时自动使用 原名2、原名3… 后缀（扩展名前）。
 
-运行前若缺少 `.aws-article`（仅含 `.git` 的仓库根也会识别）则创建；素材目录不存在则一并创建。
+`products/{产品名}/` 是用户业务的资料库根；本脚本仅写入其 `images/` 子目录
+（业务介绍 .md 直挂产品根，由 AI 用 Write 工具落库，不走本脚本）。
+
+运行前若缺少 `.aws-article`（仅含 `.git` 的仓库根也会识别）则创建；
+产品目录与 `images/` 子目录不存在时一并创建。
 
 与图片同主文件名、扩展名为 `.md` 的说明文件一并生成，固定两行标签（全角冒号）：
   **图片路径**：`相对仓库根路径`
@@ -11,8 +15,10 @@
 （可用 --content 传入描述正文；路径由脚本写入。）
 
 用法（在仓库根执行）：
-  python skills/aws-wechat-article-assets/scripts/stock_image_ingest.py path/to/a.png --stem 淘米
-  python skills/aws-wechat-article-assets/scripts/stock_image_ingest.py a.png --stem 淘米 --content "双手在盆中淘米，水清米白。"
+  python skills/aws-wechat-article-assets/scripts/product_image_ingest.py path/to/a.png \
+    --product 公众号AI运营助手 --stem 配置首页
+  python skills/aws-wechat-article-assets/scripts/product_image_ingest.py a.png \
+    --product 公众号AI运营助手 --stem 配置首页 --content "aiworkskills.cn 配置平台首页。"
 """
 
 from __future__ import annotations
@@ -24,6 +30,7 @@ import sys
 from pathlib import Path
 
 INVALID_NAME_CHARS = re.compile(r'[\\/:*?"<>|\r\n\t]+')
+PRODUCTS_BASE_REL = Path(".aws-article") / "products"
 
 
 def _err(msg: str) -> None:
@@ -56,20 +63,20 @@ def _ensure_aws_article_dir(repo: Path) -> None:
     (repo / ".aws-article").mkdir(parents=True, exist_ok=True)
 
 
-def _sanitize_stem(stem: str) -> str:
-    s = (stem or "").strip()
+def _sanitize_name(name: str, fallback: str) -> str:
+    s = (name or "").strip()
     s = INVALID_NAME_CHARS.sub("", s)
     s = s.strip(" .")
     if not s:
-        s = "未命名素材"
+        s = fallback
     return s[:120]
 
 
 def _unique_dest_paths(dest_dir: Path, stem: str, ext: str) -> tuple[Path, str]:
-    """返回 (图片路径, 实际主文件名不含扩展名)。重名时 淘米 → 淘米2 → 淘米3…"""
+    """返回 (图片路径, 实际主文件名不含扩展名)。重名时 配置首页 → 配置首页2 → …"""
     ext = ext if ext.startswith(".") else f".{ext}"
     ext = ext.lower()
-    base = _sanitize_stem(stem)
+    base = _sanitize_name(stem, "未命名素材")
     names = [base] + [f"{base}{i}" for i in range(2, 10001)]
     for name in names:
         img = dest_dir / f"{name}{ext}"
@@ -80,8 +87,15 @@ def _unique_dest_paths(dest_dir: Path, stem: str, ext: str) -> tuple[Path, str]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="用户图片入库：中文名 + 同主文件名 .md（图片描述）")
+    parser = argparse.ArgumentParser(
+        description="业务图入库：写到 .aws-article/products/{产品名}/images/，含同名 .md（图片描述）"
+    )
     parser.add_argument("source", help="源图片路径")
+    parser.add_argument(
+        "--product",
+        required=True,
+        help="产品名（业务资料库根目录名，如「公众号AI运营助手」）；不存在时自动创建",
+    )
     parser.add_argument("--stem", required=True, help="中文主文件名（不含扩展名），由分析内容决定")
     parser.add_argument(
         "--content",
@@ -103,9 +117,13 @@ def main() -> None:
     if suffix not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
         _err(f"不支持的图片扩展名: {suffix}（允许 png/jpg/jpeg/webp/gif）")
 
+    product = _sanitize_name(args.product, "")
+    if not product:
+        _err("--product 不能为空（清洗后为空字符串）")
+
     repo = _find_repo_root(Path(args.repo))
     _ensure_aws_article_dir(repo)
-    dest_dir = repo / ".aws-article" / "assets" / "stock" / "images"
+    dest_dir = repo / PRODUCTS_BASE_REL / product / "images"
     dest_dir.mkdir(parents=True, exist_ok=True)
 
     img_path, final_stem = _unique_dest_paths(dest_dir, args.stem, suffix)

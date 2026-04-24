@@ -18,8 +18,9 @@
 用法：
     python write.py draft <topic_card.md>              按选题卡片写初稿
     python write.py draft <topic_card.md> -o out.md    指定输出路径
-    python write.py draft <topic_card.md> --reference .aws-article/assets/stock/references/说明.md
-    （可重复 --reference，最多 5 个；须位于 .aws-article/assets/stock/references/ 下）
+    python write.py draft <topic_card.md> --reference .aws-article/products/公众号AI运营助手/项目介绍.md
+    （可重复 --reference，最多 5 个；须形如 .aws-article/products/<产品名>/<文件名>.md，
+     直接挂在产品根；不接受 images/ 子目录下的图片说明文件）
     python write.py rewrite <article.md>               改写已有文章
     python write.py rewrite <article.md> --instruction "改成口语化"
     python write.py continue <article.md>              续写未完成的文章
@@ -37,9 +38,10 @@ from pathlib import Path
 
 import yaml
 
-# 参考资料库：仅允许该目录下 .md；全文注入，不设脚本内截断（API 超限请减少 --reference）
+# 参考资料库：业务介绍 .md（直接挂在 .aws-article/products/<产品名>/ 根下）
+# 全文注入，不设脚本内截断（API 超限请减少 --reference）
 MAX_REFERENCE_FILES = 5
-REFERENCE_STOCK_REL = Path(".aws-article") / "assets" / "stock" / "references"
+PRODUCTS_BASE_REL = Path(".aws-article") / "products"
 
 
 def _err(msg: str):
@@ -503,49 +505,55 @@ def _extract_image_filenames(img_analysis: str) -> list[str]:
     return uniq
 
 
-def _reference_allow_dir(cwd: Path) -> Path:
-    return (cwd.resolve() / REFERENCE_STOCK_REL).resolve()
-
-
-def _is_file_under_dir(path: Path, parent: Path) -> bool:
+def _validate_reference_path(p: Path, repo_root: Path) -> Path:
+    """
+    校验 --reference 路径必须形如 `.aws-article/products/<产品名>/<文件名>.md`
+    （直接挂在产品根，不在 images/ 子目录下；那里是图片说明 .md，不是业务介绍）。
+    返回相对仓库根的 Path。
+    """
+    rp = p.resolve()
     try:
-        rp = path.resolve()
-        rp.relative_to(parent.resolve())
-        return rp.is_file()
+        rel = rp.relative_to(repo_root.resolve())
     except ValueError:
-        return False
+        _err(f"参考资料须在仓库根下：{p}")
+    parts = rel.parts
+    if (
+        len(parts) != 4
+        or parts[0] != ".aws-article"
+        or parts[1] != "products"
+        or not parts[2]
+        or not parts[3].lower().endswith(".md")
+    ):
+        _err(
+            "参考资料路径应形如 "
+            ".aws-article/products/<产品名>/<文件名>.md（直接挂在产品根，不在 images/ 下）："
+            f"{rel.as_posix()}"
+        )
+    if not rp.is_file():
+        _err(f"参考资料文件不存在：{rp}")
+    return rel
 
 
 def build_reference_library_block(raw_paths: list[str], cwd: Path) -> str:
-    """读取允许的参考资料 .md，拼成系统提示「参考资料库」正文。"""
+    """读取业务资料库 .md，拼成系统提示「参考资料库」正文。"""
     if not raw_paths:
         return ""
     if len(raw_paths) > MAX_REFERENCE_FILES:
         _err(f"--reference 最多 {MAX_REFERENCE_FILES} 个路径，当前 {len(raw_paths)} 个")
-    allow_dir = _reference_allow_dir(cwd)
-    if not allow_dir.is_dir():
-        _err(f"参考资料目录不存在: {allow_dir}")
-    chunks: list[str] = []
     repo_root = cwd.resolve()
+    chunks: list[str] = []
     for i, raw in enumerate(raw_paths, 1):
         p = Path(raw.strip())
         if not p.is_absolute():
             p = (cwd / p).resolve()
         else:
             p = p.resolve()
-        if not _is_file_under_dir(p, allow_dir):
-            _err(
-                f"参考资料须为 {allow_dir} 下的文件（建议路径前缀 "
-                f"{REFERENCE_STOCK_REL.as_posix()}/）：{p}"
-            )
-        if p.suffix.lower() != ".md":
-            _err(f"参考资料须为 .md 文件：{p}")
-        rel_display = p.relative_to(repo_root).as_posix()
+        rel = _validate_reference_path(p, repo_root)
         try:
             text = p.read_text(encoding="utf-8")
         except OSError as e:
             _err(f"无法读取参考资料: {p}：{e}")
-        chunks.append(f"### {i}\n\n{text}\n\n资料路径：`{rel_display}`\n")
+        chunks.append(f"### {i}\n\n{text}\n\n资料路径：`{rel.as_posix()}`\n")
     return "\n".join(chunks)
 
 
@@ -612,7 +620,7 @@ def build_system_prompt(
             "**引用标注（硬性）**：若某句或某段**实际依据**了某条资料，须在该句/段**结束之后**立刻写出标注；"
             "标注**整段**必须用**一对中文全角括号**（ ）包起来，中间为「资料路径：」+ **反引号**内的仓库相对路径，"
             "路径须与下文中对应条目 **`资料路径：`** 后的字符串**完全一致**。\n"
-            "**正确示例**：（资料路径：`.aws-article/assets/stock/references/某说明.md`）\n"
+            "**正确示例**：（资料路径：`.aws-article/products/<产品名>/某介绍.md`）\n"
             + ref_block
         )
 
@@ -797,8 +805,9 @@ def main():
     sub = parser.add_subparsers(dest="command", help="子命令")
 
     ref_help = (
-        "参考资料 Markdown 路径；须位于 "
-        f"{REFERENCE_STOCK_REL.as_posix()}/ 下；可重复，最多 {MAX_REFERENCE_FILES} 个"
+        "参考资料 Markdown 路径；须形如 "
+        f"{PRODUCTS_BASE_REL.as_posix()}/<产品名>/<文件名>.md（直接挂在产品根，不在 images/ 下）；"
+        f"可重复，最多 {MAX_REFERENCE_FILES} 个"
     )
 
     p_draft = sub.add_parser("draft", help="按选题卡片写初稿")

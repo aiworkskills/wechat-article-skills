@@ -5,7 +5,7 @@ aws.env
 
 # 用户自定义预设和素材
 .aws-article/presets/
-.aws-article/assets/
+.aws-article/products/
 .aws-article/templates/
 .aws-article/tmp/
 
