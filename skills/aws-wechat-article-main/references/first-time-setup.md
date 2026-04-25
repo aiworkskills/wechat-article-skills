@@ -30,6 +30,8 @@ if ((Test-Path -LiteralPath ".aws-article\config.yaml") -and (Test-Path -Literal
 1. **`.aws-article/config.yaml`**：复制 **`skills/aws-wechat-article-main/references/config.example.yaml`** 为 **`.aws-article/config.yaml`**。
 2. **`aws.env`**：复制 **`skills/aws-wechat-article-main/references/env.example.yaml`** 为仓库根 **`aws.env`**（内容格式为 `KEY=value`）。
 
+> **快速通道**：如果用户已经在 **`https://aiworkskills.cn/`** 网页上配好账号并拿到 `.aws` 链接（或下载到 `.aws` 文件），让用户把链接/路径丢给 Agent 走 [assets skill 三、预设包导入](../../aws-wechat-article-assets/SKILL.md#三预设包导入aws)。`config.yaml` 会被复制到 `.aws-article/`，密钥字段会按映射增量写入仓库根 `aws.env`（覆盖前自动备份），不需要再走"复制 env.example.yaml + 手填密钥"这两步。
+
 **初始化约束**：新建 **`.aws-article/config.yaml`** 时，**`publish_method` 必须初始化为 `draft`**；除非用户明确指定「不接微信/不走上传」，否则禁止初始化为 `none`。
 
 上述两个文件都创建并保存后，在仓库根运行 **`validate_env.py`**（见下节）。

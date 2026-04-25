@@ -6,12 +6,20 @@
   - 若本地已存在，则**不覆盖**；按包内字段在本地同名路径上递归比对，将差异以 **JSON 数组** 打印到 **stdout**（供智能体读取后询问用户再手改配置）。
     每条为 {"key": "点分路径", "old": …, "new": …}。其它日志在 stderr。
 
+aws.env 增量写入：
+  - 包内 config.yaml 的敏感字段（wechat_appid/wechat_appsecret、writing_model.api_key、
+    image_model.api_key）会按 SECRET_FIELD_MAP 增量写入仓库根 `aws.env`：
+      * 包内字段为空 → 不动 aws.env 现有键
+      * aws.env 无该键 → 追加
+      * aws.env 已有相同值 → 跳过
+      * aws.env 已有不同值 → 写入前备份 `aws.env.bak.{ts}` 后覆盖
+  - stderr 仅打印键名清单，不打印密钥值；保留原文件顺序、空行与注释。
+
 运行前若缺少 `.aws-article` 则创建；若缺少 `.aws-article/tmp` 则创建。每次执行前若 `tmp` 已存在则整目录删除再解压；合并完成后保留解压内容供核对，下次执行会再次清空 `tmp` 再解压。
 
 合并规则（以服务端为准的「替换式」）：
   - 对每个预设子目录，若**包内存在**该子目录，则**先清空本地 `.aws-article/presets/<同名>/`** 再写入包内内容——确保新包移除的旧文件不会残留；
   - 若包内**不存在**某子目录，本地对应子目录**保持不动**（不受本次导入影响）。
-不包含密钥：包内 config 仅为运营配置模板（仓库内密钥在 aws.env）。
 
 bundle 输入支持两种形态：
   - 本地 `.aws` 文件路径；
@@ -33,6 +41,7 @@ import sys
 import urllib.error
 import urllib.request
 import zipfile
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -57,6 +66,15 @@ SKIP_NAMES = frozenset({"__MACOSX", ".DS_Store"})
 ALLOWED_HOST_EXACT = "aiworkskills.cn"
 ALLOWED_HOST_SUFFIX = ".aiworkskills.cn"
 DOWNLOAD_TIMEOUT_SEC = 30
+
+# config.yaml 字段（点分路径） → aws.env 键名。
+# 当前前端导出仅支持单微信账号，固定映射到槽位 1。
+SECRET_FIELD_MAP: tuple[tuple[str, str], ...] = (
+    ("wechat_appid", "WECHAT_1_APPID"),
+    ("wechat_appsecret", "WECHAT_1_APPSECRET"),
+    ("writing_model.api_key", "WRITING_MODEL_API_KEY"),
+    ("image_model.api_key", "IMAGE_MODEL_API_KEY"),
+)
 
 
 def _is_url(s: str) -> bool:
@@ -237,6 +255,132 @@ def _print_config_diff_json(diffs: list[dict[str, Any]]) -> None:
     print(json.dumps(diffs, ensure_ascii=False, indent=2))
 
 
+def _parse_dotenv(content: str) -> dict[str, str]:
+    """与 skills/aws-wechat-article-main/scripts/validate_env.py 的 _parse_dotenv 保持同步。"""
+    out: dict[str, str] = {}
+    for raw_line in content.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        key = key.strip()
+        val = val.strip()
+        if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
+            val = val[1:-1]
+        out[key] = val
+    return out
+
+
+def _get_dotted(d: Any, path: str) -> Any:
+    cur = d
+    for part in path.split("."):
+        if not isinstance(cur, dict) or part not in cur:
+            return None
+        cur = cur[part]
+    return cur
+
+
+def _serialize_dotenv_line(key: str, value: str) -> str:
+    if any(c in value for c in (' ', '\t', '#', '"', "'", '$', '\\', '\n', '\r')):
+        escaped = value.replace('\\', '\\\\').replace('"', '\\"')
+        return f'{key}="{escaped}"'
+    return f"{key}={value}"
+
+
+def _write_aws_env_incremental(repo: Path, package_config: dict, dry_run: bool) -> None:
+    """按 SECRET_FIELD_MAP 把包内 config.yaml 的密钥字段增量写入仓库根 aws.env。
+
+    规则：
+      - 包内字段为空字符串/None → 跳过（不会动 aws.env 现有键）
+      - 现有 aws.env 无该键 → 新增（追加到末尾）
+      - 现有值 == 包内值 → 跳过
+      - 现有值 != 包内值 → 标记覆盖；写入前备份 aws.env.bak.{ts}
+      - 保留原文件顺序、空行、注释；行内只替换需要覆盖的键
+      - stderr 仅打印键名清单，不打印密钥值
+    """
+    aws_env_path = repo / "aws.env"
+
+    candidates: dict[str, str] = {}
+    for cfg_path, env_key in SECRET_FIELD_MAP:
+        v = _get_dotted(package_config, cfg_path)
+        if isinstance(v, str) and v.strip():
+            candidates[env_key] = v
+
+    if not candidates:
+        _info("包内未发现可写入 aws.env 的密钥字段，跳过 aws.env 更新")
+        return
+
+    if aws_env_path.is_file():
+        existing_content = aws_env_path.read_text(encoding="utf-8")
+        existing = _parse_dotenv(existing_content)
+    else:
+        existing_content = ""
+        existing = {}
+
+    added: list[str] = []
+    overwritten: list[str] = []
+    unchanged: list[str] = []
+    for k, new_v in candidates.items():
+        if k not in existing:
+            added.append(k)
+        elif existing[k] == new_v:
+            unchanged.append(k)
+        else:
+            overwritten.append(k)
+
+    if not added and not overwritten:
+        _info(f"aws.env 无需更新（包内 {len(candidates)} 项与现有一致）")
+        return
+
+    if dry_run:
+        bits = []
+        if added:
+            bits.append(f"新增 {len(added)} 项 [{', '.join(added)}]")
+        if overwritten:
+            bits.append(f"覆盖 {len(overwritten)} 项 [{', '.join(overwritten)}]")
+        _info("[dry-run] aws.env " + "，".join(bits))
+        return
+
+    if overwritten and aws_env_path.is_file():
+        ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+        backup = aws_env_path.with_name(f"aws.env.bak.{ts}")
+        shutil.copy2(aws_env_path, backup)
+        _ok(f"备份: {backup.as_posix()}")
+
+    overwrite_set = set(overwritten)
+    lines = existing_content.splitlines() if existing_content else []
+    new_lines: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            new_lines.append(line)
+            continue
+        key = line.partition("=")[0].strip()
+        if key in overwrite_set:
+            new_lines.append(_serialize_dotenv_line(key, candidates[key]))
+        else:
+            new_lines.append(line)
+
+    for k in added:
+        new_lines.append(_serialize_dotenv_line(k, candidates[k]))
+
+    final = "\n".join(new_lines)
+    if not final.endswith("\n"):
+        final += "\n"
+    aws_env_path.write_text(final, encoding="utf-8")
+
+    parts = []
+    if added:
+        parts.append(f"新增 {len(added)} 项 [{', '.join(added)}]")
+    if overwritten:
+        parts.append(f"覆盖 {len(overwritten)} 项 [{', '.join(overwritten)}]")
+    if unchanged:
+        parts.append(f"未变 {len(unchanged)} 项 [{', '.join(unchanged)}]")
+    _ok(f"aws.env 写入：{'，'.join(parts)}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="导入 .aws 预设包到 .aws-article/presets；config 仅首次复制，已有则 stdout 输出差异 JSON"
@@ -310,6 +454,7 @@ def main() -> None:
 
     cfg = root / "config.yaml"
     if cfg.is_file():
+        new_map = _load_yaml_mapping(cfg, "包内 config.yaml")
         if not config_dest.is_file():
             if args.dry_run:
                 _info(f"[dry-run] 将复制包内 config 至 {config_dest.as_posix()}（本地尚无 config.yaml）")
@@ -318,14 +463,14 @@ def main() -> None:
                 _ok(f"已复制包内配置（本地原无）: {config_dest}")
         else:
             old_map = _load_yaml_mapping(config_dest, "本地 config.yaml")
-            new_map = _load_yaml_mapping(cfg, "包内 config.yaml")
             diffs = _config_diff(old_map, new_map)
             _print_config_diff_json(diffs)
             _info(
                 f"config 差异 {len(diffs)} 项已输出至 stdout（JSON）；未修改 {config_dest.as_posix()}，请智能体根据用户确认再更新"
             )
+        _write_aws_env_incremental(repo, new_map, args.dry_run)
     else:
-        _info("包内无 config.yaml，跳过全局配置")
+        _info("包内无 config.yaml，跳过全局配置与 aws.env 更新")
 
     if args.dry_run:
         _ok(f"dry-run 完成（共将写入约 {total_files} 个预设文件 + 如上 config）；解压保留在 {staging.as_posix()}")

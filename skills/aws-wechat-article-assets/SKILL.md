@@ -24,7 +24,7 @@ metadata:
 - **凭证**：无
 - **网络**：可选 `https://*.aiworkskills.cn/**/*.aws` 下载预设包。**白名单强制**：仅 HTTPS + `aiworkskills.cn` 子域，非白名单会**直接报错退出**。调试参数 `--allow-any-host` 可放宽但不推荐生产使用
 - **文件读**：用户指定的本地图片路径或 `.aws` 文件（脚本边界）；AI 在引导业务介绍入库时会先 `ls .aws-article/products/` 看已有产品名
-- **文件写**：仓库内 `.aws-article/products/{产品名}/*.md`（业务介绍，AI 用 Write 工具直接落库）、`.aws-article/products/{产品名}/images/*`（图片 + 同名 `.md`，由脚本写）、`.aws-article/presets/<子目录>/*`（预设文件）、`.aws-article/downloads/*.aws`（下载缓存）、`.aws-article/tmp/*`（解压临时目录）
+- **文件写**：仓库内 `.aws-article/products/{产品名}/*.md`（业务介绍，AI 用 Write 工具直接落库）、`.aws-article/products/{产品名}/images/*`（图片 + 同名 `.md`，由脚本写）、`.aws-article/presets/<子目录>/*`（预设文件）、`.aws-article/downloads/*.aws`（下载缓存）、`.aws-article/tmp/*`（解压临时目录）；导入 `.aws` 时**仓库根 `aws.env`** 会按映射表增量写入密钥字段（覆盖现有键前自动备份为 `aws.env.bak.{ts}`，stderr 仅打印键名不打印值）
 - **归档**：解压 `.aws` 扩展名的 ZIP 到 `.aws-article/tmp/`，按白名单子目录合并到 `.aws-article/presets/`。**已内置 ZIP slip 防御**：逐项校验 ZIP 成员路径，拒绝含绝对路径、`..` 段或解析后指向解压目录外的路径，任一违反立即退出不写入任何文件
 - **shell**：仅 `python3 {baseDir}/scripts/product_image_ingest.py`、`import_presets_aws.py`
 
@@ -178,8 +178,17 @@ python {baseDir}/scripts/product_image_ingest.py <源图片路径> \
 
 ### 密钥与配置
 
-- **预设包内的 `config.yaml` 不应、也不会包含** `aws.env` 中的密钥；仓库密钥始终在仓库根 **`aws.env`**。
-- 本地已有 `config.yaml` 时导入不会自动改配置；请根据 stdout 差异与用户确认后再更新字段（或对照 `.aws-article/tmp/` 解压结果）。
+- **`config.yaml` 中的密钥字段会被增量写入仓库根 `aws.env`**。包内 `config.yaml` 顶层 `wechat_appid` / `wechat_appsecret`、嵌套 `writing_model.api_key` / `image_model.api_key` 在导入时按下表映射写入：
+
+  | `config.yaml` 字段 | `aws.env` 键 |
+  |---|---|
+  | `wechat_appid` | `WECHAT_1_APPID` |
+  | `wechat_appsecret` | `WECHAT_1_APPSECRET` |
+  | `writing_model.api_key` | `WRITING_MODEL_API_KEY` |
+  | `image_model.api_key` | `IMAGE_MODEL_API_KEY` |
+
+- 写入策略：包内字段为空 → 不动 `aws.env` 现有键；`aws.env` 无该键 → 追加；已有相同值 → 跳过；已有不同值 → 写入前备份 `aws.env.bak.{ts}` 后覆盖。stderr 仅输出键名清单，不打印密钥值；保留原文件顺序、空行与注释。当前前端导出仅支持单微信账号（固定槽位 1），`aws.env` 中的 `WECHAT_2_*` 等其他键不受导入影响。
+- `config.yaml`（运营配置）：本地无则首次复制；本地有则差异 JSON 输出到 stdout 不覆盖（与原行为一致），由 Agent 询问用户确认后手改。
 
 ### 工作流
 
@@ -216,5 +225,5 @@ python {baseDir}/scripts/import_presets_aws.py https://aiworkskills.cn/x/y.aws -
 |------|------|
 | 业务介绍 .md 入库 | `.aws-article/products/{产品名}/{文件名}.md`（AI 用 Write 工具落库；目录不存在时同时 mkdir 包括 `images/`） |
 | 业务图入库 | `.aws-article/products/{产品名}/images/*.{png,...}` + 同名 `*.md` |
-| `.aws` 导入 | 更新 `.aws-article/presets/**`；`config.yaml` 首次复制或 stdout 差异 JSON；解压缓存在 `.aws-article/tmp/` |
+| `.aws` 导入 | 更新 `.aws-article/presets/**`；`config.yaml` 首次复制或 stdout 差异 JSON；密钥增量写入仓库根 `aws.env`（覆盖前备份 `aws.env.bak.{ts}`）；解压缓存在 `.aws-article/tmp/` |
 | `.aws` URL 导入 | 下载缓存 `.aws-article/downloads/*.aws`；其余同本地导入 |
