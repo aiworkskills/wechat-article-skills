@@ -144,7 +144,7 @@ metadata:
 2. **写作时**：将业务资料转化为账号文风后引用；**与业务无关或无相关文档时不引用，不阻断写稿**。
 3. **`draft.md`**：凡正文中**实际引用或依据**了某份业务介绍的，在**该处表述之后**用括号附上**该文件的仓库相对路径**（路径须真实存在）；**未引用则不必加括号**。
 4. **配图占位（硬性）**：当 **`image_source` 不为 `user`**（合并 `config.yaml` + 本篇 `article.yaml`）时，按 **`image_density`** 生成配图占位；若未配置或为空，默认**每节一图**。格式必须为 `![类型名：画面内容](placeholder)`，每个占位**独占一行**，**封面**占位放在**标题之前**；类型名与细则见 [references/structure-template.md](references/structure-template.md)「配图标记」。
-5. **`article.md` 定稿**：面向读者发布，**正文中不保留**上述括号路径（与审稿/排版约定一致）。
+5. **下游产物 `article.md`**：本 skill 产物**只到 `draft.md`**，括号路径**保留在 `draft.md` 中**用于事实溯源。`article.md` 是 [review skill 第 5 步](../aws-wechat-article-review/SKILL.md) 的产物，由 review 调用 `write.py strip-citations <draft.md> -o <临时文件>` 自动剥离括号路径，再追加文末 `{embed:…}` 后写入。**writing 阶段禁止**自行命名 `article.md`、自行剥离括号路径、或假装"自检"等同于审稿。
 
 #### 方式二：`write.py` 写稿
 
@@ -244,9 +244,9 @@ metadata:
 
 **调用第三方模型**时的脚本用法：[references/usage.md](references/usage.md)
 
-### 第7步：自检与修正
+### 第7步：自检与修正（仅粗扫，不替代 review）
 
-按写作规范做一轮自检（禁用词、段落长度、开头吸睛度、小标题密度），发现问题自动修正。
+仅做**粗扫**：禁用词、段落长度、开头吸睛度、小标题密度，发现明显问题自动修正。**不**替代 [review skill](../aws-wechat-article-review/SKILL.md) 的内容审 —— 完整的合规、敏感词、文末 embed、引用标注剥离均归 review 处理；本步禁止越界做 review 的工作。
 
 **配图占位自检（默认模式）**：当 **`image_source != user`** 时，核对 `draft.md` 是否满足 **`image_density`**（未配置则按**每节一图**）；缺失或格式不合法时，先补齐/修正 `![类型名：画面内容](placeholder)` 再进入审稿或配图步骤。
 
@@ -256,6 +256,13 @@ metadata:
 - 进入发布相关步骤前，必须复核本篇正文产物：`article.md` / `article.html` 若仍含 `placeholder`，只能标记为“正文配图未完成”，禁止宣称发布闭环完成。
 
 ### 第8步：展示并等待用户确认 ⛔
+
+向用户展示 `draft.md`，确认后**移交 [review skill](../aws-wechat-article-review/SKILL.md) 做内容审**。
+
+**⛔ 产物边界（硬性）**：本 skill 产出**只到 `draft.md`**。**禁止**在 writing 阶段：
+- 自行写入 `article.md`（`article.md` 是 review 第 5 步 ⛔ BLOCKING 的产物，须含文末 `{embed:…}` 且已剥离引用标注）
+- 自行剥离 `（资料路径：...）` 引用标注（剥离动作由 review 调用 `write.py strip-citations` 完成）
+- 跳过 review 直接进入 [formatting](../aws-wechat-article-formatting/SKILL.md)
 
 ## 过程文件
 

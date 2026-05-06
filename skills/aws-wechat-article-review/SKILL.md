@@ -138,13 +138,16 @@ metadata:
 
 > ⚠️ **Step 4 完成不代表可以保存 `article.md`**。必须先完成 Step 5（文末 embed ⛔⛔ BLOCKING）才能写入 `article.md` 或进入排版。
 
-### 第5步：确认通过 → 文末 embed → 保存定稿 ⛔⛔ BLOCKING
+### 第5步：确认通过 → 剥离引用标注 → 文末 embed → 保存定稿 ⛔⛔ BLOCKING
 
 全部 🔴 项消除后：
 1. 展示最终审稿结果
 2. 等待用户确认 ⛔
-3. **⛔ BLOCKING · 文末 `embeds`**：**在写入 `article.md` 之前**完成本节下方「规则与表格」——**先读取** `.aws-article/config.yaml` 并与本篇 `article.yaml` **合并**（与第 1 步一致：**除 `embeds.related_articles` 外，`embeds` 仅以全局为准**；**`related_articles` 与全局深度合并**），再在**正文末尾**（原有正文之后）按规则**追加或合法省略**占位符。**占位符必须与合并后可解析的配置一致**，否则排版阶段会失败。**未完成本节不得保存定稿、不得调用 `format.py`。**
-4. 将已含文末 embed（或已按规则省略并记录在审稿说明中）的稿件保存为 **`article.md`（定稿）**。
+3. **⛔ BLOCKING · 剥离引用标注**：在仓库根执行
+   `python {baseDir}/../aws-wechat-article-writing/scripts/write.py strip-citations <本篇 draft.md> -o <本篇 draft-stripped.md>`
+   纯本地正则剥离正文中所有 `（资料路径：...）` 引用标注（writing 阶段为事实溯源强制注入，发布版必须去除以免泄露内部产品目录路径）。**禁止**用 sed / agent 肉眼撕替代该脚本 —— 历史多次出现"撕一遍漏一条"的事故。
+4. **⛔ BLOCKING · 文末 `embeds`**：**在写入 `article.md` 之前**完成本节下方「规则与表格」——**先读取** `.aws-article/config.yaml` 并与本篇 `article.yaml` **合并**（与第 1 步一致：**除 `embeds.related_articles` 外，`embeds` 仅以全局为准**；**`related_articles` 与全局深度合并**），再在 `draft-stripped.md` 的**正文末尾**（原有正文之后）按规则**追加或合法省略**占位符。**占位符必须与合并后可解析的配置一致**，否则排版阶段会失败。**未完成本节不得保存定稿、不得调用 `format.py`。**
+5. 将已剥离引用标注且含文末 embed（或已按规则省略并记录在审稿说明中）的稿件保存为 **`article.md`（定稿）**；中间产物 `draft-stripped.md` 可保留备查或删除。
 
 **定稿文末 `embeds`（规则与表格）**
 

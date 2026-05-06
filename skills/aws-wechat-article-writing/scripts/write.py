@@ -26,6 +26,8 @@
     python write.py continue <article.md>              续写未完成的文章
     python write.py prompt draft <topic_card.md>       只输出提示词JSON(不调LLM)
     python write.py prompt rewrite <article.md> --instruction "..."
+    python write.py strip-citations <draft.md> -o <article.md>
+                                                       剥离 （资料路径：...） 引用标注（review skill 定稿前调用）
 """
 
 import argparse
@@ -588,10 +590,10 @@ def build_system_prompt(
     title_max = screening.get("title_max_length")
     if title_max is not None:
         parts.append(f"- 文章标题字数不超过：{title_max}")
-    summary_length = (screening.get("summary_length") or "").strip()
+    summary_length = str(screening.get("summary_length") or "").strip()
     if summary_length:
         parts.append(f"- 摘要字数范围：{summary_length}")
-    target_word_count = (screening.get("target_word_count") or "").strip()
+    target_word_count = str(screening.get("target_word_count") or "").strip()
     if target_word_count:
         parts.append(f"- 文章目标字数：{target_word_count}")
 
@@ -762,6 +764,19 @@ def continue_writing(
 
 # ── CLI ──────────────────────────────────────────────────────
 
+_CITATION_PATTERN = re.compile(r"（资料路径[:：]\s*`[^`]+?`）")
+
+
+def _strip_citations(text: str) -> str:
+    """剥离正文中所有 （资料路径：`...`） 引用标注，并清理行尾空白与多余空行。"""
+    cleaned = _CITATION_PATTERN.sub("", text)
+    cleaned = "\n".join(line.rstrip() for line in cleaned.splitlines())
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    if text.endswith("\n") and not cleaned.endswith("\n"):
+        cleaned += "\n"
+    return cleaned
+
+
 def _build_prompts(mode, input_text, screening, writing_spec,
                    structure_template, closing_block, image_source,
                    img_analysis, instruction="", reference_library_block=""):
@@ -832,6 +847,13 @@ def main():
     p_prompt.add_argument("--instruction", default="", help="改写要求（仅 rewrite）")
     p_prompt.add_argument("--reference", action="append", metavar="PATH", help=ref_help)
 
+    p_strip = sub.add_parser(
+        "strip-citations",
+        help="剥离正文 （资料路径：...） 引用标注（review skill 定稿前调用）",
+    )
+    p_strip.add_argument("input", help="含引用标注的 Markdown 路径（如 draft.md）")
+    p_strip.add_argument("-o", "--output", help="输出路径（默认输出到终端）")
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -871,6 +893,24 @@ def main():
             reference_library_block=ref_block,
         )
         print(json.dumps(prompts, ensure_ascii=False))
+        sys.exit(0)
+
+    # strip-citations subcommand: pure local text rewrite, no LLM / no config
+    if args.command == "strip-citations":
+        input_path = Path(args.input).resolve()
+        if not input_path.exists():
+            _err(f"文件不存在: {input_path}")
+        text = input_path.read_text(encoding="utf-8")
+        n_stripped = len(_CITATION_PATTERN.findall(text))
+        cleaned = _strip_citations(text)
+        if args.output:
+            out_path = Path(args.output)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(cleaned, encoding="utf-8")
+            _ok(f"已剥离 {n_stripped} 处引用标注，保存到: {out_path}")
+        else:
+            _info(f"已剥离 {n_stripped} 处引用标注（输出到 stdout）")
+            sys.stdout.write(cleaned)
         sys.exit(0)
 
     # draft / rewrite / continue: need model config
