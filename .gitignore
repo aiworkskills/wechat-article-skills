@@ -18,6 +18,7 @@ series/
 .cursor
 .claude
 .workbuddy/
+.xkb-project-kb/
 CLAUDE.md
 AGENTS.md
 
@@ -31,4 +32,3 @@ __pycache__/
 # 系统与编辑器
 .DS_Store
 *.log
-

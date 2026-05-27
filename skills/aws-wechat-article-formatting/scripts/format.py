@@ -681,7 +681,7 @@ def _md_to_html(md_text: str, styles: dict) -> str:
                 html_parts.append(table_html)
             continue
 
-        img_match = re.match(r'^!\[(.+?)\]\((.+?)\)$', stripped)
+        img_match = re.match(r'^!\[(.*?)\]\((.+?)\)$', stripped)
         if img_match:
             flush_paragraph()
             alt = img_match.group(1)
