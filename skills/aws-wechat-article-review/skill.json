@@ -1,6 +1,6 @@
 {
   "name": "aws-wechat-article-review",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": "aiworkskills",
   "description": "审核公众号文章，检查敏感词、错别字、合规性和写作规范，输出修改清单。",
   "license": "MIT",

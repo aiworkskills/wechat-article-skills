@@ -88,14 +88,15 @@ metadata:
 
 按模式执行不同检查项，详见：[references/checklist.md](references/checklist.md)
 
-**内容审** 检查 6 个维度：
+**内容审** 检查以下维度：
 
 | 维度 | 检查内容 |
 |------|---------|
 | **标题** | 长度、禁用套路、与正文一致性 |
 | **摘要** | 长度、信息量、与正文一致性 |
 | **正文** | 敏感词、禁用词、错别字、事实出处 |
-| **写作规范** | 对照 writing-spec.md 检查用词、句式、段落、AI 味；深度与调性是否与 **本篇合并配置** 的 `target_reader`、`tone` 一致 |
+| **写作规范** | 对照 writing-spec.md 检查用词、句式、段落；深度与调性是否与 **本篇合并配置** 的 `target_reader`、`tone` 一致 |
+| **AI 味自检** | 对照 [references/ai-flavor-check.md](references/ai-flavor-check.md) 的指纹库诊断文风，逐处标注信号强度（强/中/弱）。**默认只诊断**：命中折算为 🟡 建议修改，**不 blocking、不影响定稿**，由作者决定改不改 |
 | **配图标记** | 封面标记存在、数量与 **本篇合并配置** 的 `image_density` 匹配、描述清晰 |
 | **文末 embed** | 定稿前须完成 **第5步 ⛔ BLOCKING**（与 `format.py` 的 `{embed:…}` 一致）；未写入 `article.md` 不得定稿 |
 | **原创标注** | 按 original_attribution 处理 |

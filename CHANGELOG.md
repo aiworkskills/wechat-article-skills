@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-06-01] — 审稿引入 AI 味诊断方法论
+
+### 新增
+
+- **review skill「AI 味自检」维度**：新增 `references/ai-flavor-check.md` 诊断方法论 —— 核心理念（AI 味的本质是「太完美」、不以「去 AI 味」为目标、改写须基于作者意图）+ 15 条公众号体裁化指纹库 + 防误判阈值 + 与 `writing-spec.md` 的豁免边界 + 体裁差异。内容审多一个「AI 味自检」维度
+- **校准样例** `references/ai-flavor-check-samples.md`：用仓库内两篇真实 `draft.md` 跑出的诊断结果，作为「该报什么 / 该放过什么」的回归锚点
+- 配套挂载：review 的 `SKILL.md` / `checklist.md` / `output-format.md` 接入新维度，`skill.json` 升至 0.4.0
+
+### 设计原则
+
+- AI 味命中**默认 🟡 建议修改，不 blocking、不影响定稿**——只诊断、给方向，不擅自代改
+- 信号强度用「强/中/弱」文字，与总评 🔴🟡🟢 不撞色；尊重 `writing-spec` 鼓励的口语化（口语对话、生活化类比不当 AI 味扣分）
+- 纯本地、零网络、零凭证、不新增脚本
+
+---
+
 ## [2026-04-24] — 业务资料库结构（Breaking）
 
 ### Breaking changes
