@@ -17,6 +17,7 @@
 - 🔧 [WorkBuddy 如何使用 AI Work Skills 运行公众号](https://mp.weixin.qq.com/s/GQjCY5UsArV9XI5AyoxWZQ) · WorkBuddy 组合案例
 - ⚡ [QClaw + aiworkskills 一键运营公众号](https://mp.weixin.qq.com/s/xLUJBc2bbrJvgeAesbhsFA) · QClaw 组合案例
 - 🔑 [小龙虾的模型怎么选](https://mp.weixin.qq.com/s/u5e7FC-QAzXaMlq36RNIJg) · 写作与配图模型选型指南
+- 🚀 [从写作助手到 AI 运营员工：wechat-article-skills 进化之路](https://mp.weixin.qq.com/s/PRAE37gaEDF92gjwRBEOQg) · 项目演进历程
 
 ---
 
