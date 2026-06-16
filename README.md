@@ -321,6 +321,9 @@ IMAGE_MODEL_API_KEY=sk-...
 
 完整变更历史见 [CHANGELOG.md](CHANGELOG.md)。最近几次：
 
+- **2026-06-16** · 写作 skill 增设护栏：抑制 AI 味露馅——禁「互动话题」式栏目标签与「发自北京」新闻电头（v1.0.17）
+- **2026-06-01** · 审稿引入「AI 味自检」诊断维度：公众号体裁指纹库 + 真实稿校准样例，默认 🟡 建议、不阻断定稿
+- **2026-05-06** · 审稿定稿改用 `write.py strip-citations` 剥离正文「资料路径」标注；写作 skill 收敛为只输出带溯源的 `draft.md`
 - **2026-04-24** · 引入 `products/{产品名}/` 业务资料库（读+写双向流程）；`stock_image_ingest.py` → `product_image_ingest.py`（破坏性，含老用户迁移命令）
 - **2026-04-22** · assets skill 支持 `.aws` 永久 URL 导入；强化 skill 描述与套件完整性校验
 - **2026-04-15** · 排版 skill 目录结构整理，同步各 skill 与脚本更新
