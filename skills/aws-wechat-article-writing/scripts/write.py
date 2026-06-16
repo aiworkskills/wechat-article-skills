@@ -606,13 +606,19 @@ def build_system_prompt(
 
     attribution = screening.get("original_attribution", "")
     if attribution:
-        parts.append(f"- 原创标注：{attribution}")
+        parts.append(f"- 原创标注（发布时的元数据，仅作背景信息，**不要写进正文或当作署名/电头**）：{attribution}")
 
     if writing_spec:
         parts.append(f"\n## 用户写作规范\n\n{writing_spec}")
 
     if structure_template:
-        parts.append(f"\n## 文章结构参考\n\n{structure_template}")
+        parts.append(
+            "\n## 文章结构参考\n"
+            "（以下为**写作指引**。其中方括号元标签【开头】【主体】【结尾】【金句节奏】【情绪节奏】【篇幅分配】等，"
+            "以及「互动引导」「互动收尾」之类的说明，**只供你组织行文，严禁原样作为文章里的小标题或标签输出**。"
+            "互动收尾要自然融入结尾段落的句子里，**不得**写成「互动话题」「互动时间」「话题互动」「互动引导」这类标题或加粗标签。）\n\n"
+            f"{structure_template}"
+        )
 
     ref_block = (reference_library_block or "").strip()
     if ref_block:
@@ -630,8 +636,10 @@ def build_system_prompt(
         "\n## 输出要求\n",
         "- 输出完整的 Markdown 格式文章\n",
         "- 包含：标题（# 开头）、摘要（> 引用块，80-128字）、正文（## 小标题分节）、结尾、文末区块\n",
+        "- 文章必须**直接以 `#` 标题开头**；标题前后严禁出现「作者署名／发自某地／记者／媒体名报道」之类的新闻电头（如「马斯 发自 北京」「XX 发自 凹非寺」「量子位报道」「本报记者」）。作者与原创标注属发布时的元数据，不写进正文\n",
         "- 开头 2-3 句必须吸睛\n",
         "- 段落短小，适合手机阅读\n",
+        "- 严禁把结构指引中的元标签（如【开头】【结尾】等）或「互动话题／互动时间／互动引导」之类字样当作正文标题或加粗标签输出；要做互动收尾就直接写成自然句子（如一句抛给读者的开放式提问），不加任何标签\n",
         "- 不要输出任何解释性文字，只输出文章本身",
     ]
     if ref_block:
