@@ -18,6 +18,7 @@
 - ⚡ [QClaw + aiworkskills 一键运营公众号](https://mp.weixin.qq.com/s/xLUJBc2bbrJvgeAesbhsFA) · QClaw 组合案例
 - 🔑 [小龙虾的模型怎么选](https://mp.weixin.qq.com/s/u5e7FC-QAzXaMlq36RNIJg) · 写作与配图模型选型指南
 - 🚀 [从写作助手到 AI 运营员工：wechat-article-skills 进化之路](https://mp.weixin.qq.com/s/PRAE37gaEDF92gjwRBEOQg) · 项目演进历程
+- 🌐 [在线试用「改写」功能](https://socialistic.ai/zh/skill/aws-wechat-article-writing-317084?utm_source=github&utm_medium=readme&utm_campaign=wechat-article-skills&utm_content=tutorial-section) · 不装环境，贴段稿子直接体验网感改写
 
 ---
 
