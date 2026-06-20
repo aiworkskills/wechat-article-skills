@@ -10,7 +10,7 @@ styles:
   h2: "font-size:17px; font-weight:bold; color:#fff; background:{primary-color}; padding:4px 12px 2px; border-top-left-radius:3px; border-top-right-radius:3px; display:inline-block; margin:2em 0 0; border-bottom:2px solid #efebe9;"
   h3: "font-size:16px; font-weight:bold; color:{primary-color}; margin:1.5em 0 0.8em;"
   h4: "font-size:15px; font-weight:bold; color:#c0392b; margin:1.2em 0 0.6em;"
-  p: "font-size:15px; line-height:1.8; color:#3e3e3e; margin:10px 0;"
+  p: "font-size:16px; line-height:1.8; color:#3e3e3e; margin:10px 0;"
   strong: "color:{primary-color}; font-weight:bold;"
   em: "font-style:italic; color:#555;"
   a: "color:{primary-color}; text-decoration:none; border-bottom:1px solid {primary-color};"
