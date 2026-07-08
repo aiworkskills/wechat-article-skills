@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/github/license/aiworkskills/wechat-article-skills)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/aiworkskills/wechat-article-skills?style=social)](https://github.com/aiworkskills/wechat-article-skills/stargazers)
 [![Release](https://img.shields.io/github/v/release/aiworkskills/wechat-article-skills)](https://github.com/aiworkskills/wechat-article-skills/releases)
-[![Platforms](https://img.shields.io/badge/platforms-13%2B%20Claw%20%7C%20Claude%20Code%20%7C%20Cursor%20%7C%20Codex-blue)](#supported-ecosystem)
+[![Platforms](https://img.shields.io/badge/platforms-13%2B%20Claw%20%7C%20Claude%20Code%20%7C%20Autohand%20Code%20%7C%20Cursor%20%7C%20Codex-blue)](#supported-ecosystem)
 
 ![aiworkskills homepage](https://aiworkskills.cn/images/sp/aiworkskills%E9%A6%96%E9%A1%B5.png)
 
@@ -29,7 +29,7 @@ Recommended path: use the visual config platform **[aiworkskills.cn](https://aiw
 ① Install AI tool  →  ② Clone repo  →  ③ Fill config form  →  ④ Export .aws  →  ⑤ Say "write an article"
 ```
 
-1. **Install an AI coding tool** — QClaw / WorkBuddy / Cursor / Claude Code, etc. (full list below)
+1. **Install an AI coding tool** — QClaw / WorkBuddy / Cursor / Claude Code / Autohand Code, etc. (full list below)
 2. **Clone this repo**
    ```bash
    git clone https://github.com/aiworkskills/wechat-article-skills.git
@@ -50,7 +50,7 @@ Built on the **OpenClaw standard**, compatible with 13+ Claw-series tools:
 
 > QClaw · ArkClaw · JVSClaw · WorkBuddy · Linclaw · NemoClaw · AutoClaw · MaxClaw · KimiClaw · DuClaw · PowerClaw · ZeroClaw
 
-Plus mainstream AI coding tools: **Claude Code · Cursor · Codex**.
+Plus mainstream AI coding tools: **Claude Code · Autohand Code · Cursor · Codex**.
 
 ### Language Models
 

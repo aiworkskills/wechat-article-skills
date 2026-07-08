@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/github/license/aiworkskills/wechat-article-skills)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/aiworkskills/wechat-article-skills?style=social)](https://github.com/aiworkskills/wechat-article-skills/stargazers)
 [![Release](https://img.shields.io/github/v/release/aiworkskills/wechat-article-skills)](https://github.com/aiworkskills/wechat-article-skills/releases)
-[![Platforms](https://img.shields.io/badge/platforms-13%2B%20Claw%20%7C%20Claude%20Code%20%7C%20Cursor%20%7C%20Codex-blue)](#支持的智能体)
+[![Platforms](https://img.shields.io/badge/platforms-13%2B%20Claw%20%7C%20Claude%20Code%20%7C%20Autohand%20Code%20%7C%20Cursor%20%7C%20Codex-blue)](#支持的智能体)
 
 ---
 
@@ -67,7 +67,7 @@ clawhub install aws-wechat-sticker
 
 > **OpenClaw**（Claw 系列的开源标准底座）直接读取仓库 `skills/` 目录——`git clone` 本仓库后即生效，无需 `clawhub install`。
 
-#### 1.2 其他智能体（Cursor / Claude Code / Codex）
+#### 1.2 其他智能体（Cursor / Claude Code / Autohand Code / Codex）
 
 克隆仓库就行，各工具按自己的规则读取 `skills/` 目录：
 
@@ -80,6 +80,7 @@ cd wechat-article-skills
 |------|--------------|------|
 | Cursor | 项目 `skills/` 或 `.cursor/skills/` | 克隆即用；也可把 `skills/aws-wechat-article-*` 和 `aws-wechat-sticker` 软链到 `.cursor/skills/` |
 | Claude Code | `~/.claude/skills/` 或项目 `.claude/skills/` | 把上述 9 个目录复制或软链到对应位置 |
+| Autohand Code | `~/.autohand/skills/` 或项目 `.autohand/skills/` | 把上述 9 个目录复制或软链到对应位置 |
 | Codex | 仓库根 `AGENTS.md` | 已随仓库维护，克隆即生效 |
 
 装完后，对 AI 说「帮我写一篇公众号文章」就开始了。
@@ -137,7 +138,7 @@ cd wechat-article-skills
 
 > QClaw · ArkClaw · JVSClaw · WorkBuddy · Linclaw · NemoClaw · AutoClaw · MaxClaw · KimiClaw · DuClaw · PowerClaw · ZeroClaw
 
-同时支持 **Claude Code · Cursor · Codex** 等主流智能体。
+同时支持 **Claude Code · Autohand Code · Cursor · Codex** 等主流智能体。
 
 ### 支持的大模型
 
