@@ -240,9 +240,7 @@ python skills/aws-wechat-article-main/scripts/validate_env.py
 - **配了**：AI 走你指定的专业模型（写稿：GPT / Claude，配图：香蕉、seedream 等），出稿与配图质量稳定可控，你的文风规范和敏感词策略都能严格执行。
   - **好处**： 用能力很强的模型直接跑小龙虾，我们看起来有些浪费，小龙虾配置普通模型，写稿配高级模型，好钢用到刀刃上，谁叫我们都不是土豪呢。
   - **配图可能必须**：很多coding plan的模型是不支持图片生成的，不配的话图片就出不来。 
-- **不配**：默认**不放行**，除非你明确同意让 AI 自己代写 / 代画：
-  - **写稿**：加 `validate_env.py --agent-writing-approved`，AI 会按同一套文风规范亲自写。
-  - **配图**：加 `validate_env.py --agent-image-capable`，让有多模态能力的 AI（如 Claude / GPT）直接出图。
+- **不配**：环境校验仅警告，不阻断流程。AI 会按同一套文风规范代写；配图则使用当前 AI 的生图能力，当前环境不支持时再向你说明。
 
 两个模型都走 **OpenAI 兼容接口**，**API Key 只存在你本地，不会上传任何服务器**。
 
@@ -307,7 +305,7 @@ image_model:
 IMAGE_MODEL_API_KEY=sk-...
 ```
 
-> 想让 AI 自己的多模态能力直接代画（不接外部图片模型）：运行 `validate_env.py --agent-image-capable`（需你明确同意）。
+> 不接外部图片模型时，`validate_env.py` 仅输出警告；有生图能力的 AI 可直接完成配图。
 
 ---
 

@@ -2,25 +2,23 @@
 """
 校验 `.aws-article/config.yaml` 与仓库根 `aws.env` 中的配置是否完整。
 
-写作模型（默认阻断）：
+写作模型（可选）：
   - config.yaml → writing_model：base_url、model（provider 可选）
   - aws.env → WRITING_MODEL_API_KEY
-  - 仅当用户已明确同意由 Agent 代写（传入 --agent-writing-approved）：未配置降为警告
+  - 未配置时仅警告，不阻断校验
 
-图片模型（条件可选）：
+图片模型（可选）：
   - config.yaml → image_model：base_url、model（provider 可选）
   - aws.env → IMAGE_MODEL_API_KEY
-  - 仅当用户明确同意由 Agent 代生图且传入 --agent-image-capable：未配置降为警告
-  - 未获用户明确同意（即使 Agent 具备生图能力）或未传参时：未配置为阻断级错误
+  - 未配置时仅警告，不阻断校验
 
-微信公众号（阻断级；**例外**：`config.yaml` 顶层 **`publish_method: none`** 时跳过本组）：
-  - config.yaml：wechat_accounts（≥1）、wechat_api_base、wechat_{i}_name（i=1..N）
+微信公众号（阻断级；例外：`publish_method: none` 时跳过本组）：
+  - config.yaml：wechat_accounts（≥1）、wechat_api_base
   - aws.env：WECHAT_{i}_APPID、WECHAT_{i}_APPSECRET
+  - wechat_{i}_name 仅用于展示与选择，未配置时仅警告
 
 用法（仓库根）：
     python skills/aws-wechat-article-main/scripts/validate_env.py
-    python skills/aws-wechat-article-main/scripts/validate_env.py --agent-image-capable
-    python skills/aws-wechat-article-main/scripts/validate_env.py --agent-writing-approved
     python skills/aws-wechat-article-main/scripts/validate_env.py --config .aws-article/config.yaml --env aws.env
 """
 from __future__ import annotations
@@ -105,13 +103,22 @@ def _wechat_ok(cfg: dict, env: dict[str, str]) -> bool:
     if not _nonempty_str(cfg.get("wechat_api_base")):
         return False
     for i in range(1, n + 1):
-        if not _nonempty_str(cfg.get(f"wechat_{i}_name")):
-            return False
         if not _nonempty_str(env.get(f"WECHAT_{i}_APPID")):
             return False
         if not _nonempty_str(env.get(f"WECHAT_{i}_APPSECRET")):
             return False
     return True
+
+
+def _missing_wechat_names(cfg: dict) -> list[str]:
+    n = _parse_wechat_accounts(cfg.get("wechat_accounts"))
+    if n is None:
+        return []
+    return [
+        f"wechat_{i}_name"
+        for i in range(1, n + 1)
+        if not _nonempty_str(cfg.get(f"wechat_{i}_name"))
+    ]
 
 
 def main() -> int:
@@ -134,13 +141,13 @@ def main() -> int:
         "--agent-image-capable",
         action="store_true",
         default=False,
-        help="当前 Agent 具备图片生成能力；传入时图片模型未配置仅为警告，否则为阻断",
+        help="兼容旧调用；图片模型未配置现在默认仅警告",
     )
     parser.add_argument(
         "--agent-writing-approved",
         action="store_true",
         default=False,
-        help="用户已明确同意由 Agent 代写；传入时写作模型未配置仅为警告，否则为阻断",
+        help="兼容旧调用；写作模型未配置现在默认仅警告",
     )
     args = parser.parse_args()
     config_path: Path = args.config
@@ -189,21 +196,17 @@ def main() -> int:
     bad: list[str] = []
     warnings: list[str] = []
 
-    if not _writing_ok(cfg, env_map):
-        if args.agent_writing_approved:
-            warnings.append("写作模型配置不完整")
-        else:
-            bad.append("写作模型配置不完整")
-    if not _image_ok(cfg, env_map):
-        if args.agent_image_capable:
-            warnings.append("图片模型配置不完整")
-        else:
-            bad.append("图片模型配置不完整")
-
     pm = str(cfg.get("publish_method") or "").strip().lower()
     skip_wechat = pm == "none"
     if not skip_wechat and not _wechat_ok(cfg, env_map):
         bad.append("微信公众号配置不完整")
+    if not _writing_ok(cfg, env_map):
+        warnings.append("未配置外部写作模型（可选）")
+    if not _image_ok(cfg, env_map):
+        warnings.append("未配置外部图片模型（可选）")
+    missing_names = _missing_wechat_names(cfg)
+    if missing_names:
+        warnings.append(f"微信公众号展示名未配置（可选）：{', '.join(missing_names)}")
 
     if bad:
         print("failed", file=sys.stdout)

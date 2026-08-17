@@ -47,7 +47,7 @@ metadata:
 
 ## 配置检查 ⛔ BLOCKING
 
-**进入交互顺序「2) 全局账号约束」「3) 本篇准备」及内容流水线前**须完成 **第 0～2.5 步**配置检测（任一步失败则 **不得** 继续）。**第 3 步**是**调用 `publish.py` 前**的核对（非流水线起点）：**`.aws-article/config.yaml`** 中 **`publish_method`** 默认为 **`draft`**（**`publish.py full`** 只把图文写入**公众号草稿箱**）；仅当用户明确要求「发出去 / 对外发布」时，再将该键改为 **`published`**（或使用 **`full --publish`** 临时强制发布）。**微信**：**`validate_env.py`** 默认要求公众号账号配齐（见第 2 步）；用户**明确不接微信**时，先将 **`publish_method`** 设为 **`none`** 再过校验（脚本会跳过微信组），之后 **`publish.py full`** 仍直接跳过。要走草稿/发布，须补全 **`aws.env`** 与 **`config.yaml`** 微信槽位，并建议 **`check-wechat-env`**。文风与账号约束以 **`config.yaml`** 为准，发文元数据以本篇 **`article.yaml`** 为准。
+**进入交互顺序「2) 全局账号约束」「3) 本篇准备」及内容流水线前**须完成 **第 0～2.5 步**配置检测（任一步失败则 **不得** 继续）。**第 3 步**是**调用 `publish.py` 前**的核对（非流水线起点）：**`.aws-article/config.yaml`** 中 **`publish_method`** 默认为 **`draft`**（**`publish.py full`** 只把图文写入**公众号草稿箱**）；仅当用户明确要求「发出去 / 对外发布」时，再将该键改为 **`published`**（或使用 **`full --publish`** 临时强制发布）。**微信**：**`validate_env.py`** 默认要求公众号账号配齐（见第 2 步）；用户**明确不接微信**时，先将 **`publish_method`** 设为 **`none`** 再过校验（脚本会跳过微信组），之后 **`publish.py full`** 仍直接跳过。要走草稿/发布，须补全 **`aws.env`** 与 **`config.yaml`** 微信槽位，并建议 **`check-wechat-env`**。`wechat_N_name` 只用于展示，写作/图片模型是可选项，这三项缺失时只警告。文风与账号约束以 **`config.yaml`** 为准，发文元数据以本篇 **`article.yaml`** 为准。
 
 ### 第 0 步：判断操作系统
 
@@ -88,11 +88,11 @@ python {baseDir}/scripts/validate_env.py
 
 脚本检查（规则摘要，具体交互文案统一以 [首次引导](references/first-time-setup.md) 为准）：
 
-- **写作模型**：`config.yaml` 中 `writing_model.base_url` / `model` 与 `aws.env` 中 **`WRITING_MODEL_API_KEY`** 须同时非空（`provider` 可选，不填按 URL/模型名自动识别）；否则 **`failed`** + **`写作模型配置不完整`**，**退出码 1**。
-- **图片模型**：`image_model.base_url` / `model` 与 **`IMAGE_MODEL_API_KEY`** 须同时非空（`provider` 可选，不填按 URL/模型名自动识别）；否则同上，**退出码 1**。
-- **微信公众号**：`wechat_accounts`、`wechat_api_base`、各槽位名与 **`aws.env`** 中 **`WECHAT_{i}_APPID` / `WECHAT_{i}_APPSECRET`** 须成对完整；否则 **`failed`** + **`微信公众号配置不完整`**，**退出码 1**。**例外**：**`config.yaml`** 中 **`publish_method: none`**（用户明确不接微信）时，**跳过**微信组校验，仍输出 **`True`**（并附一行说明已跳过）。
+- **微信公众号**：`wechat_accounts`、`wechat_api_base` 与 **`aws.env`** 中每个槽位的 **`WECHAT_{i}_APPID` / `WECHAT_{i}_APPSECRET`** 须完整；否则 **`failed`** + **`微信公众号配置不完整`**，**退出码 1**。`wechat_{i}_name` 仅用于展示与按名选择，未填时只警告。**例外**：**`publish_method: none`** 时跳过微信组校验。
+- **写作模型**：`writing_model.base_url` / `model` 与 **`WRITING_MODEL_API_KEY`** 仅供外部写作 API 使用；未配置时输出警告，不影响退出码，Agent 可通过 `write.py prompt` 获取约束后代写。
+- **图片模型**：`image_model.base_url` / `model` 与 **`IMAGE_MODEL_API_KEY`** 仅供外部生图 API 使用；未配置时输出警告，不影响退出码。
 
-**退出码 0**：写作、图片均通过，且（未声明 **`none`** 时）微信也通过 → **`True`** + **`配置校验通过`**。**退出码 1**：任一组未通过 → 不得进入一条龙默认流水线，并引导 [首次引导](references/first-time-setup.md) 补全或 **`publish_method: none`** 后重跑。
+**退出码 0**：微信组通过，或已声明 **`publish_method: none`** 跳过微信组 → **`True`** + **`配置校验通过`**；三个可选项缺失会同时输出警告。**退出码 1**：微信必要配置未通过 → 不得进入一条龙默认流水线，并引导 [首次引导](references/first-time-setup.md) 补全或设为 **`publish_method: none`** 后重跑。
 
 ### 第 2.5 步：创建预设与运行目录（硬性前置，必须执行）
 
@@ -118,7 +118,7 @@ python {baseDir}/scripts/validate_env.py
 - 用户在本地编辑器中填好 `aws.env` 与 `config.yaml` 并保存后，智能体协助重跑 **`validate_env.py`** 复检；若用户明确声明本次例外，按首次引导与本节约束继续处理。
 - **凭证处理原则**：Agent **不得索取、不得接收**用户在对话里粘贴的 `APPSECRET` / `API_KEY` 等任何密钥；所有密钥由用户自己在编辑器里写入 `aws.env`（或通过 `https://aiworkskills.cn/` 平台配置）。Agent 只校验存在性、不读取值、不外发值。
 
-> **模型未配置例外**：写作模型默认阻断；仅当**用户明确同意**由 Agent 代写并传入 `--agent-writing-approved` 时，写作模型未配置才降为警告。图片模型同理，仅在**用户明确同意**使用 Agent 代生图并传入 `--agent-image-capable` 时降为警告；未获用户明确同意时，模型未配置均按阻断处理。须告知用户当前使用的方式。
+> **模型配置是可选项**：默认校验不因写作/图片模型缺失而阻断。进入对应阶段时，有外部 API 配置则可由脚本调用；没有时，写作由 Agent 根据 `write.py prompt` 执行，配图则根据当前 Agent 能力执行或再向用户说明。
 
 > **单步子 skill**：用户只触发某一子能力（如仅排版、仅审稿）且**未走本总览流水线**时，仍以各子 skill 内说明为准；**一条龙 / 完整流程 / 从选题到发布** 必须满足本节 BLOCKING 与上条「禁止自作主张」。
 
@@ -148,10 +148,9 @@ python {baseDir}/scripts/validate_env.py
 
 ### 1) 配置自检（必做）
 
-- 按上文 **配置检查** 完成：**`config.yaml` 与 `aws.env` 均存在** → 运行 **`validate_env.py`**（默认不加 `--agent-image-capable`）**且退出码 0**。**退出码 1** 时按 [首次引导](references/first-time-setup.md) 补全环境；仅当用户**明确表示不接微信**时才可设 **`none`**；走**本次例外**需用户明确书面确认。
+- 按上文 **配置检查** 完成：**`config.yaml` 与 `aws.env` 均存在** → 运行 **`validate_env.py`** **且退出码 0**。**退出码 1** 时按 [首次引导](references/first-time-setup.md) 补全微信必要配置；用户明确不接微信时可设为 **`publish_method: none`** 后重跑。
 - **`validate_env.py` 退出码 0 后，必须立即执行「第 2.5 步目录创建」**（可复用 [首次引导第 2 步](references/first-time-setup.md) 命令）；该步完成前，**禁止**进入「2) 全局账号约束」与任何写稿流程。
-- **退出码 0 + 模型警告**：流程**不阻断**，可直接进入下一步。模型警告仅在用户已明确同意并传入对应参数时出现：写作模型用 `--agent-writing-approved`，图片模型用 `--agent-image-capable`。
-- **禁止擅自加参数**：未获用户明确同意前，禁止自行追加 `--agent-image-capable` 或宣称可按代生图模式继续。
+- **退出码 0 + 可选项警告**：流程**不阻断**，可直接进入下一步；不得要求用户先配置外部写作/图片模型。
 - **退出码 1（微信不完整）时**：只展示 [首次引导](references/first-time-setup.md) 中的 **配置选项**，**不要**在同一轮回复里再问「写哪篇 / 继续哪篇草稿 / 新选题」等；须等配置闭环（重跑校验通过或「本次例外」已书面确认）后，**再**进入下方 **「2) 全局账号约束」**。
 - **`validate_env.py` 不检查** `article_category`、`target_reader`、`default_author`；须在 **「2) 全局账号约束」** 中单独检查并落盘。
 

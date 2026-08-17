@@ -58,7 +58,7 @@
 | 图片模型 | `IMAGE_MODEL_API_KEY` |
 | 微信 | `NUMBER_ACCOUNTS`（与 `publish.py` 一致）、`WECHAT_{i}_NAME`、`WECHAT_{i}_APPID`、`WECHAT_{i}_APPSECRET`、可选 `WECHAT_{i}_API_BASE` |
 
-**`validate_env.py`**（环境检测）：写作、图片、微信**三组**未配齐任一组即 **`failed`**、退出码 1；**`publish_method: none`** 时跳过微信组。详见脚本 docstring。
+**`validate_env.py`**（环境检测）：微信槽位、AppID/AppSecret 缺失时 **`failed`**、退出码 1；**`publish_method: none`** 时跳过微信组。写作/图片模型与 `wechat_N_name` 缺失时仅警告。详见脚本 docstring。
 
 ---
 
