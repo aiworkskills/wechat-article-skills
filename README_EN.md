@@ -165,7 +165,7 @@ Full history in [CHANGELOG.md](CHANGELOG.md). Recent highlights:
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=aiworkskills/wechat-article-skills&type=Date)](https://star-history.com/#aiworkskills/wechat-article-skills&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=aiworkskills/wechat-article-skills&type=Date)](https://star-history.dera.page/#aiworkskills/wechat-article-skills&Date)
 
 ---
 
