@@ -19,6 +19,10 @@ Agent 可读取 `imgs/prompts/*.md` 中的 prompt 文件后用自身多模态能
     python skills/aws-wechat-article-images/scripts/image_create.py batch imgs/prompts/ -o imgs/
     python skills/aws-wechat-article-images/scripts/image_create.py test
 
+prompt 文件 frontmatter 的 `aspect`（如 "2.35:1"）会映射为 API 支持的最接近尺寸；生成后若装有 Pillow，
+会按该比例居中裁切（未装则保留原尺寸并给出 [WARN]）。`aspect` 建议加引号：未加引号的 `16:9`
+会被 YAML 1.1 解析成整数，脚本会尽量反推，但不保证所有写法。
+
 退出码：
     0  成功
     1  硬错误（API 失败、文件缺失等）
@@ -250,7 +254,9 @@ def _detect_api_type(model_cfg: dict) -> str:
     if "/v1beta/models/" in base_url and ":generatecontent" in base_url:
         return "gemini"
     # 通义原生多模态生图：北京或新加坡域名须同时带官方路径（同一 URL 不可能同时含两个域名）
-    if ("dashscope.aliyuncs.com" in base_url and "/multimodal-generation/generation" in base_url) or ("dashscope-intl.aliyuncs.com" in base_url and "/multimodal-generation/generation" in base_url):
+    if ("dashscope.aliyuncs.com" in base_url or "dashscope-intl.aliyuncs.com" in base_url) and (
+        "/multimodal-generation/generation" in base_url or "/text2image/image-synthesis" in base_url
+    ):
         return "qwen"
     if ("volces.com" in base_url and "ark." in base_url and "/api/v3/images/generations" in base_url):
         return "volcengine"
@@ -458,18 +464,20 @@ def _generate_image_gemini(model_cfg: dict, prompt: str, size: str = None,
         }],
         "generationConfig": {
             "temperature": 0.7,
+            "responseModalities": ["TEXT", "IMAGE"],
         }
     }
     data = json.dumps(body, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=data,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {model_cfg['api_key']}",
-        },
-    )
-    _info(f"调用模型: {model_cfg['model']} @ {url} (gemini)")
+    headers = {"Content-Type": "application/json"}
+    host = (urllib.parse.urlparse(url).hostname or "").lower()
+    if host.endswith("googleapis.com"):
+        # Google 官方端点：API Key 走 x-goog-api-key，Bearer 仅用于 OAuth token
+        headers["x-goog-api-key"] = model_cfg["api_key"]
+    else:
+        # 中转站通常沿用 Bearer
+        headers["Authorization"] = f"Bearer {model_cfg['api_key']}"
+    req = urllib.request.Request(url, data=data, headers=headers)
+    _info(f"调用模型: {model_cfg['model']} @ {url} (gemini, auth={'x-goog-api-key' if 'x-goog-api-key' in headers else 'bearer'})")
     try:
         with urllib.request.urlopen(req, timeout=120) as resp:
             result = json.loads(resp.read())
@@ -499,15 +507,14 @@ def _generate_image_qwen(model_cfg: dict, prompt: str, size: str = None,
     base = model_cfg["base_url"].rstrip("/")
     bl = base.lower().rstrip("/")
 
-    # 允许仅填域名：默认走 multimodal 路径；已写完整路径则直接使用（不区分路径大小写）
-    if bl.endswith("/multimodal-generation/generation"):
+    # 允许仅填域名：默认走 multimodal 路径；已写完整路径（multimodal 或 text2image）则直接使用
+    if bl.endswith("/multimodal-generation/generation") or bl.endswith("/image-synthesis"):
         url = base
     else:
         # 默认统一到多模态生成接口
         url = f"{base}/api/v1/services/aigc/multimodal-generation/generation"
 
-    use_text2image = url.endswith("/image-synthesis")
-    use_multimodal = url.endswith("/multimodal-generation/generation")
+    use_text2image = url.lower().endswith("/image-synthesis")
 
     if use_text2image:
         body = {
@@ -530,14 +537,14 @@ def _generate_image_qwen(model_cfg: dict, prompt: str, size: str = None,
             "parameters": {"size": mm_size},
         }
     data = json.dumps(body, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=data,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {model_cfg['api_key']}",
-        },
-    )
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {model_cfg['api_key']}",
+    }
+    if use_text2image:
+        # DashScope text2image（万相）仅支持异步：提交任务后轮询
+        headers["X-DashScope-Async"] = "enable"
+    req = urllib.request.Request(url, data=data, headers=headers)
     _info(f"调用模型: {model_cfg['model']} @ {url} (qwen_native {'text2image' if use_text2image else 'multimodal'})")
     try:
         with urllib.request.urlopen(req, timeout=120) as resp:
@@ -547,6 +554,12 @@ def _generate_image_qwen(model_cfg: dict, prompt: str, size: str = None,
         _err(_format_api_failure("API 调用失败", e.code, error_body))
     except urllib.error.URLError as e:
         _fail_url(e, "连接生图 API")
+
+    if use_text2image:
+        task_id = (result.get("output") or {}).get("task_id")
+        if not task_id:
+            _err(f"text2image 未返回 task_id: {result}")
+        result = _qwen_wait_task(model_cfg, url, task_id)
 
     # 兼容常见返回（若为异步，需另行适配轮询逻辑）
     if "output" in result:
@@ -591,6 +604,133 @@ def _generate_image_qwen(model_cfg: dict, prompt: str, size: str = None,
         return base64.b64decode(result["data"])
     _err("API 未返回图片数据")
 
+def _qwen_wait_task(model_cfg: dict, endpoint_url: str, task_id: str,
+                    timeout: int = 180, interval: int = 3) -> dict:
+    """轮询 DashScope 异步任务直到 SUCCEEDED；失败 / 超时走 _err。返回任务查询的完整响应。"""
+    parsed = urllib.parse.urlparse(endpoint_url)
+    task_url = f"{parsed.scheme}://{parsed.netloc}/api/v1/tasks/{task_id}"
+    _info(f"text2image 为异步任务，轮询 {task_url}")
+    deadline = time.time() + timeout
+    while True:
+        req = urllib.request.Request(
+            task_url, headers={"Authorization": f"Bearer {model_cfg['api_key']}"}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                data = json.loads(resp.read())
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8", errors="replace")
+            _err(_format_api_failure("轮询生图任务失败", e.code, error_body))
+        except urllib.error.URLError as e:
+            _fail_url(e, "轮询生图任务")
+        status = str((data.get("output") or {}).get("task_status") or "").upper()
+        if status == "SUCCEEDED":
+            return data
+        if status in ("FAILED", "CANCELED", "UNKNOWN"):
+            _err(f"生图任务 {status}: {data}")
+        if time.time() > deadline:
+            _err(f"生图任务超时（{timeout}s 仍为 {status or '未知'}）: {data}")
+        time.sleep(interval)
+
+
+def _coerce_aspect(value) -> str | None:
+    """frontmatter 的 size / aspect 统一为字符串。
+
+    PyYAML 按 YAML 1.1 把未加引号的 `16:9` 解析成六十进制整数 969、`1:1` 解析成 61，
+    这里按 divmod(60) 反推回 `16:9` / `1:1`。
+    """
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        a, b = divmod(value, 60)
+        return f"{a}:{b}"
+    text = str(value).strip()
+    return text or None
+
+
+def _resolve_size(cli_size: str | None, meta: dict) -> tuple[str | None, str | None]:
+    """返回 (发给 API 的尺寸, 生成后需裁切到的比例或 None)。
+
+    - `WxH`：原样传给 API，不裁切
+    - 已知比例（ASPECT_TO_SIZE）：映射到最接近的支持尺寸，再按比例裁切
+    - 未知比例 `w:h`：按横竖方向选一个宽幅 / 竖幅 / 方形尺寸，再按比例裁切
+    """
+    raw = _coerce_aspect(cli_size) or _coerce_aspect(meta.get("size")) or _coerce_aspect(meta.get("aspect"))
+    if not raw:
+        return None, None
+    if raw in ASPECT_TO_SIZE:
+        return ASPECT_TO_SIZE[raw], raw
+    if ":" in raw:
+        try:
+            w, h = (float(x) for x in raw.split(":", 1))
+        except ValueError:
+            _err(f"无法识别的比例 / 尺寸: {raw!r}（应为 16:9 这类比例或 1024x1024 这类尺寸）")
+        if w > h:
+            size = "1792x1024"
+        elif w < h:
+            size = "1024x1792"
+        else:
+            size = "1024x1024"
+        _info(f"比例 {raw} 不在预设表中，先按 {size} 生成再裁切")
+        return size, raw
+    return raw, None
+
+
+def _crop_to_aspect(img_data: bytes, aspect: str) -> bytes:
+    """按 `w:h` 居中裁切；与目标比例相差 <1% 时原样返回；未装 Pillow 时给 [WARN] 并原样返回。"""
+    try:
+        w_r, h_r = (float(x) for x in aspect.split(":", 1))
+    except ValueError:
+        return img_data
+    if w_r <= 0 or h_r <= 0:
+        return img_data
+    target = w_r / h_r
+    try:
+        from PIL import Image
+    except ImportError:
+        print(f"[WARN] 未安装 Pillow，无法把图片裁切到 {aspect}，保留 API 返回尺寸（pip install Pillow）", file=sys.stderr)
+        return img_data
+    import io
+    try:
+        im = Image.open(io.BytesIO(img_data))
+        im.load()
+    except Exception as e:  # noqa: BLE001
+        print(f"[WARN] 图片无法解析，跳过裁切: {e}", file=sys.stderr)
+        return img_data
+    w, h = im.size
+    if abs(w / h - target) / target < 0.01:
+        return img_data
+    if w / h > target:
+        new_w = max(1, round(h * target))
+        left = (w - new_w) // 2
+        box = (left, 0, left + new_w, h)
+    else:
+        new_h = max(1, round(w / target))
+        top = (h - new_h) // 2
+        box = (0, top, w, top + new_h)
+    fmt = im.format or "PNG"
+    cropped = im.crop(box)
+    if fmt == "JPEG" and cropped.mode not in ("RGB", "L"):
+        cropped = cropped.convert("RGB")
+    buf = io.BytesIO()
+    cropped.save(buf, format=fmt)
+    _info(f"已按 {aspect} 居中裁切: {w}x{h} -> {cropped.size[0]}x{cropped.size[1]}")
+    return buf.getvalue()
+
+
+def _detect_image_ext(data: bytes) -> str | None:
+    """按文件头识别图片格式，返回 .png/.jpg/.webp/.gif；无法识别返回 None。"""
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return ".png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return ".jpg"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return ".webp"
+    if data.startswith((b"GIF87a", b"GIF89a")):
+        return ".gif"
+    return None
+
+
 def _read_prompt_file(path: Path) -> tuple[str, dict]:
     """读取 prompt 文件，支持 YAML frontmatter。"""
     text = path.read_text(encoding="utf-8")
@@ -598,8 +738,9 @@ def _read_prompt_file(path: Path) -> tuple[str, dict]:
     if text.startswith("---"):
         parts = text.split("---", 2)
         if len(parts) >= 3:
-            import yaml
             meta = yaml.safe_load(parts[1]) or {}
+            if not isinstance(meta, dict):
+                meta = {}
             prompt = parts[2].strip()
             return prompt, meta
 
@@ -646,12 +787,9 @@ def main():
 
     if args.command == "test":
         _info("测试 API 连通性...")
-        try:
-            img_data = generate_image(model_cfg, "A simple blue circle on white background",
-                                       size="1024x1024", quality="standard")
-            _ok(f"API 连通正常，收到 {len(img_data)} 字节图片数据")
-        except SystemExit:
-            pass
+        img_data = generate_image(model_cfg, "A simple blue circle on white background",
+                                  size="1024x1024", quality="standard")
+        _ok(f"API 连通正常，收到 {len(img_data)} 字节图片数据")
         return
 
     if args.command == "generate":
@@ -661,14 +799,20 @@ def main():
 
         prompt, meta = _read_prompt_file(prompt_path)
 
-        size = args.size or meta.get("size") or meta.get("aspect")
-        if size and size in ASPECT_TO_SIZE:
-            size = ASPECT_TO_SIZE[size]
+        size, crop_aspect = _resolve_size(args.size, meta)
         quality = args.quality or meta.get("quality")
 
         img_data = generate_image(model_cfg, prompt, size=size, quality=quality)
+        if crop_aspect:
+            img_data = _crop_to_aspect(img_data, crop_aspect)
 
-        output_path = Path(args.output) if args.output else prompt_path.with_suffix(".png")
+        ext = _detect_image_ext(img_data) or ".png"
+        if args.output:
+            output_path = Path(args.output)
+            if output_path.suffix.lower() not in (ext, ".jpeg" if ext == ".jpg" else ext):
+                print(f"[WARN] 输出后缀 {output_path.suffix or '(无)'} 与实际图片格式 {ext} 不一致", file=sys.stderr)
+        else:
+            output_path = prompt_path.with_suffix(ext)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_bytes(img_data)
         _ok(f"已保存: {output_path} ({len(img_data)} 字节)")
@@ -690,13 +834,13 @@ def main():
             _info(f"[{i}/{len(prompt_files)}] {pf.name}")
             prompt, meta = _read_prompt_file(pf)
 
-            size = args.size or meta.get("size") or meta.get("aspect")
-            if size and size in ASPECT_TO_SIZE:
-                size = ASPECT_TO_SIZE[size]
+            size, crop_aspect = _resolve_size(args.size, meta)
             quality = args.quality or meta.get("quality")
 
             img_data = generate_image(model_cfg, prompt, size=size, quality=quality)
-            out_path = output_dir / pf.with_suffix(".png").name
+            if crop_aspect:
+                img_data = _crop_to_aspect(img_data, crop_aspect)
+            out_path = output_dir / (pf.stem + (_detect_image_ext(img_data) or ".png"))
             out_path.write_bytes(img_data)
             _ok(f"  → {out_path}")
 

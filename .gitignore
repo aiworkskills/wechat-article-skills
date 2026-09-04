@@ -2,6 +2,14 @@
 .aws-article/config.yaml
 .aws-article/writing-spec.md
 aws.env
+aws.env.*
+*.bak
+*.bak_*
+.aws-article/downloads/
+
+# 打包产物
+skills.zip
+*.aws
 
 # 用户自定义预设和素材
 .aws-article/presets/

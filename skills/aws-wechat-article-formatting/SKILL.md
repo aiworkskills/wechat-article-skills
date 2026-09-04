@@ -53,8 +53,7 @@ metadata:
 
 ## 配置检查 ⛔
 
-任何操作执行前，**必须**按 **[首次引导](../aws-wechat-article-main/references/first-time-setup.md)** 执行其中的 **「检测顺序」**。**单独启用本 skill** 时同上。检测通过后才能进行以下操作（或用户明确书面确认「本次不检查」）：
-
+任何操作执行前，**必须**按 **[首次引导](../aws-wechat-article-main/references/first-time-setup.md)** 执行其中的 **「检测顺序」**。**单独启用本 skill** 时同上。检测通过后才能进行以下操作（或用户明确书面确认「本次不检查」）。
 
 ## 内置主题
 
@@ -118,7 +117,9 @@ python {baseDir}/scripts/format.py --list-themes
 - **正文不含文章标题**：Markdown 中第一个 `#`（h1）在转换时被跳过，标题在公众号后台单独填写，正文不重复
 - 配图标记 `![类型：描述](placeholder)` 保留为 `<img>` 标签，待 images skill 替换
 - 图注自动从标记描述中提取
-- 同目录存在 **`closing.md`** 时，`format.py` 会追加到文末（脚本既有行为）
+- 同目录存在 **`closing.md`** 时，`format.py` 会追加到文末（脚本既有行为）；`closing.md` 自己的首个 `#` 标题会保留，只有 `article.md` 的首个 `#` 被视为文章标题跳过
+- 预格式化（中英文加空格、ASCII 引号转「」、合并空行）只作用于正文文字：围栏代码块、行内代码、链接/图片目标、`{embed:…}`、原生 HTML 标签与裸 URL 原样保留，行内代码内容做 HTML 转义。不需要预格式化时加 `--no-preformat`
+- 表格支持 `|:---:|` 这类对齐行
 
 ## 选项
 
@@ -126,13 +127,19 @@ python {baseDir}/scripts/format.py --list-themes
 |------|------|--------|
 | `--theme <名称>` | 主题；**省略则按合并配置 → default** | 见上文 |
 | `--color <hex>` | 自定义主色 | 主题默认 |
-| `--font-size <px>` | 字号 | 16px |
+| `--font-size <px>` | 正文字号（同时覆盖主题 p / li 里的字号） | 16px |
 | `-o <路径>` | 输出路径 | 同名 .html |
 | `--list-themes` | 列出可用主题 | |
+| `--export-theme <名称>` | 以 YAML 导出主题（合并默认变量与样式），重定向到文件即可作为自定义主题起点 | |
+| `--no-preformat` | 跳过 Markdown 预格式化 | |
 
 ## 自定义主题
 
-在 `.aws-article/presets/formatting/` 下新建主题文件即可。
+在 `.aws-article/presets/formatting/` 下新建主题文件即可。快速起步：
+
+```bash
+python {baseDir}/scripts/format.py --export-theme default > .aws-article/presets/formatting/my-brand.yaml
+```
 
 主题文件格式和扩展方式详见：[references/presets/README.md](references/presets/README.md)
 

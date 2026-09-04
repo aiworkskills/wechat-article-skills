@@ -155,7 +155,7 @@ metadata:
 #### 封面风格
 
 **预设发现**：Agent 扫描两个目录合并可用封面预设列表：
-1. **内置**：`{baseDir}/references/cover-styles/`（随 skill 安装）
+1. **内置**：`{baseDir}/references/cover-styles/`（随 skill 安装；文件名形如 `简约.example.md`，预设名取 `.example.md` 之前的部分即 `简约`，可直接引用无需复制）
 2. **用户自定义**：`.aws-article/presets/cover-styles/`（用户创建或预设包导入）
 
 **加载优先级**：
@@ -167,7 +167,7 @@ metadata:
 
 #### 正文配图风格
 
-**预设发现**：Agent 扫描 `.aws-article/presets/image-styles/` 获取可用正文配图预设。
+**预设发现**：Agent 扫描 `.aws-article/presets/image-styles/` 获取可用正文配图预设（文件 schema 见 [main 的 presets/image-styles/README.md](../aws-wechat-article-main/references/presets/image-styles/README.md)）。本 skill **不内置**正文配图预设文件；目录不存在或为空时直接走下方 fallback 自动推荐，不算错误。
 
 **加载优先级**：
 1. 用户当次指定（如「正文要扁平插画」）
@@ -178,13 +178,16 @@ metadata:
 
 为每张图生成方案（类型、风格、prompt 要点）。
 
-**封面 prompt frontmatter 必须包含 `aspect`**：从 `config.yaml` 的 `cover_aspect` 读取（如 `2.35:1`），写入 YAML frontmatter。`image_create.py` 据此转换为实际像素尺寸；**缺少 aspect 会导致 fallback 到 1:1**。
+**封面 prompt frontmatter 必须包含 `aspect`**：从 `config.yaml` 的 `cover_aspect` 读取（如 `2.35:1`），写入 YAML frontmatter。`image_create.py` 据此映射到 API 支持的最接近尺寸生成，装有 Pillow 时再居中裁切到该比例（如 2.35:1 → 1792x763）。**值须加引号**（`aspect: "2.35:1"`），未加引号的 `16:9` 会被 YAML 解析成整数。缺少 aspect 时退回 `config.yaml` 的 `image_model.default_size`（默认 1024x1024）。
 
 **图片内文字**：画面中出现的文字必须为中文。在 prompt 里**直接写出要显示的中文文案**（如「传统对话AI」「OpenClaw」），禁止只写 “labels in Chinese” 或 “Chinese or English OK”，否则模型会生成英文。
 
 Prompt 构建：[references/image-styles/prompt-construction.md](references/image-styles/prompt-construction.md)
 
 ### 第5步：展示方案并等待确认 ⛔
+
+- **一条龙流程**且用户对风格无特殊要求：与 main 约定一致，按默认预设自动执行，**不单独确认**，但须在结果里列出每张图的类型、风格与 prompt 文件路径。
+- **单独触发本 skill**、用户明确提出风格要求、或方案涉及用业务配图库替换正文图位：先展示方案（每图：位置、Type、Style、prompt 要点、来源），**等待用户确认后**再进入第 6 步。
 
 ### 第6步：生成图片
 
@@ -216,7 +219,7 @@ python {baseDir}/scripts/image_create.py batch drafts/YYYYMMDD-slug/imgs/prompts
 
 单张：`python {baseDir}/scripts/image_create.py generate imgs/prompts/01-cover.md -o imgs/01-cover.png`
 
-连通性自检：`python {baseDir}/scripts/image_create.py test`
+连通性自检：`python {baseDir}/scripts/image_create.py test`（失败时退出码 1 并打印分类提示，可按下方表格处理）
 
 图片规格：[references/specs.md](references/specs.md)
 

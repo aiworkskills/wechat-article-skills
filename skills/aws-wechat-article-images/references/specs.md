@@ -14,7 +14,8 @@
 
 - 格式：JPG / PNG
 - 单张建议 ≤ 2MB
-- 风格按 `custom_cover_image_style` 指定的封面预设决定（见 `cover-styles/`）
+- 风格按本篇 `article.yaml` > `custom_cover_image_style` > `default_cover_image_style` 合并后的封面预设决定（见 `cover-styles/`）
+- `image_create.py` 先按 `aspect` 映射到 API 支持的最接近尺寸生成（2.35:1 → 1792x1024），装有 Pillow 时再居中裁切到目标比例（→ 1792x763）；未装 Pillow 保留原尺寸并给出 `[WARN]`
 
 ## 正文配图
 

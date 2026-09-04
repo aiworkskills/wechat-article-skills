@@ -1,6 +1,6 @@
 # 封面风格预设
 
-本目录下的 `.md` 文件为**封面风格预设**（内置）。用户自定义预设放在 `.aws-article/presets/cover-styles/` 下。
+本目录下的 `<名>.example.md` 文件为**内置封面风格预设**，预设名为去掉 `.example.md` 后的部分（`简约.example.md` → `简约`），可直接在 `default_cover_image_style` / `custom_cover_image_style` / 本篇 `article.yaml` 中引用。用户自定义预设放在 `.aws-article/presets/cover-styles/<名>.md`，同名时覆盖内置。
 
 ## 加载规则
 
@@ -32,10 +32,10 @@
 - 画面内文字必须为中文，在 prompt 中直接写出要显示的中文文案
 ```
 
-- 文件名即预设名（不含后缀），如 `简约.md` → 预设名 `简约`。
+- 文件名即预设名：用户目录下 `简约.md` → `简约`；内置目录下 `简约.example.md` → `简约`。
 - `Prompt 要点` 部分会被 Agent 直接嵌入封面 prompt 的「风格」字段。
 - 每个预设自包含视觉风格描述，无须引用外部 Style 维度。
 
 ## 示例
 
-见同目录下的 `.example.md` 文件。复制到 `.aws-article/presets/cover-styles/` 并重命名为 `.md` 后按需修改。
+内置预设即同目录下的 `.example.md` 文件（简约 / 科技风 / 插画 / 大字报），可直接使用。要调整时复制到 `.aws-article/presets/cover-styles/<名>.md`（去掉 `.example`）后修改，同名即覆盖内置。

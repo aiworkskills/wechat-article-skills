@@ -283,7 +283,7 @@
 
 封面 prompt 的「风格」关键词直接来自封面预设 `.md` 文件的「Prompt 要点」部分（见 [cover-styles/](../cover-styles/)），无须引用 Style 维度。
 
-**YAML frontmatter 必须包含 `aspect`**：从 `config.yaml` 的 `cover_aspect` 读取（如 `2.35:1`），写入 frontmatter，`image_create.py` 据此转换为实际尺寸。缺少 frontmatter 的 aspect 会导致 fallback 到 1:1。
+**YAML frontmatter 必须包含 `aspect`**：从 `config.yaml` 的 `cover_aspect` 读取（如 `2.35:1`），写入 frontmatter，`image_create.py` 据此转换为实际尺寸并在生成后居中裁切到该比例。**值须加引号**（`aspect: "2.35:1"`），未加引号的 `16:9` 会被 YAML 解析成整数。缺少 aspect 时退回 `config.yaml` 的 `image_model.default_size`（默认 1024x1024）。
 
 ```yaml
 ---

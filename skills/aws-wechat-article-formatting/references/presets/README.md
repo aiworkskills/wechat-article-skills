@@ -2,7 +2,7 @@
 
 ## 使用主题
 
-不传 `--theme` 时，**`format.py`** 从合并配置读取 **`custom_format_preset`**（优先）> **`default_format_preset`**（**`.aws-article/config.yaml`** + 本篇 **`article.yaml`**）。该键**须为 YAML 字符串列表**：`[]`、单元素 `[主题名]`，或多候选；**多候选**须在本篇同键改为**单元素列表**后再运行，否则报错。
+不传 `--theme` 时，**`format.py`** 只读取与 `article.md` 同目录 **`article.yaml`** 的 **`default_format_preset`**（不直接读 `.aws-article/config.yaml`；全局 `custom_format_preset` / `default_format_preset` 候选池由 main 在本篇准备阶段收敛后写回 `article.yaml`）。该键**须为 YAML 字符串列表**：`[]` 或单元素 `[主题名]`；为空则用内置 `default`；多候选会报错，须先改为单元素列表。
 
 ```bash
 python format.py article.md --theme <主题名>
@@ -42,7 +42,7 @@ styles:                        # 样式规则（可用 {变量名} 引用变量�
   h2: "font-size:18px; background:{primary-color}; color:#FFF; padding:6px 14px; border-radius:4px;"
   h3: "font-size:16px; font-weight:bold; color:{primary-color};"
   h4: "font-size:15px; font-weight:bold; color:#444;"
-  p: "font-size:15px; line-height:1.8; color:#3a3a3a; margin:10px 0;"
+  p: "font-size:{font-size}; line-height:1.8; color:#3a3a3a; margin:10px 0;"   # 用 {font-size} 变量，--font-size 才能覆盖
   strong: "color:{primary-color}; font-weight:bold;"
   em: "font-style:italic; color:#555;"
   a: "color:{primary-color}; text-decoration:none; border-bottom:1px solid {primary-color};"
@@ -69,6 +69,8 @@ python format.py --export-theme default > .aws-article/presets/formatting/my-bra
 # 编辑 my-brand.yaml，修改颜色和样式
 ```
 
+导出内容包含全部默认变量与样式键，`{变量}` 引用保持原样，可直接改色改样式。
+
 ## 可用变量
 
 | 变量 | 说明 | 默认值 |
@@ -81,7 +83,7 @@ python format.py --export-theme default > .aws-article/presets/formatting/my-bra
 | `bg-light` | 浅色背景 | #F7F7F7 |
 | `border-color` | 边框颜色 | #EEEEEE |
 | `link-color` | 链接颜色 | #576B95 |
-| `font-size` | 正文字号 | 16px |
+| `font-size` | 正文字号；`--font-size` 覆盖时，主题 p / li 中硬编码的字号也会被一并替换 | 16px |
 | `font-family` | 字体 | system fonts |
 | `line-height` | 行高 | 1.8 |
 | `paragraph-spacing` | 段间距 | 1.5em |
@@ -107,6 +109,8 @@ python format.py --export-theme default > .aws-article/presets/formatting/my-bra
 | `figcaption` | 图片说明 |
 | `code` | 行内代码 |
 | `pre` | 代码块 |
+| `table` / `th` / `td` | 表格、表头、单元格（留空用内置默认） |
+| `del` | 删除线 `~~文字~~` |
 | `strong-color` | 加粗文字颜色（兼容旧主题） |
 
 样式值为 CSS inline style 格式，可使用 `{变量名}` 引用变量。
