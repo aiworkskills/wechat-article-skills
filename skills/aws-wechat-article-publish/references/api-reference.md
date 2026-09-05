@@ -169,3 +169,23 @@ WECHAT_1_API_BASE=
 - [发布草稿](https://developers.weixin.qq.com/doc/subscription/api/public/api_freepublish_submit.html)
 - [上传永久素材](https://developers.weixin.qq.com/doc/subscription/api/material/permanent/api_addmaterial.html)
 - [上传正文图片](https://developers.weixin.qq.com/doc/subscription/en/api/material/permanent/api_uploadimage)
+
+## 封面裁剪框 pic_crop_* 的回读
+
+`draft/add` 接受 `pic_crop_235_1` / `pic_crop_1_1`（归一化 `X1_Y1_X2_Y2`），但
+**`draft/get` 不回显这两个字段**——它把值归一化后放进 `cover_info.crop_percent_list`：
+
+```json
+"cover_info": {
+  "crop_percent_list": [
+    {"ratio": "2.35_1", "x1": "0.001515", "y1": "0", "x2": "0.998485", "y2": "1"},
+    {"ratio": "1_1",    "x1": "0.287879", "y1": "0", "x2": "0.712121", "y2": "1"}
+  ]
+}
+```
+
+不知道这点会得出「微信忽略了裁剪框」的错误结论——在 `news_item[0]` 里查
+`pic_crop_235_1` 只会拿到 `None`。校验请读 `cover_info.crop_percent_list`，
+`ratio` 用下划线写法（`2.35_1` / `1_1`）。
+
+实测（1584x672 封面）微信原样存下，六位小数完全一致；比例不匹配时才会报 53402。
