@@ -1,0 +1,34 @@
+name: section-title
+displayName: 编号小标题
+category: opening
+body: single
+
+when_to_use: |
+  正文分了 3 段以上、且各段是并列或递进关系时，用编号小标题替代普通 ## 标题。
+  编号本身给读者进度感——「还有几节」是长文完读率的关键。
+
+when_not_to_use: |
+  全文只有一两个小节：编号看着像凑数。
+  各节不是并列关系（比如「背景 / 正文 / 结尾」）：编号会暗示不存在的对等性。
+  已经用了 toc 组件列出目录：两处编号容易对不上。
+
+anti_pattern: |
+  编号不连续（01、03、04）——读者会以为漏看了一节。
+  编号里写中文「第一节」——圆形角标只有 30px，两个字以上会挤出来，只填 01 这类两位数字。
+  标题写超过 14 个字——右侧空间不够，会折成两行把角标顶偏。
+
+example: |
+  :::section-title[01]
+  同一个模型，两个分数
+  :::
+
+# {arg} = 方括号里的编号；{content} = 下一行的标题文字
+# 颜色与字号占位符从当前主题取，保证组件和主题不脱节
+template: |
+  <section style="margin:2.6em 0 1.2em;">
+    <section style="display:flex; align-items:center;">
+      <section style="flex:0 0 auto; width:30px; height:30px; border-radius:15px; background:{primary-color}; color:#FFFFFF; text-align:center; line-height:30px; font-size:14px; font-weight:700;">{arg}</section>
+      <section style="flex:1; padding-left:10px; font-size:19px; font-weight:600; color:{text-color}; line-height:1.45;">{content}</section>
+    </section>
+    <section style="height:2px; background:linear-gradient(to right, {primary-color}, rgba(0,0,0,0)); margin-top:10px;"></section>
+  </section>

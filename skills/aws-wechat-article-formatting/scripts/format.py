@@ -42,6 +42,13 @@ USER_THEMES_DIRS = [
 
 THEME_SEARCH_DIRS = USER_THEMES_DIRS + [BUILTIN_THEMES_DIR]
 
+# 版式组件：markdown 里用 :::name[参数] … ::: 调用，渲染成设计过的 HTML 结构。
+# 为什么需要它：微信只认内联样式，没有伪元素，所以「标题前的角标」「引用块的大引号」
+# 这类装饰没法靠 CSS 变出来，必须真的插元素。而主题只能给标签配样式，表达不了结构。
+BUILTIN_COMPONENTS_DIR = SKILL_DIR / "references" / "components"
+USER_COMPONENTS_DIR = Path(".aws-article/presets/components")
+COMPONENT_SEARCH_DIRS = [USER_COMPONENTS_DIR, BUILTIN_COMPONENTS_DIR]
+
 DEFAULT_VARIABLES = {
     "primary-color": "#0F4C81",
     "bg-accent-color": "#F0F4F8",
@@ -608,8 +615,54 @@ def _want_caption(alt: str, caption_style: str) -> bool:
     return True               # 有图注，以及无法识别的取值都按默认走
 
 
+def _load_components() -> dict:
+    """加载版式组件；同名时用户目录覆盖内置。"""
+    out: dict[str, dict] = {}
+    for d in reversed(COMPONENT_SEARCH_DIRS):      # 后加载的覆盖先加载的
+        if not d.is_dir():
+            continue
+        for f in sorted(d.glob("*.yaml")) + sorted(d.glob("*.yml")):
+            spec = _safe_yaml_dict(f)
+            name = str(spec.get("name") or f.stem).strip()
+            if name and spec.get("template"):
+                out[name] = spec
+    return out
+
+
+# 组件模板里可用的占位符 → 从当前主题取值，保证组件与主题不脱节
+_COMPONENT_VARS = (
+    "primary-color", "bg-accent-color", "text-color", "text-light",
+    "text-muted", "border-color", "link-color", "font-size", "line-height",
+)
+
+
+def _render_component(spec: dict, arg: str, body_lines: list[str], styles: dict) -> str:
+    """把一个 :::块 渲染成 HTML。arg 是方括号里的参数，body_lines 是块内正文。"""
+    body_kind = str(spec.get("body") or "free").strip()
+    if body_kind == "single":
+        content = _inline_format(" ".join(x.strip() for x in body_lines if x.strip()), styles)
+    else:                                           # free：空行分段
+        paras, buf = [], []
+        for ln in body_lines:
+            if ln.strip():
+                buf.append(ln.strip())
+            elif buf:
+                paras.append(" ".join(buf)); buf = []
+        if buf:
+            paras.append(" ".join(buf))
+        content = "<br />".join(_inline_format(x, styles) for x in paras)
+
+    html = str(spec["template"])
+    for var in _COMPONENT_VARS:
+        html = html.replace("{" + var + "}", str(styles.get(var, "")))
+    html = html.replace("{arg}", html_mod.escape(arg))
+    html = html.replace("{content}", content)
+    return html.strip()
+
+
 def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
-                caption_style: str = CAPTION_ALWAYS) -> str:
+                caption_style: str = CAPTION_ALWAYS,
+                components: dict | None = None) -> str:
     """Markdown → 带 inline style 的 HTML。
 
     skip_first_h1=True 时正文不包含文章标题（第一个 h1 跳过，由公众号后台单独填）；
@@ -702,6 +755,32 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             continue
 
         heading_match = re.match(r'^(#{1,4})\s+(.+)$', stripped)
+        # 版式组件：:::name[参数] … :::
+        directive = re.match(r'^:::([A-Za-z0-9_-]+)(?:\[(.*)\])?\s*$', stripped)
+        if directive and components:
+            name, arg = directive.group(1), (directive.group(2) or "")
+            spec = components.get(name)
+            end = None
+            for look in range(line_idx + 1, len(lines)):
+                if lines[look].strip() == ":::":
+                    end = look
+                    break
+            if spec and end is not None:
+                flush_paragraph()
+                close_list()
+                close_blockquote()
+                body = lines[line_idx + 1:end]
+                html_parts.append(_render_component(spec, arg, body, styles))
+                for skip_i in range(line_idx + 1, end + 1):
+                    lines[skip_i] = ""
+                continue
+            # 组件不存在或没有闭合，按原文走，别把内容吞掉
+            if not spec:
+                print(f"[WARN] 未知版式组件 :::{name}，按普通文本输出。"
+                      f"可用组件：{', '.join(sorted(components)) or '（无）'}", file=sys.stderr)
+            elif end is None:
+                print(f"[WARN] 组件 :::{name} 缺少结尾的 :::，按普通文本输出。", file=sys.stderr)
+
         if heading_match:
             flush_paragraph()
             close_list()
@@ -1034,7 +1113,10 @@ def main():
     _info(f"主题: {theme_name}")
     styles = _build_styles(theme, overrides)
     caption_style = str(_merge_format_context(draft_dir).get("caption_style") or CAPTION_ALWAYS)
-    body_html = _md_to_html(md_text, styles, caption_style=caption_style)
+    components = _load_components()
+    if components:
+        _info(f"已加载版式组件 {len(components)} 个: {', '.join(sorted(components))}")
+    body_html = _md_to_html(md_text, styles, caption_style=caption_style, components=components)
 
     embeds = _resolve_embeds_config(draft_dir)
     if embeds:
@@ -1046,7 +1128,7 @@ def main():
     if closing_md_path.exists():
         closing_md = closing_md_path.read_text(encoding="utf-8")
         # 不对 closing.md 进行预格式化，避免意外更改作者自定义的链接与排版
-        closing_html = _md_to_html(closing_md, styles, skip_first_h1=False, caption_style=caption_style)
+        closing_html = _md_to_html(closing_md, styles, skip_first_h1=False, caption_style=caption_style, components=components)
         # 以段落分隔以避免直接黏连
         body_html = f"{body_html}\n\n<div style=\"margin-top:1.5em\"></div>\n{closing_html}"
         _info(f"已追加文末区块: {closing_md_path}")

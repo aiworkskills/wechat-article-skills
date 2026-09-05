@@ -1,6 +1,10 @@
 """format.py 回归测试：预格式化保护、表格、引用块、列表、closing.md、字号覆盖。"""
 import re
 import unittest
+import io
+import os
+import tempfile
+from pathlib import Path
 
 from tests._load import load
 
@@ -148,3 +152,83 @@ class CaptionStyleTest(unittest.TestCase):
     def test_alt_without_colon_never_gets_caption(self):
         for style in ("有图注", "关键图有"):
             self.assertNotIn("没有冒号的alt", self._captions(style))
+
+
+class ComponentTest(unittest.TestCase):
+    """版式组件 :::name[参数] … :::
+
+    微信只认内联样式、没有伪元素，所以「标题前的角标」「引用块的大引号」必须真的
+    插元素。主题只能给标签配样式，表达不了结构——组件补的就是这一层。
+    """
+
+    def setUp(self):
+        self.styles = fmt._build_styles(fmt._load_theme("default"))
+        self.comps = fmt._load_components()
+
+    def test_builtin_components_load(self):
+        self.assertIn("section-title", self.comps)
+        self.assertIn("quote-card", self.comps)
+        for name, spec in self.comps.items():
+            self.assertTrue(spec.get("template"), f"{name} 缺 template")
+            for field in ("when_to_use", "when_not_to_use", "anti_pattern", "example"):
+                self.assertTrue(spec.get(field), f"{name} 缺 {field}（Agent 选型要用）")
+
+    def _render(self, md):
+        return fmt._md_to_html(md, self.styles, components=self.comps)
+
+    def test_single_body_renders_structure(self):
+        html = self._render(":::section-title[01]\n同一个模型，两个分数\n:::")
+        self.assertIn("border-radius:15px", html)      # 圆形角标
+        self.assertIn("01", html)
+        self.assertIn("同一个模型", html)
+
+    def test_free_body_joins_paragraphs(self):
+        html = self._render(":::quote-card[出处]\n第一段\n\n第二段\n:::")
+        self.assertIn("第一段<br />第二段", html)
+        self.assertIn("出处", html)
+
+    def test_theme_color_is_injected(self):
+        primary = self.styles["primary-color"]
+        html = self._render(":::section-title[01]\n标题\n:::")
+        self.assertIn(primary, html, "组件必须继承主题主色，否则和主题脱节")
+        for leftover in ("{arg}", "{content}", "{primary-color}", "{text-color}"):
+            self.assertNotIn(leftover, html, f"占位符 {leftover} 未被替换")
+
+    def test_arg_is_escaped(self):
+        html = self._render(':::quote-card[<b>x</b>]\n内容\n:::')
+        self.assertNotIn("<b>x</b>", html, "方括号参数须转义，否则可注入标签")
+
+    def test_unknown_component_falls_through(self):
+        import contextlib
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            html = self._render("正文\n\n:::no-such[x]\n内容\n:::")
+        self.assertIn("内容", html, "未知组件不能把正文吞掉")
+        self.assertIn("未知版式组件", err.getvalue())
+
+    def test_unclosed_component_falls_through(self):
+        import contextlib
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            html = self._render(":::quote-card[x]\n没有结尾")
+        self.assertIn("没有结尾", html, "缺少闭合时不能把正文吞掉")
+        self.assertIn("缺少结尾", err.getvalue())
+
+    def test_no_components_means_plain_text(self):
+        """未加载组件时按原文走，不能报错。"""
+        html = fmt._md_to_html(":::quote-card[x]\n内容\n:::", self.styles, components=None)
+        self.assertIn("内容", html)
+
+    def test_user_dir_overrides_builtin(self):
+        with tempfile.TemporaryDirectory() as d:
+            cwd = os.getcwd()
+            try:
+                os.chdir(d)
+                p = Path(".aws-article/presets/components")
+                p.mkdir(parents=True)
+                (p / "quote-card.yaml").write_text(
+                    "name: quote-card\ntemplate: '<section>用户版</section>'\n", encoding="utf-8")
+                comps = fmt._load_components()
+                self.assertIn("用户版", comps["quote-card"]["template"])
+            finally:
+                os.chdir(cwd)
