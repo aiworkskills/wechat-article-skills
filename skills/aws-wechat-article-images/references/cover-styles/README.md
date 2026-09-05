@@ -1,41 +1,34 @@
 # 封面风格预设
 
-本目录下的 `<名>.example.md` 文件为**内置封面风格预设**，预设名为去掉 `.example.md` 后的部分（`简约.example.md` → `简约`），可直接在 `default_cover_image_style` / `custom_cover_image_style` / 本篇 `article.yaml` 中引用。用户自定义预设放在 `.aws-article/presets/cover-styles/<名>.md`，同名时覆盖内置。
+本目录下的 `<名>.example.md` 为**内置封面风格预设**，预设名取 `.example.md` 之前的部分（`简约.example.md` → `简约`），可直接在 `default_cover_image_style` / `custom_cover_image_style` / 本篇 `article.yaml` 中引用。用户自定义预设放在 `.aws-article/presets/cover-styles/<名>.md`，同名时覆盖内置。
 
-## 加载规则
+## 预设只管「怎么画」，不管「画什么」
 
-生成封面时按 **`article.yaml` > `custom_cover_image_style` > `default_cover_image_style`** 合并后的预设名加载对应 `.md`（`custom_*` 非空时覆盖同名 `default_*`；须收窄为单元素列表后再执行配图）。
-
-**预设发现**：Agent 运行时扫描两个目录合并可用列表：
-
-1. **内置**：`skills/aws-wechat-article-images/references/cover-styles/`（随 skill 安装）
-2. **用户自定义**：`.aws-article/presets/cover-styles/`（用户创建或由 `.aws` 预设包导入）
-
-用户自定义同名文件优先于内置。
+风格预设是**账号级**的：用户配一次，每篇文章都用。所以它只描述**视觉语言**——色板、媒介、光与材质、气质。**不含**具体的物体、场景、构图或占位标题，那些每篇文章都不同，由 [cover-method.md](../cover-method.md) 从文章推导。
 
 ## Schema
-
-每个 `.md` 文件描述一种封面视觉风格：
 
 ```markdown
 # 风格名
 
-## 描述
-[1-2 句视觉风格描述]
+## 视觉语言
+[媒介与画法：实拍 / 扁平插画 / 手绘 / 水墨 / 3D…，线条与造型特征]
 
-## 适用场景
-[适合什么类型的文章/账号]
+## 色板
+[底色；2–3 个主色，给色值]
 
-## Prompt 要点
-- [视觉关键词，直接用于生图 prompt]
-- [构图/色彩/氛围等具体指导]
-- 画面内文字必须为中文，在 prompt 中直接写出要显示的中文文案
+## 光与材质
+[光源、阴影、渐变、纹理]
+
+## 气质
+[两三个形容词；可加一句「像什么，不像什么」]
+
+## 适合
+[什么类型的文章 / 账号]
 ```
 
-- 文件名即预设名：用户目录下 `简约.md` → `简约`；内置目录下 `简约.example.md` → `简约`。
-- `Prompt 要点` 部分会被 Agent 直接嵌入封面 prompt 的「风格」字段。
-- 每个预设自包含视觉风格描述，无须引用外部 Style 维度。
+Agent 在方法第四步把这些描述翻译成这张图的具体决定，再和第三步推出的隐喻合成一段散文。
 
 ## 示例
 
-内置预设即同目录下的 `.example.md` 文件（简约 / 科技风 / 插画 / 大字报），可直接使用。要调整时复制到 `.aws-article/presets/cover-styles/<名>.md`（去掉 `.example`）后修改，同名即覆盖内置。
+见同目录下的 `.example.md` 文件（简约 / 科技风 / 插画 / 大字报）。要新增风格，复制一个到 `.aws-article/presets/cover-styles/<名>.md` 后按 Schema 改写。

@@ -27,7 +27,7 @@ metadata:
 - **凭证外发**：该 key 以 `Authorization: Bearer` 头发送到 `image_model.base_url` 指定端点（常见为 DALL-E、gpt-image 兼容 `/v1/images/generations`，或多模态模型 `/v1/chat/completions`，具体由用户配置）
 - **内容外发**：每张图片的 prompt（文本）作为 JSON POST body 发送；prompt 内容来自本篇 `imgs/prompts/*.md`（可能包含文章标题、章节摘要）
 - **下图 SSRF 防御**：若 API 响应返回图片 URL（而非 base64），脚本**仅允许下载 http/https 公网地址**；内网 / 环回 / 链路本地 / 保留地址全部拒绝（防止恶意或被劫持的模型端点把脚本当作 SSRF 跳板）
-- **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`article.md`、`imgs/prompts/*.md`、`.aws-article/products/{产品名}/images/*`（业务配图库，本篇涉及用户业务时优先复用）
+- **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`article.md`、`imgs/prompts/*.md`、`references/cover-method.md`、`references/cover-examples/*.md`、`.aws-article/products/{产品名}/images/*`（业务配图库，本篇涉及用户业务时优先复用）
 - **文件写**：本篇 `imgs/*.{png,webp}`、可选 `img_analysis.md`
 - **shell**：仅 `python3 {baseDir}/scripts/image_create.py`、`user_image_prepare.py`
 
@@ -75,7 +75,7 @@ metadata:
 
 ## 封面风格 + 正文配图
 
-- **封面风格**：独立预设体系，见 [references/cover-styles/](references/cover-styles/)。每个预设 `.md` 自包含视觉关键词。
+- **封面**：按 [cover-method.md](references/cover-method.md) 七步推导——找张力、定关系、找隐喻、套视觉语言、2.35:1 布局、写成散文、回看。风格预设（[references/cover-styles/](references/cover-styles/)）只提供第四步的视觉语言，不含场景。范例见 [cover-examples/](references/cover-examples/)。
 - **正文配图**：Type（画面构成）决定"画什么"，Style（视觉风格）由 Agent 根据 tone/category 内部选择。Type 列表与 prompt 模板见 [references/image-styles/](references/image-styles/) 目录。
 
 ### 封面 vs 正文（资源策略）⛔
@@ -165,7 +165,7 @@ metadata:
 2. **本篇 `article.yaml.default_cover_image_style`**（单元素列表）→ 从内置或 **`.aws-article/presets/cover-styles/<名>.md`** 加载（用户文件同名优先于内置）
 3. **fallback**：根据 `tone` / `article_category` 从可用封面预设中自动推荐（规则见 [auto-selection.md](references/image-styles/auto-selection.md)）
 
-每个封面预设 `.md` 自包含视觉关键词（`Prompt 要点`），无须引用外部 Style 维度。Schema 见 [cover-styles/README.md](references/cover-styles/README.md)。
+每个封面预设 `.md` **只描述视觉语言**（色板、光与材质、气质），不含场景、物体或构图——画什么由 [cover-method.md](references/cover-method.md) 从文章推导。Schema 见 [cover-styles/README.md](references/cover-styles/README.md)。
 
 #### 正文配图风格
 
@@ -178,7 +178,9 @@ metadata:
 
 ### 第4步：生成配图方案
 
-为每张图生成方案（类型、风格、prompt 要点）。
+**封面**：按 [cover-method.md](references/cover-method.md) 走完前六步，产出一个 prompt 文件：frontmatter 含 `aspect`，正文是 150–300 字的散文，标题文案（≤12 字，从文章标题提炼钩子）连同位置、字体感、颜色、大小一起写在里面。不要关键词清单，不要写「不要 X」，不要照抄预设或范例里的场景。
+
+**正文配图**：为每张图生成方案（Type、Style、prompt 要点），构建见 [prompt-construction.md](references/image-styles/prompt-construction.md)。
 
 **封面 prompt frontmatter 必须包含 `aspect`**：从 `config.yaml` 的 `cover_aspect` 读取（如 `2.35:1`），写入 YAML frontmatter。`image_create.py` 据此映射到 API 支持的最接近尺寸生成，装有 Pillow 时再居中裁切到该比例（如 2.35:1 → 1792x763）。**值须加引号**（`aspect: "2.35:1"`），未加引号的 `16:9` 会被 YAML 解析成整数。缺少 aspect 时退回 `config.yaml` 的 `image_model.default_size`（默认 1024x1024）。
 
@@ -194,6 +196,8 @@ Prompt 构建：[references/image-styles/prompt-construction.md](references/imag
 ### 第6步：生成图片
 
 **封面**：见「封面 vs 正文」— **默认必须先**写好 **`imgs/prompts/`** 中封面 prompt（含 `aspect` 与 `config.yaml` 的 **`cover_aspect`** 一致），再执行 **`image_create.py generate … -o ../cover.png`**（或等价输出路径）。
+
+**封面回看（必做）**：`cover.*` 生成后打开图片，按 [cover-method.md 第七步](references/cover-method.md) 对五条：标题字对不对全不全、主体位置与标题区、元素 ≤3、缩略图可读、与文章相关。不过关**回到出问题的那一步改 prompt** 再生成——标题错了改文案写法，主体乱跑改布局描述，与文章无关是张力没找准；不要不改 prompt 盲目重跑。当前环境看不了图时，退而运行 `python {baseDir}/scripts/image_create.py check cover.png` 做纯代码检查（尺寸 / 单色 / 标题区干净度）。
 
 **生成方式（优先级，正文）**：
 

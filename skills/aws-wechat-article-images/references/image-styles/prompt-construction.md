@@ -281,32 +281,15 @@
 
 ### 封面
 
-封面 prompt 的「风格」关键词直接来自封面预设 `.md` 文件的「Prompt 要点」部分（见 [cover-styles/](../cover-styles/)），无须引用 Style 维度。
+封面不用本文件的模板。按 [cover-method.md](../cover-method.md) 七步从文章推导：找核心张力 → 定关系类型 → 找视觉隐喻 → 套风格预设的视觉语言 → 2.35:1 布局 → 写成 150–300 字散文（标题文案写在里面）→ 回看。范例见 [cover-examples/](../cover-examples/)。
 
-**YAML frontmatter 必须包含 `aspect`**：从 `config.yaml` 的 `cover_aspect` 读取（如 `2.35:1`），写入 frontmatter，`image_create.py` 据此转换为实际尺寸并在生成后居中裁切到该比例。**值须加引号**（`aspect: "2.35:1"`），未加引号的 `16:9` 会被 YAML 解析成整数。缺少 aspect 时退回 `config.yaml` 的 `image_model.default_size`（默认 1024x1024）。
+frontmatter 仍须含 `aspect`（取自 config `cover_aspect`，值加引号）：
 
 ```yaml
 ---
-aspect: "2.35:1"   # ← 必须：取自 config cover_aspect
-quality: standard
+aspect: "2.35:1"
 ---
 ```
-
-```
-[文章标题] - 封面图
-
-核心意象：[从标题提取的抽象视觉概念]
-情绪：[文章整体调性]
-色调：[主色和辅色]
-
-要求：
-- 不包含文字（标题会单独叠加）
-- 画面简洁有焦点
-- 适合作为公众号封面缩略图（小尺寸也清晰）
-
-风格：[从封面预设 .md 的 Prompt 要点加载]
-```
-
 ---
 
 ## 高级布局（适用于复杂信息可视化）
