@@ -69,12 +69,16 @@ Works with any **OpenAI-compatible** API. API keys stored locally, never uploade
 | **Writing** | Calls external LLM or writes directly, follows your spec | "Write an article on AI basics" |
 | **Review** | Sensitive words, typos, spec compliance; 3-tier results | "Review this draft" |
 | **Formatting** | Markdown → WeChat HTML, 4 built-in themes | "Format it" |
-| **Images** | 14 visual styles × 6 image types | "Add images" |
-| **Publishing** | WeChat API, multi-account, auto-compress | "Publish" |
+| **Images** | 12 cover forms + 8 in-article forms, derived from the article | "Add images" |
+| **Publishing** | WeChat API, multi-account, auto-compress, 2.35:1 cover crop | "Publish" |
 | **Sticker** | Multi-image series flow | "Make a sticker post" |
-| **Assets** | Stock image lib + `.aws` preset import/export | "Import this preset" |
+| **Assets** | Product knowledge base (`products/{name}/`) + image lib + `.aws` preset import/export | "Import this preset" |
 
 Each step pauses for confirmation. You can interrupt, edit, or restart anytime.
+
+> **Product knowledge base**: before writing about your own product, the AI reads `.aws-article/products/{name}/` — intro docs and product screenshots you saved earlier get reused instead of regenerated.
+
+> **Images are derived, not templated**: covers go through a seven-step derivation (find the tension → pick the relation → find the metaphor → apply your visual language → lay out for 2.35:1 → write a prose brief → review), and each of the 12 cover forms carries its own title-text spec, so the output is a finished cover, not a background. For in-article images, the AI first asks "if this image were deleted, would the reader be lost or just bored?" — lost means the image must carry text copied verbatim from the article; bored means a pacing image with no text; neither means the slot gets dropped. One hand-drawn medium (whiteboard, grid notebook, sticky notes, chalkboard, kraft paper, terminal, annotated printout, flat vector) is picked per article — consistent within an article, rotated between articles.
 
 ---
 
@@ -104,14 +108,14 @@ All config is done on [aiworkskills.cn](https://aiworkskills.cn/) — no code re
 </details>
 
 <details>
-<summary><b>Image Styles</b> — 14+ visual styles across content types</summary>
+<summary><b>Image Styles</b> — presets set the visual language; what each image actually shows is derived from the content</summary>
 
 ![Image styles](https://aiworkskills.cn/images/sp/%E6%94%AF%E6%8C%81%E7%9A%84%E6%96%87%E7%AB%A0%E9%85%8D%E5%9B%BE%E9%A3%8E%E6%A0%BC.png)
 
 </details>
 
 <details>
-<summary><b>Cover Styles</b> — multiple cover visual languages, mapped to content positioning</summary>
+<summary><b>Cover Styles</b> — pick a cover visual language; 12 cover forms turn it into a finished, titled cover</summary>
 
 ![Cover styles](https://aiworkskills.cn/images/sp/%E6%94%AF%E6%8C%81%E7%9A%84%E5%B0%81%E9%9D%A2%E9%85%8D%E5%9B%BE%E9%A3%8E%E6%A0%BC.png)
 
@@ -134,13 +138,18 @@ Prefer editing config files yourself? Skip the web platform:
 git clone https://github.com/aiworkskills/wechat-article-skills.git
 cd wechat-article-skills
 bash scripts/install-skills.sh              # Install to .cursor / .claude
-cp .aws-article/config.example.yaml .aws-article/config.yaml
-# Edit config.yaml (account/style/formatting) and aws.env (API keys)
+cp skills/aws-wechat-article-main/references/config.example.yaml .aws-article/config.yaml
+cp skills/aws-wechat-article-main/references/env.example.yaml aws.env
+# Edit config.yaml (account/style/models) and aws.env (API keys / WeChat credentials)
+python3 skills/aws-wechat-article-main/scripts/validate_env.py
 ```
 
+> On **Windows**, run `py -3 -X utf8 skills\aws-wechat-article-main\scripts\validate_env.py` instead — `python3` silently opens the Microsoft Store when Python isn't installed, and `-X utf8` keeps Chinese output from turning into mojibake.
+
+- Requirements: Python 3.10+ and PyYAML; `Pillow` optional (image compression, cover cropping, cover crop boxes)
 - Field reference: [first-time-setup.md](skills/aws-wechat-article-main/references/first-time-setup.md)
 - Three-layer config: global `config.yaml` → per-article `article.yaml` → runtime dialog
-- 6 preset extension points: `.aws-article/presets/{structures,closing-blocks,title-styles,formatting,cover-styles,sticker-styles}/`
+- 7 preset extension points: `.aws-article/presets/{structures,closing-blocks,title-styles,formatting,cover-styles,image-styles,sticker-styles}/`
 
 ---
 
@@ -148,6 +157,13 @@ cp .aws-article/config.example.yaml .aws-article/config.yaml
 
 Full history in [CHANGELOG.md](CHANGELOG.md). Recent highlights:
 
+- **2026-09-05** · **Image system rebuilt**: covers derived through a seven-step method (12 cover forms with title-text specs); in-article images narrowed to 8 forms judged as "information" vs "pacing" slots; hand-drawn medium rotated between articles
+- **2026-09-05** · Cover crop boxes on publish (`pic_crop_235_1` / `pic_crop_1_1`) — 2.35:1 feed image first, instead of letting WeChat center-crop the cover title away
+- **2026-09-05** · Image script hardening: post-generation code-only check (`image_create.py check`), optional title compositing, structured aspect-ratio params, safer re-runs
+- **2026-08-17** · Writing / image models are optional — unset models warn instead of blocking the pipeline
+- **2026-06-16** · Writing guardrails against telltale AI phrasing
+- **2026-06-01** · Review skill gained an "AI flavor" diagnostic dimension
+- **2026-04-24** · `products/{name}/` knowledge base replaced the old assets layout (breaking)
 - **2026-04-03** · Added assets skill: image library + `.aws` preset import/export
 - **2026-03-31** · Script migration & unified publishing entry
 - **2026-03-20** · One-click install for 4 platforms + config validation

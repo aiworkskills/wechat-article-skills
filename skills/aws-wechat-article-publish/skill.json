@@ -1,6 +1,6 @@
 {
   "name": "aws-wechat-article-publish",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": "aiworkskills",
   "description": "将文章发布到微信公众号，支持 API 发布和手动提交，含发布前检查。",
   "license": "MIT",

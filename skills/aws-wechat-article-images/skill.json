@@ -1,6 +1,6 @@
 {
   "name": "aws-wechat-article-images",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "author": "aiworkskills",
   "description": "为公众号文章生成封面图和正文配图，根据文章内容自动匹配风格。",
   "license": "MIT",
