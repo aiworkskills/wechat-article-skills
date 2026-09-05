@@ -656,6 +656,7 @@ def _render_component(spec: dict, arg: str, body_lines: list[str], styles: dict)
         delim = str(spec.get("row_delimiter") or "|")
         row_tpl = _sub_theme_vars(str(spec.get("row_template") or ""), styles)
         ncol = int(spec.get("row_columns") or 0)
+        row_map = spec.get("row_map") or {}
         rows_html = []
         for ln in body_lines:
             if not ln.strip():
@@ -665,7 +666,11 @@ def _render_component(spec: dict, arg: str, body_lines: list[str], styles: dict)
                 cells = (cells + [""] * ncol)[:ncol]
             row = row_tpl
             for i, cell in enumerate(cells):
-                row = row.replace("{c%d}" % i, _inline_format(cell, styles))
+                # row_map：把某一列的取值映射成符号/短语（如 done → ✓）。
+                # 没有它的话，枚举列只能把 "done" 原样打进去——18px 宽的状态列会截成 "don"。
+                mapped = (row_map.get("c%d" % i) or {}).get(cell)
+                row = row.replace("{c%d}" % i,
+                                  str(mapped) if mapped is not None else _inline_format(cell, styles))
             row = re.sub(r"\{c\d+\}", "", row)      # 未用到的列位清掉
             rows_html.append(row.strip())
         content = "\n".join(rows_html)

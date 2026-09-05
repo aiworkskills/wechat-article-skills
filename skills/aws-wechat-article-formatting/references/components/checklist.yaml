@@ -1,0 +1,46 @@
+name: checklist
+displayName: 要点清单
+category: conversion
+body: rows
+row_delimiter: "|"
+row_columns: 2
+
+# 状态列映射成符号——直接打 "done" 会被 18px 宽的列截断
+row_map:
+  c0:
+    done: "&#10003;"
+    todo: "&#9675;"
+    warn: "&#33;"
+
+when_to_use: |
+  并列的检查项、要点、待办——**没有先后顺序**的那种。有顺序用 steps。
+  第一列是状态（done / todo / warn），第二列是事项。读者会截图收藏这类块。
+
+when_not_to_use: |
+  各项有先后依赖（做完一才能做二）：用 steps，清单会丢掉顺序信息。
+  只有两三条且都很短：正文里写成一句话更省事。
+  事项需要展开解释：清单每行只有一行地方，说不清就拆成小节。
+
+anti_pattern: |
+  全部标 done——检查清单里没有一项待办，读者不知道这块要他干什么。
+  状态列写成中文（完成/待办）——只认 done / todo / warn 三个值，写错会掉成默认样式。
+  事项写超过 18 字——手机上折行后，状态标记和文字对不齐。
+
+example: |
+  :::checklist[发文前检查]
+  done | 敏感词过一遍
+  todo | 封面在信息流尺寸下可读
+  warn | 外链会触发安全提示
+  :::
+
+template: |
+  <section style="margin:2.2em 0; background:{bg-accent-color}; border-radius:8px; padding:18px 16px;">
+    <section style="font-size:14px; font-weight:600; color:{primary-color}; margin-bottom:12px;">{arg}</section>
+    {content}
+  </section>
+
+row_template: |
+  <section style="display:flex; align-items:flex-start; padding:7px 0;">
+      <section style="flex:0 0 auto; width:18px; font-size:14px; line-height:1.7; color:{primary-color};">{c0}</section>
+      <section style="flex:1; padding-left:8px; font-size:15px; line-height:1.7; color:{text-color};">{c1}</section>
+    </section>

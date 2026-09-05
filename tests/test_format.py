@@ -266,3 +266,17 @@ class ComponentTest(unittest.TestCase):
     def test_blank_rows_ignored(self):
         html = self._render(":::stat[t]\n1 | a\n\n2 | b\n:::")
         self.assertEqual(html.count("border-bottom:1px solid"), 2)
+
+    def test_row_map_maps_enum_to_symbol(self):
+        """枚举列必须能映射成符号：直接打 done 会被窄列截成 don。"""
+        html = self._render(":::checklist[t]\ndone | 事项一\ntodo | 事项二\n:::")
+        self.assertNotIn(">done<", html)
+        self.assertNotIn(">todo<", html)
+        self.assertIn("&#10003;", html)      # done → ✓
+        self.assertIn("&#9675;", html)       # todo → ○
+
+    def test_row_map_unknown_value_falls_back_to_raw(self):
+        """写错状态值时原样输出，不能整行消失。"""
+        html = self._render(":::checklist[t]\n完成 | 事项\n:::")
+        self.assertIn("完成", html)
+        self.assertIn("事项", html)

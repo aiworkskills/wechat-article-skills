@@ -1,0 +1,39 @@
+name: layers
+displayName: 结构分层
+category: infographic
+body: rows
+row_delimiter: "|"
+row_columns: 2
+
+when_to_use: |
+  讲一个系统由哪几层组成、每层负责什么。第一列是层名，第二列是该层的职责或子项。
+  仅当层与层之间**只是并列罗列**时用它。
+
+when_not_to_use: |
+  层级之间有包含或嵌套关系（A 里面套着 B 和 C）：组件只能平铺，画不出嵌套，用配图。
+  需要表达数据流向（请求从上往下穿过各层）：箭头是图的活。
+  超过五层：手机上会很长，读者失去整体感——整体感恰恰是这类内容的价值。
+
+anti_pattern: |
+  用它画本该有嵌套关系的结构——平铺会让读者以为各层是对等的。
+  层名和职责写反（第一列写长句、第二列写短词）。
+  只有两层——不值得起块。
+
+example: |
+  :::layers[一次请求经过什么]
+  界面层 | 用户视图、输入校验
+  逻辑层 | 业务逻辑、服务处理
+  数据层 | 数据访问、数据库
+  :::
+
+template: |
+  <section style="margin:2.2em 0;">
+    <section style="font-size:14px; font-weight:600; color:{primary-color}; margin-bottom:12px;">{arg}</section>
+    {content}
+  </section>
+
+row_template: |
+  <section style="display:flex; align-items:center; margin-bottom:8px; border:1px solid {border-color}; border-left:3px solid {primary-color};">
+      <section style="flex:0 0 auto; min-width:82px; padding:12px 10px; font-size:15px; font-weight:600; color:{text-color};">{c0}</section>
+      <section style="flex:1; padding:12px 10px; font-size:14px; color:{text-muted}; line-height:1.6;">{c1}</section>
+    </section>
