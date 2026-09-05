@@ -1,0 +1,41 @@
+name: 克制
+description: 量子位 / 新智元 那一路的排版系统。零装饰件，靠字号、行距与留白撑起精致感；强调用整行彩色粗体独立成段。适合科技、AI、深度分析类账号。
+
+variables:
+  primary-color: "#07A87C"
+  bg-accent-color: "#F4F5F7"
+  font-size: "17px"
+  line-height: "1.95"
+  text-color: "#1F1F1F"
+  text-muted: "#8A8A8A"
+
+styles:
+  # 正文：大字号 + 大行高 + 大段距。段距是精致感的主要来源，不要压缩。
+  p: "font-size:{font-size}; line-height:{line-height}; color:{text-color}; margin:0 0 1.5em;"
+
+  # 标题不做色块、不做边框。靠字重与上方留白拉开层级——实拍参考里没有任何一个带装饰的标题。
+  h1: "font-size:21px; font-weight:600; color:{text-color}; line-height:1.5; margin:0 0 1.2em;"
+  h2: "font-size:19px; font-weight:600; color:{text-color}; line-height:1.5; margin:2.6em 0 1em;"
+  h3: "font-size:17px; font-weight:600; color:{text-color}; line-height:1.6; margin:2em 0 0.8em;"
+  h4: "font-size:17px; font-weight:600; color:{text-muted}; margin:1.6em 0 0.6em;"
+
+  # 强调：品牌色 + 粗体。写作时让它独占一段，就得到参考里那种「整行金句」效果。
+  strong: "color:{primary-color}; font-weight:600;"
+  strong-color: "{primary-color}"
+  em: "font-style:normal; color:{text-color}; border-bottom:1px solid {primary-color};"
+
+  # 引用块：浅灰底、无边框、大内边距。新智元那块的内边距接近 30px，气口全靠它。
+  blockquote: "background:{bg-accent-color}; padding:24px 22px; margin:2em 0; color:#4A4A4A; font-size:16px; line-height:1.9; border:none;"
+
+  ul: "margin:0 0 1.5em; padding-left:1.2em;"
+  ol: "margin:0 0 1.5em; padding-left:1.2em;"
+  li: "font-size:{font-size}; line-height:1.85; color:{text-color}; margin-bottom:0.5em;"
+
+  # 图片零装饰：无阴影、无圆角、齐宽。投影是「模板感」最直接的来源。
+  img: "max-width:100%; display:block; margin:2em auto 0;"
+  figcaption: "text-align:center; font-size:13px; color:{text-muted}; margin:0.8em 0 2em;"
+
+  hr: "border:none; border-top:1px solid #E8E8E8; margin:3em 0;"
+  a: "color:{primary-color}; text-decoration:none;"
+  code: "font-size:15px; color:#C7254E; background:{bg-accent-color}; padding:1px 5px; border-radius:2px;"
+  pre: "background:#FAFAFA; color:#333; padding:18px; font-size:14px; line-height:1.8; overflow-x:auto; border:none; margin:2em 0;"

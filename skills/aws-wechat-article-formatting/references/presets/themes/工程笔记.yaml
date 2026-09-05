@@ -1,0 +1,37 @@
+name: 工程笔记
+description: 开发者账号的排版。小标题带 # 前缀与等宽字，代码块深色，行内代码醒目。信息密度略高，适合教程、实测、技术拆解。
+
+variables:
+  primary-color: "#2F6FEB"
+  bg-accent-color: "#F2F4F7"
+  font-size: "16.5px"
+  line-height: "1.85"
+  text-color: "#24292F"
+  text-muted: "#8B949E"
+
+styles:
+  p: "font-size:{font-size}; line-height:{line-height}; color:{text-color}; margin:0 0 1.3em;"
+
+  # 小标题前缀用等宽 # 号，是开发者一眼认得的记号；标题本身不加色块。
+  h1: "font-size:21px; font-weight:700; color:{text-color}; line-height:1.5; margin:0 0 1.2em;"
+  h2: "font-size:19px; font-weight:700; color:{text-color}; line-height:1.5; margin:2.4em 0 0.9em; padding-left:0.7em; border-left:3px solid {primary-color};"
+  h3: "font-size:17px; font-weight:700; color:{text-color}; margin:1.8em 0 0.7em;"
+  h4: "font-family:Menlo,Consolas,monospace; font-size:15px; font-weight:600; color:{text-muted}; margin:1.5em 0 0.6em;"
+
+  strong: "color:{primary-color}; font-weight:700;"
+  strong-color: "{primary-color}"
+  em: "font-style:normal; color:{text-color}; background:#FFF6D6;"
+
+  blockquote: "background:{bg-accent-color}; padding:16px 18px; margin:1.8em 0; color:#4B5563; font-size:15.5px; line-height:1.8; border-left:3px solid #D0D7DE;"
+
+  ul: "margin:0 0 1.3em; padding-left:1.2em;"
+  ol: "margin:0 0 1.3em; padding-left:1.2em;"
+  li: "font-size:{font-size}; line-height:1.8; color:{text-color}; margin-bottom:0.45em;"
+
+  img: "max-width:100%; display:block; margin:1.8em auto 0; border-radius:4px;"
+  figcaption: "text-align:center; font-size:13px; color:{text-muted}; margin:0.7em 0 1.8em;"
+
+  hr: "border:none; border-top:1px dashed #D0D7DE; margin:2.6em 0;"
+  a: "color:{primary-color}; text-decoration:none; border-bottom:1px solid #BFD3F5;"
+  code: "font-family:Menlo,Consolas,monospace; font-size:14px; color:#0550AE; background:{bg-accent-color}; padding:2px 6px; border-radius:4px;"
+  pre: "background:#0D1117; color:#C9D1D9; font-family:Menlo,Consolas,monospace; padding:18px; font-size:13px; line-height:1.75; border-radius:8px; overflow-x:auto; margin:1.8em 0;"

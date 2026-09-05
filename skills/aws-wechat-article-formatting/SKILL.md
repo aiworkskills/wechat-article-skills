@@ -66,6 +66,12 @@ metadata:
 
 每个主题包含：标题样式（h1-h4）、段落、引用块、列表、分割线、图片、代码块、链接、强调色等完整规则。
 
+## 设计新版式前必读 ⛔
+
+微信正文只认**内联样式**，没有伪元素、没有伪类、`position` 与 `id` 会被整条删掉。
+这决定了「装饰必须作为真实元素插进 HTML」，而不能靠 CSS 变出来。
+能用什么、什么会被剥离，见 [wechat-html-constraints.md](references/wechat-html-constraints.md)。
+
 ## 工作流
 
 ```

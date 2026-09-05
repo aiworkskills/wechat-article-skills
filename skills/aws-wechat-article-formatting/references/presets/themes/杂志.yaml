@@ -1,0 +1,38 @@
+name: 杂志
+description: 纸媒感的排版。标题用衬线大字，节与节之间以细线分隔，图注小字衬线。适合长文、人物、深度报道、文化类账号。
+
+variables:
+  primary-color: "#1A1A1A"
+  bg-accent-color: "#F7F5F0"
+  font-size: "17px"
+  line-height: "1.9"
+  text-color: "#222222"
+  text-muted: "#9A948C"
+
+styles:
+  p: "font-size:{font-size}; line-height:{line-height}; color:{text-color}; margin:0 0 1.4em;"
+
+  # 衬线标题是这套的骨架。字号跨度拉大，靠大小而不是颜色做层级。
+  h1: "font-family:Georgia,'Songti SC','Noto Serif CJK SC',serif; font-size:24px; font-weight:700; color:{primary-color}; line-height:1.45; margin:0 0 1.4em;"
+  h2: "font-family:Georgia,'Songti SC','Noto Serif CJK SC',serif; font-size:20px; font-weight:700; color:{primary-color}; line-height:1.5; margin:2.8em 0 0.4em; padding-bottom:0.6em; border-bottom:1px solid #E5E0D8;"
+  h3: "font-family:Georgia,'Songti SC','Noto Serif CJK SC',serif; font-size:18px; font-weight:700; color:{primary-color}; margin:2em 0 0.8em;"
+  h4: "font-size:16px; font-weight:600; letter-spacing:1px; color:{text-muted}; margin:1.6em 0 0.6em;"
+
+  strong: "color:{primary-color}; font-weight:700; border-bottom:2px solid #E8DFC8;"
+  strong-color: "{primary-color}"
+  em: "font-family:Georgia,'Songti SC',serif; font-style:italic; color:#5A5A5A;"
+
+  # 大号衬线引言，米色底，模拟纸张。
+  blockquote: "background:{bg-accent-color}; font-family:Georgia,'Songti SC','Noto Serif CJK SC',serif; font-size:17px; line-height:1.95; color:#3C3833; padding:26px 24px; margin:2.2em 0; border:none;"
+
+  ul: "margin:0 0 1.4em; padding-left:1.3em;"
+  ol: "margin:0 0 1.4em; padding-left:1.3em;"
+  li: "font-size:{font-size}; line-height:1.85; color:{text-color}; margin-bottom:0.5em;"
+
+  img: "max-width:100%; display:block; margin:2.2em auto 0;"
+  figcaption: "text-align:center; font-family:Georgia,'Songti SC',serif; font-size:13px; color:{text-muted}; margin:0.9em 0 2.2em;"
+
+  hr: "border:none; border-top:1px solid #E5E0D8; margin:3em 0;"
+  a: "color:{primary-color}; border-bottom:1px solid {text-muted}; text-decoration:none;"
+  code: "font-family:Menlo,Consolas,monospace; font-size:14px; color:#8A5A00; background:{bg-accent-color}; padding:1px 5px;"
+  pre: "background:{bg-accent-color}; color:#3C3833; font-family:Menlo,Consolas,monospace; padding:18px; font-size:13px; line-height:1.8; overflow-x:auto; border:none; margin:2em 0;"
