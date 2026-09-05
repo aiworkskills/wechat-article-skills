@@ -232,3 +232,37 @@ class ComponentTest(unittest.TestCase):
                 self.assertIn("用户版", comps["quote-card"]["template"])
             finally:
                 os.chdir(cwd)
+
+    def test_rows_body_renders_each_line(self):
+        html = self._render(
+            ":::stat[标题]\n62.7% | 标准 harness\n99.9% | Provider Adapter\n:::")
+        self.assertIn("62.7%", html)
+        self.assertIn("Provider Adapter", html)
+        self.assertEqual(html.count("border-bottom:1px solid"), 2, "两行应各渲染一次")
+
+    def test_row_template_also_gets_theme_vars(self):
+        """行模板是先渲染再塞进 {content} 的，容易漏掉变量替换。"""
+        html = self._render(":::stat[t]\n1 | a\n:::")
+        self.assertNotIn("{primary-color}", html)
+        self.assertNotIn("{text-muted}", html)
+        self.assertIn(self.styles["primary-color"], html)
+
+    def test_missing_column_does_not_break_row(self):
+        """作者少写一列时补空串，不能整块渲染失败。"""
+        html = self._render(":::steps[t]\n只有步骤名\n:::")
+        self.assertIn("只有步骤名", html)
+        self.assertNotIn("{c1}", html)
+
+    def test_extra_columns_are_dropped(self):
+        html = self._render(":::stat[t]\n1 | a | 多余的 | 更多\n:::")
+        self.assertIn("1", html)
+        self.assertNotIn("多余的", html, "超出 row_columns 的列应丢弃而不是溢出版式")
+
+    def test_arg_split_for_two_column_header(self):
+        html = self._render(":::compare[左边 / 右边]\na | b\n:::")
+        self.assertIn("左边", html)
+        self.assertIn("右边", html)
+
+    def test_blank_rows_ignored(self):
+        html = self._render(":::stat[t]\n1 | a\n\n2 | b\n:::")
+        self.assertEqual(html.count("border-bottom:1px solid"), 2)

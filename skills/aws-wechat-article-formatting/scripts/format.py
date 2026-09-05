@@ -636,10 +636,40 @@ _COMPONENT_VARS = (
 )
 
 
+def _sub_theme_vars(html: str, styles: dict) -> str:
+    """把模板里的 {primary-color} 等占位符换成当前主题的值。
+
+    行模板（row_template）必须和外层模板一样走这一步——行是先渲染再塞进 {content} 的，
+    只替换外层会让行里的占位符原样漏到产出里。
+    """
+    for var in _COMPONENT_VARS:
+        html = html.replace("{" + var + "}", str(styles.get(var, "")))
+    return html
+
+
 def _render_component(spec: dict, arg: str, body_lines: list[str], styles: dict) -> str:
     """把一个 :::块 渲染成 HTML。arg 是方括号里的参数，body_lines 是块内正文。"""
     body_kind = str(spec.get("body") or "free").strip()
-    if body_kind == "single":
+    if body_kind == "rows":
+        # 每行一条，按分隔符切列，逐行套 row_template。列不足时补空串，
+        # 多余的列丢弃——宁可少显示，也不要因为作者多打一个分隔符就整块渲染失败。
+        delim = str(spec.get("row_delimiter") or "|")
+        row_tpl = _sub_theme_vars(str(spec.get("row_template") or ""), styles)
+        ncol = int(spec.get("row_columns") or 0)
+        rows_html = []
+        for ln in body_lines:
+            if not ln.strip():
+                continue
+            cells = [c.strip() for c in ln.split(delim)]
+            if ncol:
+                cells = (cells + [""] * ncol)[:ncol]
+            row = row_tpl
+            for i, cell in enumerate(cells):
+                row = row.replace("{c%d}" % i, _inline_format(cell, styles))
+            row = re.sub(r"\{c\d+\}", "", row)      # 未用到的列位清掉
+            rows_html.append(row.strip())
+        content = "\n".join(rows_html)
+    elif body_kind == "single":
         content = _inline_format(" ".join(x.strip() for x in body_lines if x.strip()), styles)
     else:                                           # free：空行分段
         paras, buf = [], []
@@ -652,10 +682,12 @@ def _render_component(spec: dict, arg: str, body_lines: list[str], styles: dict)
             paras.append(" ".join(buf))
         content = "<br />".join(_inline_format(x, styles) for x in paras)
 
-    html = str(spec["template"])
-    for var in _COMPONENT_VARS:
-        html = html.replace("{" + var + "}", str(styles.get(var, "")))
+    html = _sub_theme_vars(str(spec["template"]), styles)
     html = html.replace("{arg}", html_mod.escape(arg))
+    # {arg0} {arg1} …：把方括号参数按 / 切开，供「左标题 / 右标题」这类双栏组件用
+    parts = [x.strip() for x in arg.split("/")]
+    for i in range(max(len(parts), 4)):
+        html = html.replace("{arg%d}" % i, html_mod.escape(parts[i]) if i < len(parts) else "")
     html = html.replace("{content}", content)
     return html.strip()
 

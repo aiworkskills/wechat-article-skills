@@ -1,0 +1,45 @@
+name: compare
+displayName: 对比两栏
+category: infographic
+body: rows
+row_delimiter: "|"
+row_columns: 2
+
+when_to_use: |
+  两个方案、两个版本、改前改后的逐条对照。左右并排读者能一眼扫出差异，
+  比写成两段文字省一半阅读成本。
+
+when_not_to_use: |
+  只有一条对比：不值得起一个块，写进正文一句话就够。
+  超过六条：手机上要滚很久，拆成两个块或改用表格。
+  两边不是同一维度的对照（左边讲功能、右边讲价格）：并排会误导读者以为在比同一件事。
+
+anti_pattern: |
+  每格写超过 20 字——375px 宽下会折成四五行，两栏高度差一大就散了。
+  左右标题用同一个词（都写「方案」）——读者分不清哪边是哪边。
+  用它做「优点/缺点」但只列优点——并排结构本身承诺了对等，缺一边很显眼。
+
+example: |
+  :::compare[改前 / 改后]
+  正文 16px 行高 1.8 | 正文 16px 行高 1.95
+  段距 10px 密不透风 | 段距 28px 有呼吸感
+  图片挂重投影 | 图片零装饰
+  :::
+
+# {arg} 用「左标题 / 右标题」格式；{content} 为逐行渲染结果
+template: |
+  <section style="margin:2.2em 0;">
+    <section style="display:flex; margin-bottom:8px;">
+      <section style="flex:1; padding:8px 10px; background:{bg-accent-color}; color:{primary-color}; font-size:14px; font-weight:600; text-align:center;">{arg0}</section>
+      <section style="width:8px;"></section>
+      <section style="flex:1; padding:8px 10px; background:{bg-accent-color}; color:{primary-color}; font-size:14px; font-weight:600; text-align:center;">{arg1}</section>
+    </section>
+    {content}
+  </section>
+
+row_template: |
+  <section style="display:flex; margin-bottom:8px;">
+      <section style="flex:1; padding:12px 10px; border:1px solid {border-color}; font-size:15px; line-height:1.7; color:{text-color};">{c0}</section>
+      <section style="width:8px;"></section>
+      <section style="flex:1; padding:12px 10px; border:1px solid {border-color}; font-size:15px; line-height:1.7; color:{text-color};">{c1}</section>
+    </section>
