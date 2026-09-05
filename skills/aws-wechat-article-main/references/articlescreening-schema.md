@@ -40,6 +40,8 @@
 | `author` | 作者；可空时部分流程会回退 **`config.yaml`** 的 **`default_author`** |
 | `digest` | 摘要（微信 digest 上限 128 字） |
 | `cover_image` | 封面路径或 URL（强烈建议） |
+| `pic_crop_235_1` | 可选。2.35:1 封面裁剪框，`X1_Y1_X2_Y2` 归一化 0~1；留空由 `publish.py` 按封面尺寸自动居中计算 |
+| `pic_crop_1_1` | 可选。1:1 封面裁剪框，格式同上；两者裁出的宽高比须与目标比例一致，否则接口报 53402 |
 | `content_source` | 正文 HTML 来源，默认 **`article.html`** |
 | `need_open_comment` | 是否开启留言（与微信能力一致） |
 | `only_fans_can_comment` | 是否仅粉丝可留言 |
