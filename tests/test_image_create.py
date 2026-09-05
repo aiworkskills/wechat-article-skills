@@ -256,6 +256,61 @@ if __name__ == "__main__":
 
 
 @unittest.skipIf(Image is None, "Pillow 未安装")
+class WriteIfNotWorseTest(unittest.TestCase):
+    """重跑只能让结果变好，不该让它变坏。
+
+    实测踩过：跑完整篇文章后补跑两张，端点这一轮返回的更小，
+    把上一轮已经合格的图覆盖成了 683px。
+    """
+
+    def _png(self, w, h):
+        buf = io.BytesIO()
+        Image.effect_noise((w, h), 64).convert("RGB").save(buf, "PNG")
+        return buf.getvalue()
+
+    def _capture(self, out, data):
+        import contextlib
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            wrote = ic._write_if_not_worse(out, data)
+        return wrote, err.getvalue()
+
+    def test_writes_when_new_image_is_fine(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d) / "02-x.png"
+            wrote, err = self._capture(out, self._png(1365, 768))
+            self.assertTrue(wrote)
+            self.assertEqual(Image.open(out).size, (1365, 768))
+            self.assertEqual(err, "")
+
+    def test_keeps_existing_good_image_when_new_one_is_undersized(self):
+        with tempfile.TemporaryDirectory() as d:
+            good = Path(d) / "02-x.jpg"
+            Image.effect_noise((1365, 768), 64).convert("RGB").save(good, "JPEG")
+            out = Path(d) / "02-x.png"
+            wrote, err = self._capture(out, self._png(683, 384))
+            self.assertFalse(wrote)
+            self.assertFalse(out.exists(), "不合格的新图不该落盘")
+            self.assertTrue(good.exists(), "磁盘上合格的旧图必须保留")
+            self.assertIn("保留旧图", err)
+
+    def test_overwrites_when_existing_is_also_bad(self):
+        """两张都不合格时照常覆盖——否则永远卡在第一次的坏图上。"""
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d) / "02-x.png"
+            out.write_bytes(self._png(400, 225))
+            wrote, err = self._capture(out, self._png(683, 384))
+            self.assertTrue(wrote)
+            self.assertEqual(Image.open(out).size, (683, 384))
+
+    def test_ignores_non_image_siblings(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d) / "02-x.png"
+            (Path(d) / "02-x.md").write_text("prompt", encoding="utf-8")
+            wrote, _ = self._capture(out, self._png(683, 384))
+            self.assertTrue(wrote, "同名 .md 不是图，不该拦住写入")
+
+
 class StaleSiblingTest(unittest.TestCase):
     """返回格式会变（PNG/JPEG 交替），同名旧后缀残留会让后续 glob 取到旧图。"""
 

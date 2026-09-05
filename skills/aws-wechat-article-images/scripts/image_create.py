@@ -254,7 +254,7 @@ DEFAULT_IMAGE_SIZE = "2K"
 # 不要用 4K：实测发 imageSize=4K 时该端点连 aspectRatio 一起忽略（3/3 返回 ~1.8:1），
 # 比不发还差。2K 对公众号封面已绰绰有余。
 MIN_LONG_EDGE = 900
-CHECK_RETRIES = 1
+CHECK_RETRIES = 3
 
 # ── 封面标题区与出图检查 ────────────────────────────────
 # 标题区默认位置（归一化 x0,y0,x1,y1）：右侧 55%~92%、垂直 30%~70%，与预设库里
@@ -1070,11 +1070,12 @@ def _cover_problems(img_data: bytes, zone=None) -> list[str]:
 
 
 def _generate_with_checks(label: str, gen, zone=None) -> bytes:
-    """生成并做纯代码检查，不合格重试一次，两张里取更好的。
+    """生成并做纯代码检查，不合格就重试，所有结果里取最好的一张。
 
     端点返回的尺寸波动很大（同参数实测 384px~1584px 都出现过）；模型也时常无视
-    「标题区留白」的要求。重试一次通常能拿到可用的一张。仍不合格则保留较好的并告警，
-    由 Agent 决定是否再跑。
+    「标题区留白」的要求。实测同一 prompt 连着跑，返回 683px 的概率接近一半，
+    只重试一次不够——跑完整篇文章五张图，仍有两张卡在 683px。仍不合格则保留较好的
+    并告警，由 Agent 决定是否再跑。
     """
     def score(data):
         probs = _cover_problems(data, zone)
@@ -1097,6 +1098,28 @@ def _generate_with_checks(label: str, gen, zone=None) -> bytes:
     return best
 
 
+def _write_if_not_worse(out_path: Path, img_data: bytes, zone=None) -> bool:
+    """写出图片；若新图不合格而磁盘上已有一张合格的同名图，则保留旧图。
+
+    端点的分辨率是随机的，重跑同一条 prompt 完全可能拿到更差的一张。实测跑完
+    整篇文章后补跑两张，其中一张把上一轮已经合格的图覆盖成了 683px——重跑只能
+    让结果变好，不该让它变坏。
+    """
+    new_probs = _cover_problems(img_data, zone)
+    if new_probs:
+        for old in out_path.parent.glob(out_path.stem + ".*"):
+            if old.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
+                continue
+            if not _cover_problems(old.read_bytes(), zone):
+                print(f"[WARN] {out_path.stem} 新图不合格（{'；'.join(new_probs)}），"
+                      f"磁盘上的 {old.name} 是合格的，保留旧图未覆盖。", file=sys.stderr)
+                return False
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_bytes(img_data)
+    _clear_stale_siblings(out_path)
+    return True
+
+
 def _clear_stale_siblings(out_path: Path) -> None:
     """删掉同名不同后缀的旧图。
 
@@ -1107,7 +1130,9 @@ def _clear_stale_siblings(out_path: Path) -> None:
     for f in out_path.parent.glob(out_path.stem + ".*"):
         if f != out_path and f.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
             f.unlink()
-            _info(f"已删除同名旧图: {f.name}")
+            print(f"[WARN] 已删除同名旧图 {f.name}（本次返回 {out_path.suffix}）。"
+                  f"若该图已插入 article.md / article.html，引用会断，"
+                  f"须把 imgs/{f.name} 改成 imgs/{out_path.name}。", file=sys.stderr)
 
 
 def _detect_image_ext(data: bytes) -> str | None:
@@ -1277,10 +1302,8 @@ def main():
                 print(f"[WARN] 输出后缀 {output_path.suffix or '(无)'} 与实际图片格式 {ext} 不一致", file=sys.stderr)
         else:
             output_path = prompt_path.with_suffix(ext)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_bytes(img_data)
-        _clear_stale_siblings(output_path)
-        _ok(f"已保存: {output_path} ({len(img_data)} 字节)")
+        if _write_if_not_worse(output_path, img_data, zone=check_zone):
+            _ok(f"已保存: {output_path} ({len(img_data)} 字节)")
 
     elif args.command == "batch":
         prompts_dir = Path(args.prompts_dir)
@@ -1317,9 +1340,8 @@ def main():
                     img_data = _compose_title(img_data, title, zone=check_zone,
                                               font_path=args.title_font)
                 out_path = output_dir / (pf.stem + (_detect_image_ext(img_data) or ".png"))
-                out_path.write_bytes(img_data)
-                _clear_stale_siblings(out_path)
-                _ok(f"  → {out_path}")
+                if _write_if_not_worse(out_path, img_data, zone=check_zone):
+                    _ok(f"  → {out_path}")
             except SystemExit:
                 # _err 已打印原因；记下并继续下一条
                 failed.append((pf.name, "见上方错误"))

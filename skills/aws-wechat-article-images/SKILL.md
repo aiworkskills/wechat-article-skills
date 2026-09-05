@@ -46,7 +46,7 @@ metadata:
 
 完整长文从选题到发布 → [aws-wechat-article-main](../aws-wechat-article-main/SKILL.md)；图片消息/九宫格等多图推送 → [aws-wechat-sticker](../aws-wechat-sticker/SKILL.md)。
 
-读取文章中的配图标记，按内容形态生成图片：封面 12 个形态、正文配图 9 个形态，均按内容判断而非账号审美。专注于**长文配图**，贴图请用 sticker。
+读取文章中的配图标记，按内容形态生成图片：封面 12 个形态、正文配图 8 个形态，均按内容判断而非账号审美。专注于**长文配图**，贴图请用 sticker。
 
 ## 脚本目录
 
@@ -75,7 +75,7 @@ metadata:
 
 ## 封面风格 + 正文配图
 
-- **封面**：按 [cover-method.md](references/cover-method.md) 七步推导——找张力、定关系、找隐喻、套视觉语言、2.35:1 布局、写成散文、回看。封面模板（[references/cover-styles/](references/cover-styles/)）提供第四步的内容形态与**文案规格**（字号/颜色/位置），共 9 个，默认全选为候选池，Agent 按文章内容挑一个。范例见 [cover-examples/](references/cover-examples/)。
+- **封面**：按 [cover-method.md](references/cover-method.md) 七步推导——找张力、定关系、找隐喻、套视觉语言、2.35:1 布局、写成散文、回看。封面模板（[references/cover-styles/](references/cover-styles/)）提供第四步的内容形态与**文案规格**（字号/颜色/位置），共 12 个，默认全选为候选池，Agent 按文章内容挑一个。范例见 [cover-examples/](references/cover-examples/)。
 - **正文配图**：8 个内容形态，见 [references/image-styles/](references/image-styles/)。判断只有一条——删掉这张图，读者会**看不懂**（信息位，必须带文章真实内容）还是**读不下去**（节奏位，不加字）？都不影响就不要这张图。
 
 ### 封面 vs 正文（资源策略）⛔
@@ -169,7 +169,7 @@ metadata:
 
 #### 正文配图风格
 
-**预设发现**：内置 9 个于 `{baseDir}/references/image-styles/`（`<名>.example.md`，预设名取 `.example.md` 之前的部分），用户自定义放 `.aws-article/presets/image-styles/<名>.md`，同名覆盖。默认全选为候选池，Agent 按每个图位的作用挑形态。schema 与判断标准见 [image-styles/README.md](references/image-styles/README.md)。
+**预设发现**：内置 8 个于 `{baseDir}/references/image-styles/`（`<名>.example.md`，预设名取 `.example.md` 之前的部分），用户自定义放 `.aws-article/presets/image-styles/<名>.md`，同名覆盖。默认全选为候选池，Agent 按每个图位的作用挑形态。schema 与判断标准见 [image-styles/README.md](references/image-styles/README.md)。
 
 **加载优先级**：
 1. 用户当次指定（如「正文要扁平插画」）
@@ -251,6 +251,8 @@ python {baseDir}/scripts/image_create.py batch drafts/YYYYMMDD-slug/imgs/prompts
 **封面排除**：封面图（`![封面：...]`）**仅用于微信文章封面上传**，**禁止**作为 `<img>` 嵌入 HTML 正文。替换 placeholder 时**跳过封面标记行**（或直接删除该行），封面图单独复制到文章根目录 `cover.{ext}`。`publish.py` 也支持从 `imgs/` 目录自动发现封面图（`cover.*` 或 `*-cover.*`）。
 
 **修复 HTML 的触发条件**：仅当在 `article.html` 中**确实存在** `href="placeholder"` 或 placeholder 被渲染成可点击链接时，才将误转的 `<a>` 改为 `<img>` 或占位说明；**不要**默认每次都执行「修复流程图占位」或「修复 HTML」。
+
+**⛔ 插图入正文之后又重跑生图时，必须复核引用。** 端点返回的格式会变（同一 prompt 这次 PNG 下次 JPEG），脚本会删掉同名旧后缀的图并打 `[WARN]`，`article.md` / `article.html` 里的 `imgs/xxx.png` 就指向了不存在的文件。实测踩过：补跑两张分辨率不达标的图，其中一张换成了 `.jpg`，正文引用当场断掉且不报错。重跑后按文件名主干（`05-金句卡片`）重新匹配实际存在的文件，两个文件一起改。
 
 ## 过程文件
 
