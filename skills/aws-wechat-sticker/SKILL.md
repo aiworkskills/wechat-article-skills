@@ -101,7 +101,7 @@ topics 产出的贴图卡片 / 用户直接给主题 / 用户提供素材图片�
 1. 用户指定（「用知识卡片风格」）
 2. 本篇合并配置中的 `custom_sticker_style` > `default_sticker_style`（若有；`custom_*` 优先；列表多元素时须先择一）
 3. `.aws-article/presets/sticker-styles/` 下的自定义风格
-4. **fallback**：根据贴图主题自动选择 Type（氛围 or 信息图）× 默认 Style（扁平矢量），使用共享 [image-styles/](../aws-wechat-article-images/references/image-styles/)
+4. **fallback**：根据贴图主题从共享的 [image-styles/](../aws-wechat-article-images/references/image-styles/) 里选一个形态——信息型选「信息位」那几个（流程步骤/结构分层/数据图表/对比两栏/清单要点），氛围型选「节奏位」（概念隐喻/场景还原/氛围留白）
 
 全组图统一风格。
 

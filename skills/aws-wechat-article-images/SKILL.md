@@ -27,7 +27,7 @@ metadata:
 - **凭证外发**：该 key 以 `Authorization: Bearer` 头发送到 `image_model.base_url` 指定端点（常见为 DALL-E、gpt-image 兼容 `/v1/images/generations`，或多模态模型 `/v1/chat/completions`，具体由用户配置）
 - **内容外发**：每张图片的 prompt（文本）作为 JSON POST body 发送；prompt 内容来自本篇 `imgs/prompts/*.md`（可能包含文章标题、章节摘要）
 - **下图 SSRF 防御**：若 API 响应返回图片 URL（而非 base64），脚本**仅允许下载 http/https 公网地址**；内网 / 环回 / 链路本地 / 保留地址全部拒绝（防止恶意或被劫持的模型端点把脚本当作 SSRF 跳板）
-- **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`article.md`、`imgs/prompts/*.md`、`references/cover-method.md`、`references/cover-examples/*.md`、`.aws-article/products/{产品名}/images/*`（业务配图库，本篇涉及用户业务时优先复用）
+- **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`article.md`、`imgs/prompts/*.md`、`references/cover-method.md`、`references/image-method.md`、`references/cover-examples/*.md`、`.aws-article/products/{产品名}/images/*`（业务配图库，本篇涉及用户业务时优先复用）
 - **文件写**：本篇 `imgs/*.{png,webp}`、可选 `img_analysis.md`
 - **shell**：仅 `python3 {baseDir}/scripts/image_create.py`、`user_image_prepare.py`
 
@@ -46,7 +46,7 @@ metadata:
 
 完整长文从选题到发布 → [aws-wechat-article-main](../aws-wechat-article-main/SKILL.md)；图片消息/九宫格等多图推送 → [aws-wechat-sticker](../aws-wechat-sticker/SKILL.md)。
 
-读取文章中的配图标记，按 Type × Style 体系生成图片。专注于**长文配图**，贴图请用 sticker。
+读取文章中的配图标记，按内容形态生成图片：封面 12 个形态、正文配图 9 个形态，均按内容判断而非账号审美。专注于**长文配图**，贴图请用 sticker。
 
 ## 脚本目录
 
@@ -106,7 +106,7 @@ metadata:
 
 1. **仓库业务配图库**：若本篇涉及用户业务，先 `ls .aws-article/products/`，进入相关产品的 **`images/`** 子目录，列出并阅读 **同名 `.md`**（含路径与画面说明），按主题匹配后，在 `article.md` 中直接引用对应 **`.png` / `.webp`**（或复制到本篇 `imgs/` 再引用）。**与正文严格相关才用**，避免硬凑。
 2. **用户上传 / 本篇 `image_source: user`**：用户提供的图或上述引用策略，走「用户供图模式」与 `img_analysis.md`（正文部分）。
-3. **仍缺图或须原创插画**：再进入 **Type × Style**、`imgs/prompts/` 与 **`image_create.py`**（或 Agent 降级生图）。
+3. **仍缺图或须原创插画**：再按 [image-method.md](references/image-method.md) 选形态、写 `imgs/prompts/`、执行 **`image_create.py`**（或 Agent 降级生图）。
 
 > 说明：业务配图库属「仓库内业务资源」，**不必**等用户手动上传才查；与「用户供图模式」并列，而非仅附属于后者。
 
@@ -163,7 +163,7 @@ metadata:
 **加载优先级**：
 1. 用户当次指定（如「封面要简约风」）
 2. **本篇 `article.yaml.default_cover_image_style`**（单元素列表）→ 从内置或 **`.aws-article/presets/cover-styles/<名>.md`** 加载（用户文件同名优先于内置）
-3. **fallback**：根据 `tone` / `article_category` 从可用封面预设中自动推荐（规则见 [auto-selection.md](references/image-styles/auto-selection.md)）
+3. **fallback**：`custom_cover_image_style` 为空即全选，Agent 按 [cover-method.md](references/cover-method.md) 第四步从 12 个形态里挑——判断只有一条：主体在 345px 缩略图里能否被一眼认出。
 
 每个封面模板 `.md` 含五个字段：用于 / 主体 / 影调 / **文案** / 版式。「文案」不可缺省——缺了产出的是背景图而不是成品封面。画什么由 [cover-method.md](references/cover-method.md) 从文章推导。Schema 见 [cover-styles/README.md](references/cover-styles/README.md)。
 
@@ -174,19 +174,19 @@ metadata:
 **加载优先级**：
 1. 用户当次指定（如「正文要扁平插画」）
 2. **本篇 `article.yaml.default_article_image_style`**（单元素列表）→ 加载 **`.aws-article/presets/image-styles/<名>.md`**
-3. **fallback**：根据正文内容信号与 `tone` 自动推荐 Type 和视觉风格（规则见 [auto-selection.md](references/image-styles/auto-selection.md)），视觉风格为 Agent 内部决策
+3. **fallback**：`custom_article_image_style` 为空即全选，Agent 按 [image-method.md](references/image-method.md) 逐个图位判断——删掉它读者会看不懂（信息位）还是读不下去（节奏位）？都不影响就删掉该图位。
 
 ### 第4步：生成配图方案
 
 **封面**：按 [cover-method.md](references/cover-method.md) 走完前六步，产出一个 prompt 文件：frontmatter 含 `aspect`，正文是 150–300 字的散文，标题文案（4–7 字，从文章标题提炼钩子；字高占画面 25–35%，是画面第一元素）连同位置、字体感、颜色、大小一起写在里面。不要关键词清单，不要写「不要 X」，不要照抄预设或范例里的场景。
 
-**正文配图**：为每张图生成方案（Type、Style、prompt 要点），构建见 [prompt-construction.md](references/image-styles/prompt-construction.md)。
+**正文配图**：按 [image-method.md](references/image-method.md) 六步逐个图位处理。信息位的内容**必须从文章里取**，不能让模型自由发挥——实测会生成无关鸡汤并自带 emoji。
 
 **封面 prompt frontmatter 必须包含 `aspect`**：从 `config.yaml` 的 `cover_aspect` 读取（如 `2.35:1`），写入 YAML frontmatter。`image_create.py` 据此映射到 API 支持的最接近尺寸生成，装有 Pillow 时再居中裁切到该比例（如 2.35:1 → 1792x763）。**值须加引号**（`aspect: "2.35:1"`），未加引号的 `16:9` 会被 YAML 解析成整数。缺少 aspect 时退回 `config.yaml` 的 `image_model.default_size`（默认 1024x1024）。
 
 **图片内文字**：画面中出现的文字必须为中文。在 prompt 里**直接写出要显示的中文文案**（如「传统对话AI」「OpenClaw」），禁止只写 “labels in Chinese” 或 “Chinese or English OK”，否则模型会生成英文。
 
-Prompt 构建：[references/image-styles/prompt-construction.md](references/image-styles/prompt-construction.md)
+Prompt 构建：封面见 [cover-method.md](references/cover-method.md)，正文配图见 [image-method.md](references/image-method.md)；通用规则（图中文字、构图要求、高级布局）见 [prompt-construction.md](references/image-styles/prompt-construction.md)
 
 ### 第5步：展示方案并等待确认 ⛔
 
