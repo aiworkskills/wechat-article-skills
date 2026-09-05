@@ -223,7 +223,14 @@ def _merge_format_context(draft_dir: Path) -> dict:
     仅 embeds.related_articles 与全局深度合并；名片/小程序等仍以全局 embeds 为准，本篇 article.yaml 的其它 embeds 子键不参与覆盖。
     """
     merged: dict = {}
-    cfg = _safe_yaml_dict(Path(".aws-article/config.yaml"))
+    cfg_path = Path(".aws-article/config.yaml")
+    if not cfg_path.is_file():
+        # 静默跳过是最坏的失败方式：退出码 0、HTML 照出，只是名片/小程序等嵌入元素
+        # 和主题设置全都没生效，肉眼要比对两份产物才看得出来。
+        print(f"[WARN] 未在当前工作目录下找到 .aws-article/config.yaml（当前目录：{Path.cwd()}），"
+              f"本次不套用全局配置（嵌入元素、图注等按默认处理）。"
+              f"如非本意，请在仓库根下重跑。", file=sys.stderr)
+    cfg = _safe_yaml_dict(cfg_path)
     for k, v in cfg.items():
         if k not in _CONFIG_SKIP:
             merged[k] = v
@@ -577,7 +584,32 @@ def _preformat_markdown(text: str) -> str:
 
 # ── Markdown → HTML ──────────────────────────────────────────
 
-def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True) -> str:
+# config.yaml 的 caption_style。原先这个字段谁也没读，图注是「alt 里有全角冒号就切一刀」
+# 写死的行为——用户在配置台选「无图注」照样出图注，选「关键图有」也毫无区别。
+CAPTION_ALWAYS = "有图注"
+CAPTION_NEVER = "无图注"
+CAPTION_KEY_ONLY = "关键图有"
+
+# 「关键图有」按图位判定：信息位的图是拿来解释内容的，图注补充说明有意义；
+# 节奏位（概念隐喻/场景还原/金句卡片）本来就不承载信息，图注只是重复一遍。
+# 形态名就写在 alt 的全角冒号之前（`![流程步骤：…]`），不必另存元数据。
+INFO_SLOT_FORMS = frozenset({"流程步骤", "结构分层", "数据图表", "对比两栏", "清单要点"})
+
+
+def _want_caption(alt: str, caption_style: str) -> bool:
+    """按 caption_style 决定这张图要不要图注。alt 形如 `形态：描述`。"""
+    style = (caption_style or "").strip() or CAPTION_ALWAYS
+    if "：" not in alt:
+        return False          # 没有描述部分，本来就无图注可出
+    if style == CAPTION_NEVER:
+        return False
+    if style == CAPTION_KEY_ONLY:
+        return alt.split("：", 1)[0].strip() in INFO_SLOT_FORMS
+    return True               # 有图注，以及无法识别的取值都按默认走
+
+
+def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
+                caption_style: str = CAPTION_ALWAYS) -> str:
     """Markdown → 带 inline style 的 HTML。
 
     skip_first_h1=True 时正文不包含文章标题（第一个 h1 跳过，由公众号后台单独填）；
@@ -753,7 +785,7 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True) -> str:
                 f'<img src="{src}" alt="{alt_escaped}" style="{img_style}" />'
                 f'</p>'
             )
-            if "：" in alt:
+            if _want_caption(alt, caption_style):
                 caption = alt.split("：", 1)[1]
                 fc_style = styles.get("figcaption", "") or (
                     f'text-align:center; font-size:14px; '
@@ -1001,7 +1033,8 @@ def main():
 
     _info(f"主题: {theme_name}")
     styles = _build_styles(theme, overrides)
-    body_html = _md_to_html(md_text, styles)
+    caption_style = str(_merge_format_context(draft_dir).get("caption_style") or CAPTION_ALWAYS)
+    body_html = _md_to_html(md_text, styles, caption_style=caption_style)
 
     embeds = _resolve_embeds_config(draft_dir)
     if embeds:
@@ -1013,7 +1046,7 @@ def main():
     if closing_md_path.exists():
         closing_md = closing_md_path.read_text(encoding="utf-8")
         # 不对 closing.md 进行预格式化，避免意外更改作者自定义的链接与排版
-        closing_html = _md_to_html(closing_md, styles, skip_first_h1=False)
+        closing_html = _md_to_html(closing_md, styles, skip_first_h1=False, caption_style=caption_style)
         # 以段落分隔以避免直接黏连
         body_html = f"{body_html}\n\n<div style=\"margin-top:1.5em\"></div>\n{closing_html}"
         _info(f"已追加文末区块: {closing_md_path}")

@@ -158,6 +158,9 @@ image_model:
 
 # ── WeChat accounts ──
 wechat_accounts: 1                       # Number of WeChat accounts; default 1
-wechat_api_base: ""                        # WeChat API base URL
+wechat_api_base: "https://wechat.aiworkskills.cn"   # WeChat API base URL. Official api.weixin.qq.com enforces an
+                                         # IP allowlist, which blocks calls from a laptop; this
+                                         # reverse proxy avoids that. Set it to
+                                         # https://api.weixin.qq.com to talk to WeChat directly.
 wechat_1_name: ""                                                # WeChat account 1 display name
 wechat_2_name: ""                                                   # WeChat account 2 display name

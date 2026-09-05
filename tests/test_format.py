@@ -1,4 +1,5 @@
 """format.py 回归测试：预格式化保护、表格、引用块、列表、closing.md、字号覆盖。"""
+import re
 import unittest
 
 from tests._load import load
@@ -106,3 +107,44 @@ class BuildStylesTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CaptionStyleTest(unittest.TestCase):
+    """config.yaml 的 caption_style 原先谁也没读——图注是「alt 里有全角冒号就切一刀」写死的，
+    用户在配置台选「无图注」照样出图注。"""
+
+    def _md(self):
+        return (
+            "正文一段。\n\n"
+            "![流程步骤：怎么定媒介](imgs/a.png)\n\n"
+            "![概念隐喻：完美就是破绽](imgs/b.png)\n\n"
+            "![对比两栏：改前 vs 改后](imgs/c.png)\n\n"
+            "![封面：不该进正文](imgs/cover.png)\n\n"
+            "![没有冒号的alt](imgs/d.png)\n"
+        )
+
+    def _captions(self, style):
+        styles = fmt._build_styles(fmt._load_theme("default"))
+        html = fmt._md_to_html(self._md(), styles, caption_style=style)
+        return re.findall(r'<p style="text-align:center; font-size:\d+px[^>]*>([^<]*)</p>', html)
+
+    def test_always(self):
+        self.assertEqual(self._captions("有图注"),
+                         ["怎么定媒介", "完美就是破绽", "改前 vs 改后"])
+
+    def test_never(self):
+        self.assertEqual(self._captions("无图注"), [])
+
+    def test_key_images_only(self):
+        """关键图有：只有信息位的图配图注，节奏位（概念隐喻等）不配。"""
+        self.assertEqual(self._captions("关键图有"), ["怎么定媒介", "改前 vs 改后"])
+
+    def test_unknown_value_falls_back_to_always(self):
+        self.assertEqual(len(self._captions("随便写的")), 3)
+
+    def test_empty_value_falls_back_to_always(self):
+        self.assertEqual(len(self._captions("")), 3)
+
+    def test_alt_without_colon_never_gets_caption(self):
+        for style in ("有图注", "关键图有"):
+            self.assertNotIn("没有冒号的alt", self._captions(style))

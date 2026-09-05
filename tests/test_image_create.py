@@ -141,10 +141,37 @@ class TestCommandExitCodeTest(unittest.TestCase):
             self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
             self.assertIn("网络错误", r.stderr)
 
-    def test_no_model_exit_2(self):
+    def test_wrong_directory_is_not_no_model(self):
+        """空目录（没有 .aws-article/config.yaml）是「跑错目录 / 没做首次引导」，不是「模型未配置」。
+
+        原先这两种情况都走 [NO_MODEL] + 退出码 2，而 SKILL.md 规定退出码 2 意味着
+        Agent 可以改用自身能力代生图——于是配置完全正常、只是 cd 错了目录的用户，
+        会看到一句假的「你没配图片模型」并同意降级，绕开自己配好的专用模型。
+        """
         with tempfile.TemporaryDirectory() as d:
             r = subprocess.run([sys.executable, str(SCRIPT), "test"], cwd=d, capture_output=True, text=True)
-            self.assertEqual(r.returncode, 2)
+            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+            self.assertNotIn("[NO_MODEL]", r.stderr, "不得触发 Agent 降级生图")
+            self.assertIn(".aws-article/config.yaml", r.stderr)
+
+    def test_no_model_exit_2(self):
+        """config.yaml 在、但 image_model 没配 —— 这才是真正的未配置，允许降级。"""
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, ".aws-article").mkdir()
+            Path(d, ".aws-article/config.yaml").write_text("tone: x\n", encoding="utf-8")
+            r = subprocess.run([sys.executable, str(SCRIPT), "test"], cwd=d, capture_output=True, text=True)
+            self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+            self.assertIn("[NO_MODEL]", r.stderr)
+
+    def test_missing_api_key_is_still_no_model(self):
+        """image_model 填了但 aws.env 没有 key —— 仍属未配置。"""
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, ".aws-article").mkdir()
+            Path(d, ".aws-article/config.yaml").write_text(
+                'image_model:\n  base_url: "https://x/v1/images/generations"\n  model: "m"\n',
+                encoding="utf-8")
+            r = subprocess.run([sys.executable, str(SCRIPT), "test"], cwd=d, capture_output=True, text=True)
+            self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
             self.assertIn("[NO_MODEL]", r.stderr)
 
 

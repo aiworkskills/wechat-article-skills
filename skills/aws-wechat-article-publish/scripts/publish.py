@@ -120,8 +120,18 @@ def cmd_check_screening(config_path: Path) -> int:
 
 
 def load_repo_config(config_path: Path | None = None) -> dict:
-    """读取仓库 .aws-article/config.yaml；缺失或无效返回 {}。"""
+    """读取仓库 .aws-article/config.yaml；缺失或无效返回 {}。
+
+    配置按 cwd 相对路径解析且刻意不向上遍历（见 getdraft.py `_repo_root`）。用默认
+    路径而文件不存在时，多半是跑错了目录——这里点破一次，否则后续报的是
+    「config.yaml 中 wechat_accounts 无效」，把「文件根本没找到」说成了「值不对」，
+    用户会去翻一个不存在的文件里的字段。
+    """
     p = config_path if config_path is not None else Path(".aws-article/config.yaml")
+    if config_path is None and not p.is_file():
+        print(f"[ERROR] 未在当前工作目录下找到 .aws-article/config.yaml（当前目录：{Path.cwd()}）。\n"
+              f"        请在仓库根（含 .aws-article/ 的目录）下运行本脚本。", file=sys.stderr)
+        return {}
     data = _load_yaml_config(p)
     if data is None or not isinstance(data, dict):
         return {}
@@ -1145,8 +1155,23 @@ def _run_checks():
                     f"槽位 {probe_i} 凭证或白名单有误（见 errcode/errmsg），请检查 .env"
                 )
         except Exception as e:
-            print(f"[ERROR] API 连通失败: {e}")
-            issues.append("网络异常或微信接口不可用，可稍后重试")
+            # 报错必须带上实际请求的 API 基址，且分清「端点配错了」和「网络抖动」。
+            # 实测踩过：config.yaml 里的自建反代域名下线后全路径返回 404，这里却报
+            # 「网络异常，可稍后重试」且不提端点是谁——用户会一直重试，永远查不到
+            # 是自己配了个死掉的反代。
+            code = getattr(e, "code", None)
+            print(f"[ERROR] API 连通失败（端点 {API_BASE}{API_PATH}）: {e}")
+            src = ("config.yaml 的 wechat_api_base"
+                   if str(cfg.get("wechat_api_base") or "").strip()
+                   else f"aws.env 的 WECHAT_{probe_i}_API_BASE")
+            if API_BASE != DEFAULT_API_BASE and (code in (404, 403, 405) or code is None):
+                issues.append(
+                    f"端点 {API_BASE} 不可用（{e}）。这是自配的反代，不是官方接口——"
+                    f"重试不会好转。请确认 {src} 填的地址仍在服务；"
+                    f"或先清空该项改回官方 {DEFAULT_API_BASE}（注意官方接口有 IP 白名单）"
+                )
+            else:
+                issues.append(f"网络异常或微信接口不可用（端点 {API_BASE}），可稍后重试")
 
     try:
         import yaml

@@ -197,7 +197,7 @@ Prompt 构建：封面见 [cover-method.md](references/cover-method.md)，正文
 
 **封面**：见「封面 vs 正文」— **默认必须先**写好 **`imgs/prompts/`** 中封面 prompt（含 `aspect` 与 `config.yaml` 的 **`cover_aspect`** 一致），再执行 **`image_create.py generate … -o ../cover.png`**（或等价输出路径）。
 
-**封面回看（必做）**：`cover.*` 生成后打开图片，按 [cover-method.md 第七步](references/cover-method.md) 对五条：标题字对不对全不全、主体位置与标题区、元素 ≤3、缩略图可读、与文章相关。不过关**回到出问题的那一步改 prompt** 再生成——标题错了改文案写法，主体乱跑改布局描述，与文章无关是张力没找准；不要不改 prompt 盲目重跑。当前环境看不了图时，退而运行 `python {baseDir}/scripts/image_create.py check cover.png` 做纯代码检查（尺寸 / 单色 / 标题区干净度）。
+**封面回看（必做）**：`cover.*` 生成后打开图片，按 [cover-method.md 第七步](references/cover-method.md) 对五条：标题字对不对全不全、主体位置与标题区、元素 ≤3、缩略图可读、与文章相关。不过关**回到出问题的那一步改 prompt** 再生成——标题错了改文案写法，主体乱跑改布局描述，与文章无关是张力没找准；不要不改 prompt 盲目重跑。当前环境看不了图时，退而运行 `python {baseDir}/scripts/image_create.py check cover.png` 做纯代码检查——**只有尺寸与近单色两项**。标题区干净度只对「先出底图再用 `--title-font` 合成标题」那条路有效；本方法的标题由模型画进图里，文字本身就是高边缘密度，套这项会把正确的封面判为不合格。
 
 **生成方式（优先级，正文）**：
 

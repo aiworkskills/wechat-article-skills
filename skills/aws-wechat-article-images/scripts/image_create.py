@@ -111,6 +111,27 @@ def _resolve_env_path() -> Path:
     return Path("aws.env")
 
 
+def _require_repo_root() -> None:
+    """跑错目录时立刻停下，而不是报成「模型未配置」。
+
+    配置按 cwd 相对路径解析，且刻意不向上遍历（见 getdraft.py `_repo_root`：
+    避免在非预期的工作区读到别人的凭证）。但「找不到 .aws-article/config.yaml」
+    原本会一路走到 [NO_MODEL] + 退出码 2，而 SKILL.md 规定退出码 2 意味着
+    「模型没配」、Agent 可以改用自身能力代生图——于是配置完全正常的用户会看到
+    一句假的「你没配图片模型」，然后同意降级，绕开自己配好的专用模型。
+    目录错和没配置是两回事，必须分开报。
+    """
+    if Path(".aws-article/config.yaml").is_file():
+        return
+    _err(
+        "未在当前工作目录下找到 .aws-article/config.yaml。\n"
+        f"       当前目录：{Path.cwd()}\n"
+        "       要么跑错了目录（请在仓库根、即含 .aws-article/ 的目录下运行），\n"
+        "       要么首次引导还没走（见 aws-wechat-article-main/references/first-time-setup.md）。\n"
+        "       两种都不是「图片模型未配置」，不要据此降级由 Agent 代生图。"
+    )
+
+
 def _parse_dotenv(content: str) -> dict[str, str]:
     out: dict[str, str] = {}
     for raw_line in content.splitlines():
@@ -1210,7 +1231,8 @@ def main():
 
     p_chk = sub.add_parser("check", help="出图后纯代码检查：尺寸 / 单色 / 标题区干净度（不调 API）")
     p_chk.add_argument("image", help="图片路径")
-    p_chk.add_argument("--title-zone", help="归一化 x0,y0,x1,y1；给了才检查标题区留白（用于合成标题前）")
+    p_chk.add_argument("--title-zone", help="归一化 x0,y0,x1,y1；仅用于合成标题前确认该区域是空的。"
+                            "标题由模型直接画进图里时不要用——文字本身就是高边缘密度，会误判")
 
     p_test = sub.add_parser("test", help="测试 API 连通性")
 
@@ -1257,6 +1279,7 @@ def main():
         _ok("检查通过")
         return
 
+    _require_repo_root()
     model_cfg = _resolve_model_config()
     if model_cfg is None:
         print(
