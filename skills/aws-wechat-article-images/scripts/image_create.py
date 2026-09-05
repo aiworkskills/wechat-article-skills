@@ -1097,6 +1097,19 @@ def _generate_with_checks(label: str, gen, zone=None) -> bytes:
     return best
 
 
+def _clear_stale_siblings(out_path: Path) -> None:
+    """删掉同名不同后缀的旧图。
+
+    返回格式会变（同一 prompt 这次 PNG 下次 JPEG），不清理的话目录里会同时留下
+    05-x.jpg 和 05-x.png，后续按 glob 取文件时可能拿到上一次的旧图——排查过一次
+    「重生成没生效」，实际是取到了残留的旧后缀。
+    """
+    for f in out_path.parent.glob(out_path.stem + ".*"):
+        if f != out_path and f.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
+            f.unlink()
+            _info(f"已删除同名旧图: {f.name}")
+
+
 def _detect_image_ext(data: bytes) -> str | None:
     """按文件头识别图片格式，返回 .png/.jpg/.webp/.gif；无法识别返回 None。"""
     if data.startswith(b"\x89PNG\r\n\x1a\n"):
@@ -1266,6 +1279,7 @@ def main():
             output_path = prompt_path.with_suffix(ext)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_bytes(img_data)
+        _clear_stale_siblings(output_path)
         _ok(f"已保存: {output_path} ({len(img_data)} 字节)")
 
     elif args.command == "batch":
@@ -1304,6 +1318,7 @@ def main():
                                               font_path=args.title_font)
                 out_path = output_dir / (pf.stem + (_detect_image_ext(img_data) or ".png"))
                 out_path.write_bytes(img_data)
+                _clear_stale_siblings(out_path)
                 _ok(f"  → {out_path}")
             except SystemExit:
                 # _err 已打印原因；记下并继续下一条

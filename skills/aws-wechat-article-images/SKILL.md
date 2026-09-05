@@ -76,7 +76,7 @@ metadata:
 ## 封面风格 + 正文配图
 
 - **封面**：按 [cover-method.md](references/cover-method.md) 七步推导——找张力、定关系、找隐喻、套视觉语言、2.35:1 布局、写成散文、回看。封面模板（[references/cover-styles/](references/cover-styles/)）提供第四步的内容形态与**文案规格**（字号/颜色/位置），共 9 个，默认全选为候选池，Agent 按文章内容挑一个。范例见 [cover-examples/](references/cover-examples/)。
-- **正文配图**：Type（画面构成）决定"画什么"，Style（视觉风格）由 Agent 根据 tone/category 内部选择。Type 列表与 prompt 模板见 [references/image-styles/](references/image-styles/) 目录。
+- **正文配图**：9 个内容形态，见 [references/image-styles/](references/image-styles/)。判断只有一条——删掉这张图，读者会**看不懂**（信息位，必须带文章真实内容）还是**读不下去**（节奏位，不加字）？都不影响就不要这张图。
 
 ### 封面 vs 正文（资源策略）⛔
 
@@ -169,7 +169,7 @@ metadata:
 
 #### 正文配图风格
 
-**预设发现**：Agent 扫描 `.aws-article/presets/image-styles/` 获取可用正文配图预设（文件 schema 见 [main 的 presets/image-styles/README.md](../aws-wechat-article-main/references/presets/image-styles/README.md)）。本 skill **不内置**正文配图预设文件；目录不存在或为空时直接走下方 fallback 自动推荐，不算错误。
+**预设发现**：内置 9 个于 `{baseDir}/references/image-styles/`（`<名>.example.md`，预设名取 `.example.md` 之前的部分），用户自定义放 `.aws-article/presets/image-styles/<名>.md`，同名覆盖。默认全选为候选池，Agent 按每个图位的作用挑形态。schema 与判断标准见 [image-styles/README.md](references/image-styles/README.md)。
 
 **加载优先级**：
 1. 用户当次指定（如「正文要扁平插画」）

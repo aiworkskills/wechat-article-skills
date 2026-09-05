@@ -253,3 +253,31 @@ class TitleHelpersTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipIf(Image is None, "Pillow 未安装")
+class StaleSiblingTest(unittest.TestCase):
+    """返回格式会变（PNG/JPEG 交替），同名旧后缀残留会让后续 glob 取到旧图。"""
+
+    def _write(self, d, name):
+        p = Path(d) / name
+        buf = io.BytesIO(); Image.new("RGB", (40, 20), (1, 2, 3)).save(buf, "PNG")
+        p.write_bytes(buf.getvalue())
+        return p
+
+    def test_removes_other_extensions(self):
+        with tempfile.TemporaryDirectory() as d:
+            keep = self._write(d, "05-x.png")
+            old = self._write(d, "05-x.jpg")
+            ic._clear_stale_siblings(keep)
+            self.assertTrue(keep.exists())
+            self.assertFalse(old.exists())
+
+    def test_keeps_other_names_and_non_images(self):
+        with tempfile.TemporaryDirectory() as d:
+            keep = self._write(d, "05-x.png")
+            other = self._write(d, "06-y.jpg")
+            md = Path(d) / "05-x.md"; md.write_text("prompt", encoding="utf-8")
+            ic._clear_stale_siblings(keep)
+            self.assertTrue(other.exists())
+            self.assertTrue(md.exists(), "同名 .md 是 prompt 源文件，不能删")
