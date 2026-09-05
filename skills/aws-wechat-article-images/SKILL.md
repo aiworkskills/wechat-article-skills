@@ -178,7 +178,7 @@ metadata:
 
 ### 第4步：生成配图方案
 
-**封面**：按 [cover-method.md](references/cover-method.md) 走完前六步，产出一个 prompt 文件：frontmatter 含 `aspect`，正文是 150–300 字的散文，标题文案（≤12 字，从文章标题提炼钩子）连同位置、字体感、颜色、大小一起写在里面。不要关键词清单，不要写「不要 X」，不要照抄预设或范例里的场景。
+**封面**：按 [cover-method.md](references/cover-method.md) 走完前六步，产出一个 prompt 文件：frontmatter 含 `aspect`，正文是 150–300 字的散文，标题文案（4–7 字，从文章标题提炼钩子；字高占画面 25–35%，是画面第一元素）连同位置、字体感、颜色、大小一起写在里面。不要关键词清单，不要写「不要 X」，不要照抄预设或范例里的场景。
 
 **正文配图**：为每张图生成方案（Type、Style、prompt 要点），构建见 [prompt-construction.md](references/image-styles/prompt-construction.md)。
 
