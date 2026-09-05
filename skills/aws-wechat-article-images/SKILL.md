@@ -75,7 +75,7 @@ metadata:
 
 ## 封面风格 + 正文配图
 
-- **封面**：按 [cover-method.md](references/cover-method.md) 七步推导——找张力、定关系、找隐喻、套视觉语言、2.35:1 布局、写成散文、回看。风格预设（[references/cover-styles/](references/cover-styles/)）只提供第四步的视觉语言，不含场景。范例见 [cover-examples/](references/cover-examples/)。
+- **封面**：按 [cover-method.md](references/cover-method.md) 七步推导——找张力、定关系、找隐喻、套视觉语言、2.35:1 布局、写成散文、回看。封面模板（[references/cover-styles/](references/cover-styles/)）提供第四步的内容形态与**文案规格**（字号/颜色/位置），共 9 个，默认全选为候选池，Agent 按文章内容挑一个。范例见 [cover-examples/](references/cover-examples/)。
 - **正文配图**：Type（画面构成）决定"画什么"，Style（视觉风格）由 Agent 根据 tone/category 内部选择。Type 列表与 prompt 模板见 [references/image-styles/](references/image-styles/) 目录。
 
 ### 封面 vs 正文（资源策略）⛔
@@ -165,7 +165,7 @@ metadata:
 2. **本篇 `article.yaml.default_cover_image_style`**（单元素列表）→ 从内置或 **`.aws-article/presets/cover-styles/<名>.md`** 加载（用户文件同名优先于内置）
 3. **fallback**：根据 `tone` / `article_category` 从可用封面预设中自动推荐（规则见 [auto-selection.md](references/image-styles/auto-selection.md)）
 
-每个封面预设 `.md` **只描述视觉语言**（色板、光与材质、气质），不含场景、物体或构图——画什么由 [cover-method.md](references/cover-method.md) 从文章推导。Schema 见 [cover-styles/README.md](references/cover-styles/README.md)。
+每个封面模板 `.md` 含五个字段：用于 / 主体 / 影调 / **文案** / 版式。「文案」不可缺省——缺了产出的是背景图而不是成品封面。画什么由 [cover-method.md](references/cover-method.md) 从文章推导。Schema 见 [cover-styles/README.md](references/cover-styles/README.md)。
 
 #### 正文配图风格
 
