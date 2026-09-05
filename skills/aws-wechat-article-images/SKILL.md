@@ -69,6 +69,8 @@ metadata:
 - `https://xxx.com/v1/images/generations` — DALL-E / gpt-image 等
 - `https://xxx.com/v1/chat/completions` — Gemini 等多模态模型（通过中转站生图）
 
+**比例怎么传（因端点而异）**：`/v1/images/generations` 用 `size` 像素串；Gemini 系模型走 `/v1/chat/completions` 时用 `extra_body.imageConfig`（比例 + 分辨率档位），这是 Gemini 特有结构，**只对识别为 Gemini 系的模型发送**（模型名含 gemini / nano-banana / imagen），其余模型保持「尺寸并入提示 + 生成后裁切」以免严格网关报 400。可用 **`image_model.aspect_mode`**（`auto` / `imageconfig` / `none`）显式覆盖。无论走哪条路径，最终都会按 `aspect` 校正到目标比例。
+
 **交互约定**：可提示用户上述项是否已填；**一条龙**下通常已通过 **`validate_env.py`**。须遵守 main 的**智能体行为约束**——未通过环境校验且未获用户明确「本次例外」时，不得假装已走专用生图 API。
 
 ## 封面风格 + 正文配图

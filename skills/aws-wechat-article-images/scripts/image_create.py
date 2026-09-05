@@ -97,11 +97,11 @@ def _err(msg: str):
 
 
 def _ok(msg: str):
-    print(f"[OK] {msg}")
+    print(f"[OK] {msg}", flush=True)
 
 
 def _info(msg: str):
-    print(f"[INFO] {msg}")
+    print(f"[INFO] {msg}", flush=True)
 
 
 # ── 配置（config.yaml + aws.env）─────────────────────────────
@@ -168,6 +168,7 @@ def _model_config_from_config_and_env(cfg: dict | None, env: dict[str, str]) -> 
     if not base_url or not api_key or not model:
         return None
     provider = (im.get("provider") or "").strip().lower()
+    aspect_mode = (im.get("aspect_mode") or "auto").strip().lower()
     default_size = str(im.get("default_size") or "1024x1024").strip()
     default_quality = str(im.get("default_quality") or "standard").strip()
     return {
@@ -175,6 +176,7 @@ def _model_config_from_config_and_env(cfg: dict | None, env: dict[str, str]) -> 
         "api_key": api_key,
         "model": model,
         "provider": provider,
+        "aspect_mode": aspect_mode,
         "default_size": default_size,
         "default_quality": default_quality,
     }
@@ -212,9 +214,9 @@ def _format_api_failure(label: str, code: int, error_body: str) -> str:
     return "\n".join(parts)
 
 
-def _fail_url(e: urllib.error.URLError, what: str) -> None:
+def _fail_url(e: urllib.error.URLError | TimeoutError, what: str) -> None:
     _err(
-        f"网络错误（可重试）—{what}: {e.reason}\n"
+        f"网络错误（可重试）—{what}: {getattr(e, 'reason', e)}\n"
         "请检查网络、代理、DNS 以及 config.yaml 中 image_model.base_url 是否可达。"
     )
 
@@ -229,6 +231,59 @@ ASPECT_TO_SIZE = {
     "4:3": "1024x768",
     "3:4": "768x1024",
 }
+
+
+# Gemini（含通过 OpenAI 兼容中转站调用的 gemini-*-image）原生支持的比例。
+# 2.35:1 不在其中，最接近的是 21:9（2.33:1），差异 <1%，生成后无须再裁。
+# `extra_body.imageConfig` 是 Gemini 家族特有的结构，不是 OpenAI 兼容协议的一部分。
+# 往非 Gemini 端点发这个字段，宽松网关会忽略，严格网关会直接 400 —— 从「比例不对」
+# 退化成「出不了图」。所以只在识别出 Gemini 系模型时才发，其余模型保持原有行为
+# （尺寸并入提示 + 生成后按需裁切）。
+GEMINI_MODEL_HINTS = ("gemini", "nano-banana", "nanobanana", "imagen")
+
+# Gemini 的分辨率档位。不指定时同一 prompt 两次可能返回差一倍的尺寸
+# （实测 1584x672 与 784x336），公众号封面要求长边 ≥900px，所以默认锁 2K。
+GEMINI_IMAGE_SIZES = ("512", "1K", "2K", "4K")
+DEFAULT_IMAGE_SIZE = "2K"
+
+# 公众号封面长边建议 ≥900px（900x383 是官方推荐的 2.35:1 尺寸）。
+# imageSize 未必被中转站透传：实测同一 prompt、同一 imageSize=2K，返回过 1376px
+# 也返回过 384px。波动大且随机，所以出图后按实际像素检查，过小就重试一次。
+#
+# 不要用 4K：实测发 imageSize=4K 时该端点连 aspectRatio 一起忽略（3/3 返回 ~1.8:1），
+# 比不发还差。2K 对公众号封面已绰绰有余。
+MIN_LONG_EDGE = 900
+UNDERSIZE_RETRIES = 1
+
+GEMINI_ASPECT_RATIOS = (
+    "1:1", "1:4", "1:8", "2:3", "3:2", "3:4", "4:1",
+    "4:3", "4:5", "5:4", "8:1", "9:16", "16:9", "21:9",
+)
+
+
+def _aspect_value(aspect: str) -> float | None:
+    """`w:h` → w/h；无法解析返回 None。"""
+    if not aspect or ":" not in aspect:
+        return None
+    try:
+        w, h = (float(x) for x in aspect.split(":", 1))
+    except ValueError:
+        return None
+    return w / h if h > 0 else None
+
+
+def _nearest_supported_aspect(aspect: str) -> str | None:
+    """把任意比例映射到 Gemini 支持的最接近比例；无法解析返回 None。"""
+    target = _aspect_value(aspect)
+    if target is None:
+        return None
+    if aspect in GEMINI_ASPECT_RATIOS:
+        return aspect
+    best = min(
+        GEMINI_ASPECT_RATIOS,
+        key=lambda a: abs((_aspect_value(a) or 0) - target),
+    )
+    return best
 
 
 def _detect_api_type(model_cfg: dict) -> str:
@@ -271,15 +326,50 @@ def _detect_api_type(model_cfg: dict) -> str:
     raise RuntimeError("undetected image provider")
 
 
+def _supports_image_config(model_cfg: dict) -> bool:
+    """该端点是否接受 Gemini 的 imageConfig（比例/分辨率结构化参数）。
+
+    `image_model.aspect_mode` 可显式指定：
+      auto（默认）— 按模型名判断；imageconfig — 强制发送；none — 从不发送。
+    """
+    mode = (model_cfg.get("aspect_mode") or "auto").strip().lower()
+    if mode == "imageconfig":
+        return True
+    if mode == "none":
+        return False
+    if mode != "auto":
+        _err(f"image_model.aspect_mode 无效: {mode}（应为 auto | imageconfig | none）")
+    model = (model_cfg.get("model") or "").lower()
+    return any(h in model for h in GEMINI_MODEL_HINTS)
+
+
+def _normalize_image_size(value) -> str | None:
+    """把 frontmatter 的 resolution 归一到 Gemini 档位；无效值返回 None。"""
+    if value is None:
+        return None
+    v = str(value).strip().upper().replace("K", "K")
+    for allowed in GEMINI_IMAGE_SIZES:
+        if v == allowed.upper():
+            return allowed
+    return None
+
+
 def generate_image(model_cfg: dict, prompt: str, size: str = None,
-                   quality: str = None) -> bytes:
-    """根据 provider/端点类型调度到不同实现。"""
+                   quality: str = None, aspect: str = None,
+                   resolution: str = None) -> bytes:
+    """根据 provider/端点类型调度到不同实现。
+
+    `aspect`（如 "2.35:1"）用于支持结构化比例参数的端点：chat/completions 走
+    `extra_body.imageConfig.aspectRatio`，Gemini 原生走 `generationConfig.imageConfig`。
+    不支持的端点忽略该参数，仍按 `size` 处理。
+    """
     api_type = _detect_api_type(model_cfg)
 
     if api_type == "openai" or api_type == "volcengine":
-        return _generate_image_openai_compatible(model_cfg, prompt, size, quality, api_type)
+        return _generate_image_openai_compatible(
+            model_cfg, prompt, size, quality, api_type, aspect, resolution)
     if api_type == "gemini":
-        return _generate_image_gemini(model_cfg, prompt, size, quality)
+        return _generate_image_gemini(model_cfg, prompt, size, quality, aspect, resolution)
     if api_type == "qwen":
         return _generate_image_qwen(model_cfg, prompt, size, quality)
 
@@ -305,7 +395,7 @@ def _image_bytes_from_openai_like_result(result: dict, url: str) -> bytes:
             except urllib.error.HTTPError as e:
                 error_body = e.read().decode("utf-8", errors="replace")
                 _err(_format_api_failure("下载图片失败", e.code, error_body))
-            except urllib.error.URLError as e:
+            except (urllib.error.URLError, TimeoutError) as e:
                 _fail_url(e, "下载图片")
 
     if "/v1/chat/completions" in url.lower():
@@ -334,7 +424,7 @@ def _image_bytes_from_openai_like_result(result: dict, url: str) -> bytes:
                     except urllib.error.HTTPError as e:
                         error_body = e.read().decode("utf-8", errors="replace")
                         _err(_format_api_failure("下载图片失败", e.code, error_body))
-                    except urllib.error.URLError as e:
+                    except (urllib.error.URLError, TimeoutError) as e:
                         _fail_url(e, "下载图片")
                 m = re.search(r"https?://[^\s\)\]\"']+", s)
                 if m:
@@ -346,7 +436,7 @@ def _image_bytes_from_openai_like_result(result: dict, url: str) -> bytes:
                     except urllib.error.HTTPError as e:
                         error_body = e.read().decode("utf-8", errors="replace")
                         _err(_format_api_failure("下载图片失败", e.code, error_body))
-                    except urllib.error.URLError as e:
+                    except (urllib.error.URLError, TimeoutError) as e:
                         _fail_url(e, "下载图片")
             if isinstance(content, list):
                 for part in content:
@@ -362,7 +452,7 @@ def _image_bytes_from_openai_like_result(result: dict, url: str) -> bytes:
                             except urllib.error.HTTPError as e:
                                 error_body = e.read().decode("utf-8", errors="replace")
                                 _err(_format_api_failure("下载图片失败", e.code, error_body))
-                            except urllib.error.URLError as e:
+                            except (urllib.error.URLError, TimeoutError) as e:
                                 _fail_url(e, "下载图片")
                     u = part.get("url") or ""
                     if u and (u.startswith("http://") or u.startswith("https://")):
@@ -373,14 +463,15 @@ def _image_bytes_from_openai_like_result(result: dict, url: str) -> bytes:
                         except urllib.error.HTTPError as e:
                             error_body = e.read().decode("utf-8", errors="replace")
                             _err(_format_api_failure("下载图片失败", e.code, error_body))
-                        except urllib.error.URLError as e:
+                        except (urllib.error.URLError, TimeoutError) as e:
                             _fail_url(e, "下载图片")
 
     _err(f"API 返回无图片: {result}")
 
 
 def _generate_image_openai_compatible(model_cfg: dict, prompt: str, size: str = None,
-                                      quality: str = None, api_type: str = "openai") -> bytes:
+                                      quality: str = None, api_type: str = "openai",
+                                      aspect: str = None, resolution: str = None) -> bytes:
     """OpenAI 兼容生图。base_url 须为完整端点（含 /v1/images/generations 或 /v1/chat/completions）。"""
     b = model_cfg["base_url"].rstrip("/")
     bl = b.lower()
@@ -402,14 +493,27 @@ def _generate_image_openai_compatible(model_cfg: dict, prompt: str, size: str = 
         raise RuntimeError("invalid image provider")
 
     use_chat = "/v1/chat/completions" in url.lower()
+    sent_aspect = None
     if use_chat:
-        sz = size or model_cfg["default_size"]
-        q = quality or model_cfg["default_quality"]
-        user_text = f"{prompt}\n\n（尺寸: {sz}，质量: {q}）"
+        # Gemini 系走结构化比例参数。此前是把「（尺寸: 1792x1024）」当中文拼进 prompt
+        # 末尾，模型基本不理会，实测出图一律是它自己的默认尺寸。
+        if aspect and _supports_image_config(model_cfg):
+            sent_aspect = _nearest_supported_aspect(aspect)
         body = {
             "model": model_cfg["model"],
-            "messages": [{"role": "user", "content": user_text}],
+            "messages": [{"role": "user", "content": prompt}],
         }
+        if sent_aspect:
+            image_cfg = {"aspectRatio": sent_aspect}
+            sent_size = _normalize_image_size(resolution) or DEFAULT_IMAGE_SIZE
+            image_cfg["imageSize"] = sent_size
+            body["extra_body"] = {"imageConfig": image_cfg}
+        else:
+            # 非 Gemini 端点或未给比例：保持原有行为，尺寸并入提示；
+            # 真实比例由调用方在生成后用 _crop_to_aspect 兜底
+            sz = size or model_cfg["default_size"]
+            q = quality or model_cfg["default_quality"]
+            body["messages"][0]["content"] = f"{prompt}\n\n（尺寸: {sz}，质量: {q}）"
     else:
         body = {
             "model": model_cfg["model"],
@@ -430,7 +534,18 @@ def _generate_image_openai_compatible(model_cfg: dict, prompt: str, size: str = 
     )
     _info(f"调用模型: {model_cfg['model']} @ {url} ({api_type})")
     if use_chat:
-        _info(f"模式: chat/completions | 尺寸/质量已并入用户提示")
+        if sent_aspect:
+            note = f"比例: {sent_aspect} | 分辨率: {body['extra_body']['imageConfig']['imageSize']}（extra_body.imageConfig）"
+            if aspect and sent_aspect != aspect:
+                note += f"，比例由 {aspect} 就近映射"
+            _info(f"模式: chat/completions | {note}")
+        elif aspect:
+            _info(
+                f"模式: chat/completions | 端点不接受 imageConfig（模型 {model_cfg['model']}），"
+                f"尺寸并入提示，生成后按 {aspect} 裁切"
+            )
+        else:
+            _info("模式: chat/completions | 无可用比例，尺寸并入用户提示")
     else:
         _info(f"尺寸: {body['size']} | 质量: {body['quality']}")
 
@@ -440,14 +555,15 @@ def _generate_image_openai_compatible(model_cfg: dict, prompt: str, size: str = 
     except urllib.error.HTTPError as e:
         error_body = e.read().decode("utf-8", errors="replace")
         _err(_format_api_failure("API 调用失败", e.code, error_body))
-    except urllib.error.URLError as e:
+    except (urllib.error.URLError, TimeoutError) as e:
         _fail_url(e, "连接生图 API")
 
     return _image_bytes_from_openai_like_result(result, url)
 
 
 def _generate_image_gemini(model_cfg: dict, prompt: str, size: str = None,
-                           quality: str = None) -> bytes:
+                           quality: str = None, aspect: str = None,
+                           resolution: str = None) -> bytes:
     """Gemini generateContent（图片以 inlineData 返回）。base_url：完整 ...:generateContent 或网关根。"""
     b = model_cfg["base_url"].rstrip("/")
     model = (model_cfg["model"] or "").strip()
@@ -467,6 +583,16 @@ def _generate_image_gemini(model_cfg: dict, prompt: str, size: str = None,
             "responseModalities": ["TEXT", "IMAGE"],
         }
     }
+    gemini_aspect = (
+        _nearest_supported_aspect(aspect)
+        if aspect and _supports_image_config(model_cfg)
+        else None
+    )
+    if gemini_aspect:
+        body["generationConfig"]["imageConfig"] = {
+            "aspectRatio": gemini_aspect,
+            "imageSize": _normalize_image_size(resolution) or DEFAULT_IMAGE_SIZE,
+        }
     data = json.dumps(body, ensure_ascii=False).encode("utf-8")
     headers = {"Content-Type": "application/json"}
     host = (urllib.parse.urlparse(url).hostname or "").lower()
@@ -484,7 +610,7 @@ def _generate_image_gemini(model_cfg: dict, prompt: str, size: str = None,
     except urllib.error.HTTPError as e:
         error_body = e.read().decode("utf-8", errors="replace")
         _err(_format_api_failure("API 调用失败", e.code, error_body))
-    except urllib.error.URLError as e:
+    except (urllib.error.URLError, TimeoutError) as e:
         _fail_url(e, "连接生图 API")
 
     candidates = result.get("candidates", [])
@@ -552,7 +678,7 @@ def _generate_image_qwen(model_cfg: dict, prompt: str, size: str = None,
     except urllib.error.HTTPError as e:
         error_body = e.read().decode("utf-8", errors="replace")
         _err(_format_api_failure("API 调用失败", e.code, error_body))
-    except urllib.error.URLError as e:
+    except (urllib.error.URLError, TimeoutError) as e:
         _fail_url(e, "连接生图 API")
 
     if use_text2image:
@@ -579,7 +705,7 @@ def _generate_image_qwen(model_cfg: dict, prompt: str, size: str = None,
                     except urllib.error.HTTPError as e:
                         error_body = e.read().decode("utf-8", errors="replace")
                         _err(_format_api_failure("下载图片失败", e.code, error_body))
-                    except urllib.error.URLError as e:
+                    except (urllib.error.URLError, TimeoutError) as e:
                         _fail_url(e, "下载图片")
         # 2) 旧版/兼容：results[].url / results[].data
         results = out.get("results", [])
@@ -594,7 +720,7 @@ def _generate_image_qwen(model_cfg: dict, prompt: str, size: str = None,
                 except urllib.error.HTTPError as e:
                     error_body = e.read().decode("utf-8", errors="replace")
                     _err(_format_api_failure("下载图片失败", e.code, error_body))
-                except urllib.error.URLError as e:
+                except (urllib.error.URLError, TimeoutError) as e:
                     _fail_url(e, "下载图片")
             b64 = r0.get("data", "")
             if b64:
@@ -621,7 +747,7 @@ def _qwen_wait_task(model_cfg: dict, endpoint_url: str, task_id: str,
         except urllib.error.HTTPError as e:
             error_body = e.read().decode("utf-8", errors="replace")
             _err(_format_api_failure("轮询生图任务失败", e.code, error_body))
-        except urllib.error.URLError as e:
+        except (urllib.error.URLError, TimeoutError) as e:
             _fail_url(e, "轮询生图任务")
         status = str((data.get("output") or {}).get("task_status") or "").upper()
         if status == "SUCCEEDED":
@@ -718,6 +844,51 @@ def _crop_to_aspect(img_data: bytes, aspect: str) -> bytes:
     return buf.getvalue()
 
 
+def _image_long_edge(data: bytes) -> int | None:
+    """返回图片长边像素；无 Pillow 或无法解析时返回 None（视为无法判断，不拦截）。"""
+    try:
+        from PIL import Image
+    except ImportError:
+        return None
+    import io
+    try:
+        im = Image.open(io.BytesIO(data))
+    except Exception:  # noqa: BLE001
+        return None
+    return max(im.size)
+
+
+def _generate_with_min_size(label: str, gen, ) -> bytes:
+    """生成图片；长边不足 MIN_LONG_EDGE 时重试。
+
+    端点返回的尺寸波动很大（同参数实测 384px~1584px 都出现过），重试一次通常就能
+    拿到可用尺寸。重试仍不达标则保留最后一张并告警，由 Agent 决定是否再跑。
+    """
+    best = gen()
+    for attempt in range(UNDERSIZE_RETRIES):
+        edge = _image_long_edge(best)
+        if edge is None or edge >= MIN_LONG_EDGE:
+            return best
+        _info(
+            f"{label} 长边仅 {edge}px（需 ≥{MIN_LONG_EDGE}px），重试第 {attempt + 1} 次"
+        )
+        candidate = gen()
+        cand_edge = _image_long_edge(candidate)
+        # 取更大的一张，避免重试反而更差
+        if cand_edge is not None and cand_edge > edge:
+            best = candidate
+    edge = _image_long_edge(best)
+    if edge is not None and edge < MIN_LONG_EDGE:
+        print(
+            f"[WARN] {label} 重试后长边仍只有 {edge}px（需 ≥{MIN_LONG_EDGE}px），"
+            f"用作公众号封面会明显模糊。\n"
+            f"       该端点未稳定透传 imageSize。可重跑本条，或改用直连端点。"
+            f"（勿设 resolution: 4K，实测会连比例一起失效）",
+            file=sys.stderr,
+        )
+    return best
+
+
 def _detect_image_ext(data: bytes) -> str | None:
     """按文件头识别图片格式，返回 .png/.jpg/.webp/.gif；无法识别返回 None。"""
     if data.startswith(b"\x89PNG\r\n\x1a\n"):
@@ -788,7 +959,7 @@ def main():
     if args.command == "test":
         _info("测试 API 连通性...")
         img_data = generate_image(model_cfg, "A simple blue circle on white background",
-                                  size="1024x1024", quality="standard")
+                                  size="1024x1024", quality="standard", aspect="1:1")
         _ok(f"API 连通正常，收到 {len(img_data)} 字节图片数据")
         return
 
@@ -802,8 +973,13 @@ def main():
         size, crop_aspect = _resolve_size(args.size, meta)
         quality = args.quality or meta.get("quality")
 
-        img_data = generate_image(model_cfg, prompt, size=size, quality=quality)
+        img_data = _generate_with_min_size(
+            prompt_path.name,
+            lambda: generate_image(model_cfg, prompt, size=size, quality=quality,
+                                   aspect=crop_aspect, resolution=meta.get("resolution")),
+        )
         if crop_aspect:
+            # 端点已按比例出图时这一步是空操作（差异 <1% 直接返回原图）
             img_data = _crop_to_aspect(img_data, crop_aspect)
 
         ext = _detect_image_ext(img_data) or ".png"
@@ -830,24 +1006,47 @@ def main():
             _err(f"目录下无 .md 文件: {prompts_dir}")
 
         _info(f"找到 {len(prompt_files)} 个 prompt 文件")
+        failed: list[tuple[str, str]] = []
         for i, pf in enumerate(prompt_files, 1):
             _info(f"[{i}/{len(prompt_files)}] {pf.name}")
-            prompt, meta = _read_prompt_file(pf)
+            # 单条失败不该丢掉整批：批量常跑几十条，一次读超时就全废代价太高
+            try:
+                prompt, meta = _read_prompt_file(pf)
 
-            size, crop_aspect = _resolve_size(args.size, meta)
-            quality = args.quality or meta.get("quality")
+                size, crop_aspect = _resolve_size(args.size, meta)
+                quality = args.quality or meta.get("quality")
 
-            img_data = generate_image(model_cfg, prompt, size=size, quality=quality)
-            if crop_aspect:
-                img_data = _crop_to_aspect(img_data, crop_aspect)
-            out_path = output_dir / (pf.stem + (_detect_image_ext(img_data) or ".png"))
-            out_path.write_bytes(img_data)
-            _ok(f"  → {out_path}")
+                img_data = _generate_with_min_size(
+                    pf.name,
+                    lambda p=prompt, sz=size, q=quality, ca=crop_aspect, m=meta: generate_image(
+                        model_cfg, p, size=sz, quality=q, aspect=ca, resolution=m.get("resolution")),
+                )
+                if crop_aspect:
+                    img_data = _crop_to_aspect(img_data, crop_aspect)
+                out_path = output_dir / (pf.stem + (_detect_image_ext(img_data) or ".png"))
+                out_path.write_bytes(img_data)
+                _ok(f"  → {out_path}")
+            except SystemExit:
+                # _err 已打印原因；记下并继续下一条
+                failed.append((pf.name, "见上方错误"))
+                print(f"[WARN] {pf.name} 失败，继续处理后续文件", file=sys.stderr)
+            except Exception as e:  # noqa: BLE001
+                failed.append((pf.name, f"{type(e).__name__}: {e}"))
+                print(f"[WARN] {pf.name} 失败（{type(e).__name__}: {e}），继续处理后续文件",
+                      file=sys.stderr)
 
             if i < len(prompt_files):
                 time.sleep(1)
 
-        _ok(f"批量生成完成：{len(prompt_files)} 张")
+        done = len(prompt_files) - len(failed)
+        if failed:
+            print(f"[WARN] 批量结束：成功 {done}，失败 {len(failed)}", file=sys.stderr)
+            for name, why in failed:
+                print(f"       - {name}: {why}", file=sys.stderr)
+            print("       重跑本命令即可，已成功的会被覆盖重生成；"
+                  "或把失败的 prompt 单独放一个目录再跑。", file=sys.stderr)
+            sys.exit(1)
+        _ok(f"批量生成完成：{done} 张")
 
 
 if __name__ == "__main__":

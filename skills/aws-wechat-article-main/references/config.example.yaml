@@ -147,6 +147,14 @@ image_model:
   model: ""
   default_size: "1024x1024"
   default_quality: "standard"
+  # How to request an aspect ratio on /v1/chat/completions endpoints.
+  #   auto (default) — send Gemini's extra_body.imageConfig only for Gemini-family models
+  #                    (gemini / nano-banana / imagen); other models keep the text hint and
+  #                    get the target ratio by post-generation crop.
+  #   imageconfig    — always send it (for a proxy serving Gemini under a custom model name)
+  #   none           — never send it (for strict gateways that reject unknown body fields)
+  # Ignored by /v1/images/generations, Volcengine and Qwen endpoints, which have their own size params.
+  aspect_mode: auto
 
 # ── WeChat accounts ──
 wechat_accounts: 1                       # Number of WeChat accounts; default 1
