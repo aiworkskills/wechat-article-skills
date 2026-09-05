@@ -29,7 +29,7 @@ metadata:
 - **文件读（仓库内）**：`.aws-article/config.yaml`、本篇 `article.yaml`、`topic-card.md`、`.aws-article/products/{产品名}/*.md`（业务介绍 .md，直接挂在产品根）
 - **文件读（仓库外）**：若仓库内 `.aws-article/` 缺失，`write.py` 会从用户家目录 `~/.aws-article/` 读取 `writing-spec.md` 与 `presets/`（**只读预设，不读凭证**）
 - **文件写**：仅本篇目录下 `draft.md`、`article.md`
-- **shell**：仅 `python3 {baseDir}/scripts/write.py`
+- **shell**：仅 `{python} {baseDir}/scripts/write.py`（`{python}` = 本机 Python 3 解释器，见 [main SKILL 第 0 步](../aws-wechat-article-main/SKILL.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
 
 可使用 `write.py prompt` 子命令**只输出 prompt JSON 不调用 LLM**，由 Agent 代写 —— 想避免把内容发给第三方时用这条路径。
 

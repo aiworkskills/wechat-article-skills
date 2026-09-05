@@ -30,7 +30,7 @@ metadata:
 - **内容外发**：图片 prompt 发给图像 API；图片文件（PNG/WEBP）发给微信 `material/add_material` / `draft/add`
 - **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`imgs/prompts/*.md`
 - **文件写**：本篇 `imgs/*.{png,webp}`、`imgs/outline.md`、`article.yaml` 状态字段
-- **shell**：`python3 {baseDir}/../aws-wechat-article-images/scripts/image_create.py`；可选 `python3 {baseDir}/../aws-wechat-article-publish/scripts/publish.py`
+- **shell**：`{python} {baseDir}/../aws-wechat-article-images/scripts/image_create.py`；可选 `{python} {baseDir}/../aws-wechat-article-publish/scripts/publish.py`（`{python}` = 本机 Python 3 解释器，见 [main SKILL 第 0 步](../aws-wechat-article-main/SKILL.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
 
 ## 配套 skill（informational）
 
@@ -126,12 +126,12 @@ topics 产出的贴图卡片 / 用户直接给主题 / 用户提供素材图片�
 **调用专用 API 时**（在**仓库根**执行，路径按本篇 `imgs/` 调整）：
 
 ```bash
-python {baseDir}/../aws-wechat-article-images/scripts/image_create.py batch drafts/YYYYMMDD-slug/imgs/prompts/ -o drafts/YYYYMMDD-slug/imgs/
+{python} {baseDir}/../aws-wechat-article-images/scripts/image_create.py batch drafts/YYYYMMDD-slug/imgs/prompts/ -o drafts/YYYYMMDD-slug/imgs/
 ```
 
-单张：`python {baseDir}/../aws-wechat-article-images/scripts/image_create.py generate imgs/prompts/01.md -o imgs/01.png`
+单张：`{python} {baseDir}/../aws-wechat-article-images/scripts/image_create.py generate imgs/prompts/01.md -o imgs/01.png`
 
-连通性自检：`python {baseDir}/../aws-wechat-article-images/scripts/image_create.py test`
+连通性自检：`{python} {baseDir}/../aws-wechat-article-images/scripts/image_create.py test`
 
 图片内文字与 prompt 构建规则与长文配图一致，见 [aws-wechat-article-images/SKILL.md](../aws-wechat-article-images/SKILL.md) 与 [prompt-construction.md](../aws-wechat-article-images/references/image-styles/prompt-construction.md)。
 
@@ -146,7 +146,7 @@ python {baseDir}/../aws-wechat-article-images/scripts/image_create.py batch draf
 ### 第8步：发布
 
 ```bash
-python {baseDir}/../aws-wechat-article-publish/scripts/publish.py full article/
+{python} {baseDir}/../aws-wechat-article-publish/scripts/publish.py full article/
 ```
 
 ## 过程文件

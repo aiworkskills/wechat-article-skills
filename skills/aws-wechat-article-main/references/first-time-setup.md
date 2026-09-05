@@ -15,6 +15,15 @@
 - **Linux / macOS**：下文用 Bash。
 - **Windows**：下文用 PowerShell。
 
+下文命令中的 `{python}` 是**占位符**，须先探测出本机可用的 Python 3 解释器再代入（每次会话探测一次）：
+
+- **Linux / macOS**：`python3 --version` 输出 `Python 3.x.x` → `{python}` = `python3`；不存在则试 `python --version`。
+- **Windows**：`py -3 --version` 输出 `Python 3.x.x` → `{python}` = `py -3 -X utf8`；`py` 不可用则试 `python --version`，通过则用 `python -X utf8`。
+
+⛔ **Windows 上不要探测 `python3`**——未安装 Python 时它是系统预置的应用执行别名，会静默打开 Microsoft Store 而不报错。`-X utf8` 也不可省略，否则脚本的中文输出在简体中文机器上会以 GBK 编码吐出，读到的是乱码。
+
+要求 **Python 3.10+**；版本更低时先提示用户升级。详见 [SKILL.md 第 0 步](../SKILL.md)。
+
 ### 1）`.aws-article/config.yaml` 与 `aws.env` 是否存在（仓库根）
 
 ```bash
@@ -39,7 +48,7 @@ if ((Test-Path -LiteralPath ".aws-article\config.yaml") -and (Test-Path -Literal
 在**仓库根**执行：
 
 ```bash
-python skills/aws-wechat-article-main/scripts/validate_env.py
+{python} skills/aws-wechat-article-main/scripts/validate_env.py
 ```
 
 （默认读取 **`.aws-article/config.yaml`** 与 **`aws.env`**；可用 `--config`、`--env` 指定路径。）
@@ -174,7 +183,7 @@ foreach ($d in $dirs) {
 **每次**进入一条龙、或**仅**触发写作 / 配图 / 发布检查前，都须在仓库根执行：
 
 ```bash
-python skills/aws-wechat-article-main/scripts/validate_env.py
+{python} skills/aws-wechat-article-main/scripts/validate_env.py
 ```
 
 **智能体**：若退出码非 0，根据终端 **`failed`** 下列出的汇总句，按上文 **「校验失败时的配置引导」** 文案**原样输出**（含三条配置引导 + **额外操作**）；用户补全并落盘后重跑 **`validate_env.py`**。若用户**明确声明本次例外**，按总览 [SKILL.md](../SKILL.md)「智能体行为约束」处理。**禁止**未获补全或明确例外确认就宣称已通过环境校验或一条龙已完成。**禁止**因「上次已通过」而跳过本节命令。

@@ -227,8 +227,10 @@ cd wechat-article-skills
 cp skills/aws-wechat-article-main/references/config.example.yaml .aws-article/config.yaml
 cp skills/aws-wechat-article-main/references/env.example.yaml aws.env
 # 编辑 config.yaml（账号 / 文风 / 模型）和 aws.env（API Key / 微信凭证）
-python skills/aws-wechat-article-main/scripts/validate_env.py
+python3 skills/aws-wechat-article-main/scripts/validate_env.py
 ```
+
+> **Windows** 用 PowerShell，最后一行换成 `py -3 -X utf8 skills\aws-wechat-article-main\scripts\validate_env.py`。别用 `python3`——没装 Python 时它会静默打开 Microsoft Store；`-X utf8` 用来避免脚本的中文输出变成乱码。需要 Python 3.10+。
 ---
 
 ## 🔑 模型配置（可选但推荐）
@@ -273,7 +275,7 @@ writing_model:
 WRITING_MODEL_API_KEY=sk-...
 ```
 
-改完后在仓库根跑一次 `python skills/aws-wechat-article-main/scripts/validate_env.py` 确认。
+改完后在仓库根跑一次 `python3 skills/aws-wechat-article-main/scripts/validate_env.py`（Windows：`py -3 -X utf8 skills\aws-wechat-article-main\scripts\validate_env.py`）确认。
 
 ### 画图模型（`image_model`）
 

@@ -25,7 +25,7 @@ metadata:
 - **网络**：Agent 可能使用 `web_search` / `web_fetch`（Claude Code 内置能力，非本 skill 脚本层发起）
 - **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`.aws-article/products/{产品名}/*.md`（业务介绍 .md，直接挂在产品根；选题涉及用户业务时必读）
 - **文件写**：本篇目录下 `topic-card.md`、`research.md`；更新本篇 `article.yaml`
-- **shell**：可能调用同仓库的 `python3 {baseDir}/../aws-wechat-article-publish/scripts/article_init.py`
+- **shell**：可能调用同仓库的 `{python} {baseDir}/../aws-wechat-article-publish/scripts/article_init.py`（`{python}` = 本机 Python 3 解释器，见 [main SKILL 第 0 步](../aws-wechat-article-main/SKILL.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
 
 ## 配套 skill（informational）
 
@@ -165,7 +165,7 @@ metadata:
 2. 将选题卡片保存为 **`topic-card.md`**
 3. 将调研摘要保存为 **`research.md`**
 4. 系列模式：将系列规划保存到 `{series_root}/{系列slug}/plan.md`
-5. **`article.yaml`**：同目录**若无**或需更新已定题信息，**须在本步创建或补全**（**`publish_completed: false`**；标题、摘要等与用户选定一致时可写入）。推荐：`python {baseDir}/../aws-wechat-article-publish/scripts/article_init.py <本篇目录> --title "…" --digest "…"` 等。**总览一条龙**下 main 若已初始化，则**合并更新**缺失键即可。
+5. **`article.yaml`**：同目录**若无**或需更新已定题信息，**须在本步创建或补全**（**`publish_completed: false`**；标题、摘要等与用户选定一致时可写入）。推荐：`{python} {baseDir}/../aws-wechat-article-publish/scripts/article_init.py <本篇目录> --title "…" --digest "…"` 等。**总览一条龙**下 main 若已初始化，则**合并更新**缺失键即可。
 
 → 交给 **aws-wechat-article-writing**。须已具备 **`.aws-article/config.yaml`**（仓库根相对路径）；本篇目录建议已有 **`article.yaml`**（见 [writing SKILL](../aws-wechat-article-writing/SKILL.md)）。
 
@@ -185,6 +185,6 @@ metadata:
 1. **本篇** `article.yaml` 中只增加 **`embeds.related_articles.manual`**（`name` + `url` 列表）；**不要**在本篇写名片/小程序（仍以全局为准）。
 2. 排版时 **`format.py` 仅将本篇的 `embeds.related_articles` 与全局同名块深度合并**。
 3. **智能体自动获取推荐**（全局 `manual` 为空或本篇需要单独列表时）：运行  
-   `python {baseDir}/../aws-wechat-article-publish/scripts/getdraft.py published-fields`
+   `{python} {baseDir}/../aws-wechat-article-publish/scripts/getdraft.py published-fields`
    得到已发布正式文章的 `title` / `digest` / `url`，结合当前篇主题**挑选最多 3 条**，写入**本篇** `article.yaml` 的 `embeds.related_articles.manual`，并在 **`article.md`** 文末使用 `{embed:link:名称}`，`name` 与 `manual` 中一致。
 4. 定稿前确认文末 `{embed:link:…}` 与合并后的 **`related_articles`** 一致（参见 [review SKILL](../aws-wechat-article-review/SKILL.md) 定稿说明）。

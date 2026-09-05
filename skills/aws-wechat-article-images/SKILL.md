@@ -29,7 +29,7 @@ metadata:
 - **下图 SSRF 防御**：若 API 响应返回图片 URL（而非 base64），脚本**仅允许下载 http/https 公网地址**；内网 / 环回 / 链路本地 / 保留地址全部拒绝（防止恶意或被劫持的模型端点把脚本当作 SSRF 跳板）
 - **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`article.md`、`imgs/prompts/*.md`、`references/cover-method.md`、`references/image-method.md`、`references/cover-examples/*.md`、`.aws-article/products/{产品名}/images/*`（业务配图库，本篇涉及用户业务时优先复用）
 - **文件写**：本篇 `imgs/*.{png,webp}`、可选 `img_analysis.md`
-- **shell**：仅 `python3 {baseDir}/scripts/image_create.py`、`user_image_prepare.py`
+- **shell**：仅 `{python} {baseDir}/scripts/image_create.py`、`user_image_prepare.py`（`{python}` = 本机 Python 3 解释器，见 [main SKILL 第 0 步](../aws-wechat-article-main/SKILL.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
 
 **建议**：用专用 key（最低权限、独立计费），避免使用 account 级 master key。
 
@@ -197,7 +197,7 @@ Prompt 构建：封面见 [cover-method.md](references/cover-method.md)，正文
 
 **封面**：见「封面 vs 正文」— **默认必须先**写好 **`imgs/prompts/`** 中封面 prompt（含 `aspect` 与 `config.yaml` 的 **`cover_aspect`** 一致），再执行 **`image_create.py generate … -o ../cover.png`**（或等价输出路径）。
 
-**封面回看（必做）**：`cover.*` 生成后打开图片，按 [cover-method.md 第七步](references/cover-method.md) 对五条：标题字对不对全不全、主体位置与标题区、元素 ≤3、缩略图可读、与文章相关。不过关**回到出问题的那一步改 prompt** 再生成——标题错了改文案写法，主体乱跑改布局描述，与文章无关是张力没找准；不要不改 prompt 盲目重跑。当前环境看不了图时，退而运行 `python {baseDir}/scripts/image_create.py check cover.png` 做纯代码检查——**只有尺寸与近单色两项**。标题区干净度只对「先出底图再用 `--title-font` 合成标题」那条路有效；本方法的标题由模型画进图里，文字本身就是高边缘密度，套这项会把正确的封面判为不合格。
+**封面回看（必做）**：`cover.*` 生成后打开图片，按 [cover-method.md 第七步](references/cover-method.md) 对五条：标题字对不对全不全、主体位置与标题区、元素 ≤3、缩略图可读、与文章相关。不过关**回到出问题的那一步改 prompt** 再生成——标题错了改文案写法，主体乱跑改布局描述，与文章无关是张力没找准；不要不改 prompt 盲目重跑。当前环境看不了图时，退而运行 `{python} {baseDir}/scripts/image_create.py check cover.png` 做纯代码检查——**只有尺寸与近单色两项**。标题区干净度只对「先出底图再用 `--title-font` 合成标题」那条路有效；本方法的标题由模型画进图里，文字本身就是高边缘密度，套这项会把正确的封面判为不合格。
 
 **生成方式（优先级，正文）**：
 
@@ -220,12 +220,12 @@ Prompt 构建：封面见 [cover-method.md](references/cover-method.md)，正文
 **调用专用 API 时**（在**仓库根**执行，`{baseDir}` 按上表解析；路径按本篇 `imgs/` 调整）：
 
 ```bash
-python {baseDir}/scripts/image_create.py batch drafts/YYYYMMDD-slug/imgs/prompts/ -o drafts/YYYYMMDD-slug/imgs/
+{python} {baseDir}/scripts/image_create.py batch drafts/YYYYMMDD-slug/imgs/prompts/ -o drafts/YYYYMMDD-slug/imgs/
 ```
 
-单张：`python {baseDir}/scripts/image_create.py generate imgs/prompts/01-cover.md -o imgs/01-cover.png`
+单张：`{python} {baseDir}/scripts/image_create.py generate imgs/prompts/01-cover.md -o imgs/01-cover.png`
 
-连通性自检：`python {baseDir}/scripts/image_create.py test`（失败时退出码 1 并打印分类提示，可按下方表格处理）
+连通性自检：`{python} {baseDir}/scripts/image_create.py test`（失败时退出码 1 并打印分类提示，可按下方表格处理）
 
 图片规格：[references/specs.md](references/specs.md)
 

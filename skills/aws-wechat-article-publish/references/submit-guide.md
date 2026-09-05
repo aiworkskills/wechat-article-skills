@@ -14,7 +14,7 @@
    WECHAT_1_APPSECRET=你的AppSecret
    WECHAT_1_API_BASE=
    ```
-   多账号递增 `WECHAT_2_*` 等；发布前可运行 `python skills/aws-wechat-article-publish/scripts/publish.py check-wechat-env` 检查缺项。
+   多账号递增 `WECHAT_2_*` 等；发布前可运行 `{python} skills/aws-wechat-article-publish/scripts/publish.py check-wechat-env` 检查缺项。
 
 2. 在公众平台「开发 → 基本配置」中将服务器 IP 加入白名单
 
@@ -31,32 +31,32 @@
 
 ```bash
 # 创建草稿（不发布，可在后台预览）
-python skills/aws-wechat-article-publish/scripts/publish.py full article/
+{python} skills/aws-wechat-article-publish/scripts/publish.py full article/
 
 # 创建草稿并立即发布
-python skills/aws-wechat-article-publish/scripts/publish.py full article/ --publish
+{python} skills/aws-wechat-article-publish/scripts/publish.py full article/ --publish
 ```
 
 ### 分步操作
 
 ```bash
 # 获取 token
-python skills/aws-wechat-article-publish/scripts/publish.py token
+{python} skills/aws-wechat-article-publish/scripts/publish.py token
 
 # 上传封面图
-python skills/aws-wechat-article-publish/scripts/publish.py upload-thumb cover.jpg
+{python} skills/aws-wechat-article-publish/scripts/publish.py upload-thumb cover.jpg
 
 # 上传正文图片
-python skills/aws-wechat-article-publish/scripts/publish.py upload-content-image imgs/img1.png
+{python} skills/aws-wechat-article-publish/scripts/publish.py upload-content-image imgs/img1.png
 
 # 创建草稿（需要先准备好 article.yaml）
-python skills/aws-wechat-article-publish/scripts/publish.py create-draft article.yaml
+{python} skills/aws-wechat-article-publish/scripts/publish.py create-draft article.yaml
 
 # 发布
-python skills/aws-wechat-article-publish/scripts/publish.py publish <media_id>
+{python} skills/aws-wechat-article-publish/scripts/publish.py publish <media_id>
 
 # 查询状态
-python skills/aws-wechat-article-publish/scripts/publish.py status <publish_id>
+{python} skills/aws-wechat-article-publish/scripts/publish.py status <publish_id>
 ```
 
 接口详情与错误码：[api-reference.md](api-reference.md)

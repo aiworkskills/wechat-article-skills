@@ -6,16 +6,16 @@
 
 ```bash
 # 在仓库根执行；输入文件所在目录一般含本篇 article.yaml
-python skills/aws-wechat-article-writing/scripts/write.py draft drafts/20260324-example/topic-card.md -o drafts/20260324-example/draft.md
+{python} skills/aws-wechat-article-writing/scripts/write.py draft drafts/20260324-example/topic-card.md -o drafts/20260324-example/draft.md
 
 # 改写已有文章
-python skills/aws-wechat-article-writing/scripts/write.py rewrite article.md --instruction "改成口语化"
+{python} skills/aws-wechat-article-writing/scripts/write.py rewrite article.md --instruction "改成口语化"
 
 # 续写未完成的文章
-python skills/aws-wechat-article-writing/scripts/write.py continue article.md -o article.md
+{python} skills/aws-wechat-article-writing/scripts/write.py continue article.md -o article.md
 
 # 业务资料库（最多 5 个路径；须形如 .aws-article/products/<产品名>/<文件名>.md，直接挂在产品根）
-python skills/aws-wechat-article-writing/scripts/write.py draft drafts/foo/topic-card.md -o drafts/foo/draft.md \
+{python} skills/aws-wechat-article-writing/scripts/write.py draft drafts/foo/topic-card.md -o drafts/foo/draft.md \
   --reference .aws-article/products/公众号AI运营助手/项目介绍.md
 ```
 
@@ -68,12 +68,12 @@ WRITING_MODEL_API_KEY=你的APIKey
 
 ```bash
 # 只输出 system_prompt + user_prompt 的 JSON，不调用 LLM，不需要模型配置
-python skills/aws-wechat-article-writing/scripts/write.py prompt draft drafts/20260324-example/topic-card.md
-python skills/aws-wechat-article-writing/scripts/write.py prompt rewrite article.md --instruction "改成口语化"
-python skills/aws-wechat-article-writing/scripts/write.py prompt continue article.md
+{python} skills/aws-wechat-article-writing/scripts/write.py prompt draft drafts/20260324-example/topic-card.md
+{python} skills/aws-wechat-article-writing/scripts/write.py prompt rewrite article.md --instruction "改成口语化"
+{python} skills/aws-wechat-article-writing/scripts/write.py prompt continue article.md
 
 # 与 draft 相同，可带 --reference 查看注入后的 system_prompt
-python skills/aws-wechat-article-writing/scripts/write.py prompt draft drafts/foo/topic-card.md \
+{python} skills/aws-wechat-article-writing/scripts/write.py prompt draft drafts/foo/topic-card.md \
   --reference .aws-article/products/公众号AI运营助手/项目介绍.md
 ```
 

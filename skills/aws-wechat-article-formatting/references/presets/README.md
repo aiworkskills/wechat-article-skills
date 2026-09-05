@@ -5,8 +5,8 @@
 不传 `--theme` 时，**`format.py`** 只读取与 `article.md` 同目录 **`article.yaml`** 的 **`default_format_preset`**（不直接读 `.aws-article/config.yaml`；全局 `custom_format_preset` / `default_format_preset` 候选池由 main 在本篇准备阶段收敛后写回 `article.yaml`）。该键**须为 YAML 字符串列表**：`[]` 或单元素 `[主题名]`；为空则用内置 `default`；多候选会报错，须先改为单元素列表。
 
 ```bash
-python format.py article.md --theme <主题名>
-python format.py --list-themes              # 列出可用主题
+{python} format.py article.md --theme <主题名>
+{python} format.py --list-themes              # 列出可用主题
 ```
 
 ## 内置主题
@@ -65,7 +65,7 @@ styles:                        # 样式规则（可用 {变量名} 引用变量�
 基于内置主题导出 YAML，再修改：
 
 ```bash
-python format.py --export-theme default > .aws-article/presets/formatting/my-brand.yaml
+{python} format.py --export-theme default > .aws-article/presets/formatting/my-brand.yaml
 # 编辑 my-brand.yaml，修改颜色和样式
 ```
 

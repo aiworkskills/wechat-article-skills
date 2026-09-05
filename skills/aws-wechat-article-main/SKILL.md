@@ -30,7 +30,7 @@ metadata:
 - **网络**：本入口脚本无外发请求；**子 skill 有外发**（详见各子 skill 的能力披露）
 - **文件读**：仓库内 `aws.env`、`.aws-article/config.yaml`、本篇 `article.yaml`
 - **文件写**：仓库内 —— `.aws-article/`（首次引导创建目录结构）、本篇 `article.yaml` 状态字段
-- **shell**：仅 `python3 {baseDir}/scripts/validate_env.py`
+- **shell**：仅 `{python} {baseDir}/scripts/validate_env.py`（`{python}` = 本机 Python 3 解释器，由下文**第 0 步**探测得出：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
 
 > **注意**：整体套件（含子 skill）会调用外部 LLM、图像 API 与微信 API，并在调用时外发 API key 与本篇内容。完整行为见各子 skill 的「能力披露」。
 
@@ -49,12 +49,36 @@ metadata:
 
 **进入交互顺序「2) 全局账号约束」「3) 本篇准备」及内容流水线前**须完成 **第 0～2.5 步**配置检测（任一步失败则 **不得** 继续）。**第 3 步**是**调用 `publish.py` 前**的核对（非流水线起点）：**`.aws-article/config.yaml`** 中 **`publish_method`** 默认为 **`draft`**（**`publish.py full`** 只把图文写入**公众号草稿箱**）；仅当用户明确要求「发出去 / 对外发布」时，再将该键改为 **`published`**（或使用 **`full --publish`** 临时强制发布）。**微信**：**`validate_env.py`** 默认要求公众号账号配齐（见第 2 步）；用户**明确不接微信**时，先将 **`publish_method`** 设为 **`none`** 再过校验（脚本会跳过微信组），之后 **`publish.py full`** 仍直接跳过。要走草稿/发布，须补全 **`aws.env`** 与 **`config.yaml`** 微信槽位，并建议 **`check-wechat-env`**。`wechat_N_name` 只用于展示，写作/图片模型是可选项，这三项缺失时只警告。文风与账号约束以 **`config.yaml`** 为准，发文元数据以本篇 **`article.yaml`** 为准。
 
-### 第 0 步：判断操作系统
+### 第 0 步：判断操作系统与 Python 解释器
 
 智能体在执行下列检测命令前，**先判断当前环境**：
 
 - **Linux / macOS**：使用 Bash 命令（`test`、`echo` 等）。
 - **Windows**：使用 **PowerShell** 命令（`Test-Path` 等）。
+
+**再确定 `{python}`**——本套件所有文档里的 `{python}` 都是占位符，不是可直接执行的命令，须先探测出本机实际可用的 Python 3 解释器再代入。**本次会话探测一次即可**，之后所有 `{python}` 统一代入该结果。
+
+**Linux / macOS：**
+
+```bash
+python3 --version
+```
+
+输出 `Python 3.x.x` → `{python}` = `python3`。命令不存在则改试 `python --version`，同样要求输出 `Python 3.`；都不行 → 提示用户安装 Python 3.10+ 后再继续，**不得**继续后续步骤。
+
+**Windows（PowerShell）：**
+
+```powershell
+py -3 --version
+```
+
+输出 `Python 3.x.x` → `{python}` = `py -3 -X utf8`。`py` 不可用时改试 `python --version`，通过则 `{python}` = `python -X utf8`。
+
+⛔ **Windows 上不要探测 `python3`**：未安装 Python 时它是系统预置的应用执行别名，会**静默打开 Microsoft Store** 而不报错——你会拿到一个空输出、看不出失败原因。始终优先 `py -3`（python.org 官方安装器默认附带 py launcher，且不受该别名影响）。
+
+⛔ **Windows 上的 `-X utf8` 不可省略**：本套件脚本输出大量中文，Windows 上 Python 的 stdout 编码默认跟随系统 locale（简体中文机器为 GBK），省略后你读到的会是乱码，进而误判脚本成败。
+
+**版本要求 Python 3.10+**。`--version` 显示低于 3.10 时先提示用户升级，再继续。
 
 ### 第 1 步：`.aws-article/config.yaml` 与 `aws.env` 是否存在
 
@@ -81,7 +105,7 @@ if ((Test-Path -LiteralPath ".aws-article\config.yaml") -and (Test-Path -Literal
 两文件均存在后，在仓库根运行：
 
 ```bash
-python {baseDir}/scripts/validate_env.py
+{python} {baseDir}/scripts/validate_env.py
 ```
 
 （默认读取 **`.aws-article/config.yaml`** 与 **`aws.env`**；可用 `--config` / `--env` 指定路径。）

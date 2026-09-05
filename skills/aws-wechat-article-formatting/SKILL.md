@@ -26,7 +26,7 @@ metadata:
 - **文件读（仓库内）**：`.aws-article/config.yaml`、本篇 `article.yaml`、`article.md`、可选 `closing.md`、`.aws-article/presets/formatting/<名>.yaml`
 - **文件读（仓库外）**：`format.py` 还会检查用户家目录 `~/.aws-article/presets/formatting/`（跨项目共享的自定义排版主题；**只读预设文件，不读凭证**）。不需要这个能力可清空 / 不创建该目录
 - **文件写**：本篇 `article.html`
-- **shell**：仅 `python3 {baseDir}/scripts/format.py`
+- **shell**：仅 `{python} {baseDir}/scripts/format.py`（`{python}` = 本机 Python 3 解释器，见 [main SKILL 第 0 步](../aws-wechat-article-main/SKILL.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
 
 ## 配套 skill（informational）
 
@@ -92,17 +92,17 @@ metadata:
 
 ```bash
 # 不传 --theme：使用合并配置中的 default_format_preset，否则 default
-python {baseDir}/scripts/format.py drafts/YYYYMMDD-slug/article.md -o drafts/YYYYMMDD-slug/article.html
+{python} {baseDir}/scripts/format.py drafts/YYYYMMDD-slug/article.md -o drafts/YYYYMMDD-slug/article.html
 
 # 显式指定主题（覆盖配置）
-python {baseDir}/scripts/format.py drafts/YYYYMMDD-slug/article.md --theme grace -o drafts/YYYYMMDD-slug/article.html
+{python} {baseDir}/scripts/format.py drafts/YYYYMMDD-slug/article.md --theme grace -o drafts/YYYYMMDD-slug/article.html
 
 # 自定义主色 / 字号
-python {baseDir}/scripts/format.py article.md --theme modern --color "#A93226"
-python {baseDir}/scripts/format.py article.md --font-size 15px
+{python} {baseDir}/scripts/format.py article.md --theme modern --color "#A93226"
+{python} {baseDir}/scripts/format.py article.md --font-size 15px
 
 # 列出可用主题
-python {baseDir}/scripts/format.py --list-themes
+{python} {baseDir}/scripts/format.py --list-themes
 ```
 
 ### 嵌入元素 `{embed:...}`
@@ -138,7 +138,7 @@ python {baseDir}/scripts/format.py --list-themes
 在 `.aws-article/presets/formatting/` 下新建主题文件即可。快速起步：
 
 ```bash
-python {baseDir}/scripts/format.py --export-theme default > .aws-article/presets/formatting/my-brand.yaml
+{python} {baseDir}/scripts/format.py --export-theme default > .aws-article/presets/formatting/my-brand.yaml
 ```
 
 主题文件格式和扩展方式详见：[references/presets/README.md](references/presets/README.md)

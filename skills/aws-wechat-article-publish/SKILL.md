@@ -30,7 +30,7 @@ metadata:
 - **网络目标**：默认 `api.weixin.qq.com`；用户可在 `WECHAT_{N}_API_BASE` / `config.yaml.wechat_api_base` 自配反代
 - **文件读**：仓库内 `.aws-article/config.yaml`、`aws.env`、本篇 `article.yaml`、`article.html`、`imgs/*`
 - **文件写**：仅本篇 `article.yaml` 的状态字段（`media_id`、`publish_id`、`publish_completed`）
-- **shell**：仅 `python3 {baseDir}/scripts/publish.py`、`getdraft.py`、`article_init.py`
+- **shell**：仅 `{python} {baseDir}/scripts/publish.py`、`getdraft.py`、`article_init.py`（`{python}` = 本机 Python 3 解释器，见 [main SKILL 第 0 步](../aws-wechat-article-main/SKILL.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
 
 **建议**：首次运行用 `publish_method: draft` 只入草稿箱确认效果，再切 `published` 真正群发。
 
@@ -55,8 +55,8 @@ metadata:
 
 | 脚本 / 子命令 | 用途 |
 |--------|------|
-| **`article_init.py`** | 初始化或更新本篇 **`article.yaml`**（及可选 **`closing.md`**）。用于总览 **本篇准备**（建目录后）或 **发布前** 补全元数据。仓库根执行：`python {baseDir}/scripts/article_init.py <文章目录> [--title … --author … --digest …]` |
-| **`getdraft.py`** | 独立于 `publish.py`：用于正式文章查询（`published-list` / `published-fields` / `publish-get` / `article-get`，对应 `freepublish/*`），可用于 `embeds.related_articles.manual` 为空时自动补全推荐链接。注意：`freepublish/*` 需要公众号具备对应接口权限。仓库根：`python {baseDir}/scripts/getdraft.py published-fields` |
+| **`article_init.py`** | 初始化或更新本篇 **`article.yaml`**（及可选 **`closing.md`**）。用于总览 **本篇准备**（建目录后）或 **发布前** 补全元数据。仓库根执行：`{python} {baseDir}/scripts/article_init.py <文章目录> [--title … --author … --digest …]` |
+| **`getdraft.py`** | 独立于 `publish.py`：用于正式文章查询（`published-list` / `published-fields` / `publish-get` / `article-get`，对应 `freepublish/*`），可用于 `embeds.related_articles.manual` 为空时自动补全推荐链接。注意：`freepublish/*` 需要公众号具备对应接口权限。仓库根：`{python} {baseDir}/scripts/getdraft.py published-fields` |
 | `check-screening` | 校验 **`config.yaml`** 的 **`publish_method`**（**`draft`** / **`published`** / **`none`**） |
 | `check-wechat-env` | 按 **`config.yaml` 槽位**检查 `aws.env` 的 `WECHAT_N_APPID` / `WECHAT_N_APPSECRET` 是否已填（**调用 `publish.py` 前建议跑**） |
 | `check` | 环境检查：`aws.env`、各槽位、依赖、可选探测 token |
@@ -75,7 +75,7 @@ metadata:
 
 ### 多账号时如何选槽位
 
-1. 运行 **`python {baseDir}/scripts/publish.py accounts`**，从 **`config.yaml` 的 `wechat_accounts` + `wechat_N_name`** 向用户展示列表（例如：`您有2个账号：1."xiaoming"，2."xiaoz"`）必须询问用户选择哪个账号发布到草稿箱，然后根据用户选择发布到指定的账号。
+1. 运行 **`{python} {baseDir}/scripts/publish.py accounts`**，从 **`config.yaml` 的 `wechat_accounts` + `wechat_N_name`** 向用户展示列表（例如：`您有2个账号：1."xiaoming"，2."xiaoz"`）必须询问用户选择哪个账号发布到草稿箱，然后根据用户选择发布到指定的账号。
 2. 在 **`config.yaml`** 写 **`wechat_publish_slot: <整数>`**，**或**命令行 **`--account <序号或名称>`**（**CLI 优先**，见 [articlescreening-schema.md](../aws-wechat-article-main/references/articlescreening-schema.md)）。
 
 ### 全局环境
@@ -150,12 +150,12 @@ metadata:
 ## 命令示例（仓库根）
 
 ```bash
-python {baseDir}/scripts/publish.py check-screening
-python {baseDir}/scripts/publish.py check-wechat-env
-python {baseDir}/scripts/publish.py accounts
-python {baseDir}/scripts/publish.py check
-python {baseDir}/scripts/publish.py --account 1 full drafts/YYYYMMDD-标题slug/
-python {baseDir}/scripts/getdraft.py published-fields
+{python} {baseDir}/scripts/publish.py check-screening
+{python} {baseDir}/scripts/publish.py check-wechat-env
+{python} {baseDir}/scripts/publish.py accounts
+{python} {baseDir}/scripts/publish.py check
+{python} {baseDir}/scripts/publish.py --account 1 full drafts/YYYYMMDD-标题slug/
+{python} {baseDir}/scripts/getdraft.py published-fields
 ```
 
 详见 [references/usage.md](references/usage.md)、[references/submit-guide.md](references/submit-guide.md)、[references/api-reference.md](references/api-reference.md)。
