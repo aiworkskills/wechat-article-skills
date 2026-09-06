@@ -1,0 +1,31 @@
+name: quote-card
+displayName: 金句卡
+category: evidence
+body: free
+when_to_use: '全文最值得被单独记住、且脱离上下文仍成立的那一句。做成卡片是为了让读者截图转发——
+
+  这是它唯一的存在理由。方括号里可填出处（人名 / 机构 / 报告名）。
+
+  '
+when_not_to_use: '这句话正文里两段之内刚说过：卡片会变成复读，读者跳过。
+
+  内容是陈述事实而非观点（「本次发布于 9 月 3 日」）：截图出去没人转。
+
+  一篇里已经有一张金句卡：第二张开始，稀缺性没了，两张都不会被转。
+
+  '
+anti_pattern: '一篇放三四张——这是最常见的毁掉方式，卡片密度一高就退化成装饰条。
+
+  句子超过 40 字——手机上要滚动才能读完，截图截不全。
+
+  把小标题塞进来当卡片用——那是 section-title 的活。
+
+  '
+example: ':::quote-card[AWS 团队]
+
+  基准分数衡量的是你缺哪个 harness，不是模型的能力上限。
+
+  :::
+
+  '
+template: "<section style=\"margin:40px 0; padding:0 0 0 18px; border-left:6px solid #14508C;\">\n  <section style=\"font-size:20px; line-height:1.6; font-weight:800; letter-spacing:-0.3px; color:#111318;\">{content}</section>\n  <section style=\"margin-top:14px; font-size:13px; letter-spacing:1.5px; color:#6B7078;\">{arg}</section>\n</section>\n"

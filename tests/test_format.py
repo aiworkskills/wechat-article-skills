@@ -1,5 +1,6 @@
 """format.py 回归测试：预格式化保护、表格、引用块、列表、closing.md、字号覆盖。"""
 import re
+import sys
 import unittest
 import io
 import os
@@ -577,6 +578,7 @@ class PaletteTest(unittest.TestCase):
         原色 #FFD400 上，对比只有 1.43，肉眼一看就糊，审计却报「全部达标」。
         """
         import yaml
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
         from contrast_audit import violations
         md = (":::lead\n导语文字\n:::\n\n## 小标题\n\n正文**重点**与[链接](x)。\n\n"
               ":::stat[数据]\n3.2× | 平均阅读时长\n:::\n\n"
@@ -764,6 +766,7 @@ class BuiltinThemeContrastTest(unittest.TestCase):
 
     def test_no_unreadable_text_in_builtin_themes(self):
         import yaml
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
         from contrast_audit import violations
         md = ("## 小标题\n\n正文**重点**与[链接](x)。\n\n> 引用\n\n- 列表\n\n"
               ":::lead\n导语\n:::\n\n:::steps[标题]\n第一步 | 说明\n:::\n\n"
@@ -775,6 +778,127 @@ class BuiltinThemeContrastTest(unittest.TestCase):
             html = fmt._md_to_html(md, fmt._build_styles(theme), components=comps)
             bad = violations(html)
             self.assertEqual(bad, [], f"{f.stem} 有读不了的文字：{bad[:3]}")
+
+
+def _template_files():
+    """三套模版（涂 / 画 / 省）。README 不是模版。"""
+    d = fmt.SKILL_DIR / "references" / "presets" / "templates"
+    return [f for f in sorted(d.glob("*.yaml"))] if d.is_dir() else []
+
+
+_HAS_TEMPLATES = bool(_template_files())
+_SKIP_NO_TEMPLATE = unittest.skipUnless(_HAS_TEMPLATES, "三套模版尚未落地")
+
+
+@_SKIP_NO_TEMPLATE
+class ThreeTemplateTest(unittest.TestCase):
+    """涂 / 画 / 省 三套模版的守卫。
+
+    上一轮做四个骨架失败，根因之一是没有尺——定了规则却一路手写把规则忘了。
+    这些用例把「实验里撞出来的硬规则」钉死，改坏了会直接红。
+    """
+
+    SAMPLE = ("## 小标题\n\n正文**加粗**与[链接](x)。\n\n- 列表项\n\n> 引用\n\n"
+              "![对比图：说明](x.png \"图 1：图注\")\n\n:::lead\n导语\n:::\n\n"
+              ":::quote-card[出处]\n金句\n:::\n\n:::steps[标题]\n第一步 | 说明\n:::\n\n"
+              ":::stat[数据]\n3.2× | 说明\n:::\n\n:::compare[左|右]\na|b\n:::\n\n"
+              ":::checklist[清单]\ndone | 事项\n:::\n\n:::closing[署名]\n收尾\n:::")
+
+    def _theme(self, f):
+        import yaml
+        return yaml.safe_load(f.read_text(encoding="utf-8"))
+
+    def _render(self, theme):
+        comps = fmt._load_components(str(theme.get("skeleton") or ""))
+        return fmt._md_to_html(self.SAMPLE, fmt._build_styles(theme), components=comps)
+
+    @staticmethod
+    def _techniques(css):
+        """一段样式用了哪些手法。判据是集合，不是布尔对——
+        「底色 + 彩字」和「彩字」差在底色上，实际分得开。"""
+        t = set()
+        if "border-bottom" in css or "underline" in css:
+            t.add("线")
+        if "background" in css:
+            t.add("底")
+        m = re.search(r"(?<!-)color:\s*(#[0-9A-Fa-f]{6})", css)
+        if m and m.group(1).upper() != "#111318":
+            t.add("彩字")
+        w = re.search(r"font-weight:\s*(\d+)", css)
+        if w and int(w.group(1)) >= 800:
+            t.add("重字")
+        return t
+
+    def test_bold_and_link_use_different_techniques(self):
+        """两者都用底线时读者分不清哪个能点。这个坑撞过两次，钉死。"""
+        for f in _template_files():
+            st = self._theme(f)["styles"]
+            a, b = self._techniques(st["strong"]), self._techniques(st["a"])
+            self.assertNotEqual(a, b, f"{f.stem}：加粗与链接手法相同 {sorted(a)}")
+
+    def test_list_marker_is_never_none(self):
+        """list-style:none 会让列表项看起来就是普通段落。撞过三次。"""
+        for f in _template_files():
+            self.assertNotIn("list-style:none", self._theme(f)["styles"]["ul"], f.stem)
+
+    def test_templates_differ_at_the_core_layer(self):
+        """身份必须落在每篇出现几十次的元素上，而不是可能一个都不出现的组件上。"""
+        seen = {}
+        for f in _template_files():
+            st = self._theme(f)["styles"]
+            key = (frozenset(self._techniques(st["strong"])),
+                   frozenset(self._techniques(st["a"])),
+                   re.search(r"list-style:\s*([\w-]+)", st["ul"]).group(1))
+            self.assertNotIn(key, seen, f"{f.stem} 与 {seen.get(key)} 的核心层完全相同")
+            seen[key] = f.stem
+
+    def test_inline_background_never_uses_padding(self):
+        """行内 background 配 padding 会撑高行盒，带底色那行的行距明显大于周围。"""
+        for f in _template_files():
+            for k in ("strong", "a", "em"):
+                css = self._theme(f)["styles"].get(k, "")
+                if "background" in css:
+                    self.assertNotIn("padding", css, f"{f.stem} 的 {k} 用 padding 撑了行盒")
+
+    def test_every_template_renders_cleanly(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from contrast_audit import violations
+        for f in _template_files():
+            html = self._render(self._theme(f))
+            self.assertNotIn("{", html, f"{f.stem} 有残留花括号")
+            self.assertEqual(violations(html), [], f"{f.stem} 有读不了的文字")
+
+    def test_no_semantic_reuses_another_semantics_form(self):
+        """同一套里七个语义七种形态。上一轮「块」五个语义共用一张圆角卡就是这条没守住。
+
+        形态签名取「用了哪些视觉手段」——底色、各边框、是否 flex、字号集合、
+        字重集合、字距。只取容器和边框会漏掉「省」：那一套按设计就没有底色和边框，
+        它的七种形态全靠排版本身分开（flex 加序号列 vs 上下排加箭头），
+        签名看不见排版就会误判成雷同。
+        """
+        import yaml
+        COMPS = ["lead", "quote-card", "steps", "stat", "compare", "checklist", "closing"]
+        d = fmt.SKILL_DIR / "references" / "components"
+        for f in _template_files():
+            sk = str(self._theme(f).get("skeleton") or "")
+            if not sk or not (d / sk).is_dir():
+                continue
+            shapes = {}
+            for c in COMPS:
+                p = d / sk / f"{c}.yaml"
+                if not p.exists():
+                    continue
+                spec = yaml.safe_load(p.read_text(encoding="utf-8"))
+                body = str(spec.get("template", "")) + str(spec.get("row_template", ""))
+                body = re.sub(r"#[0-9A-Fa-f]{3,8}|\{[a-z][a-z0-9-]*\}", "C", body)
+                sig = tuple(sorted(set(
+                    re.findall(r"background(?:-color)?|display:\s*flex|text-align:\s*\w+"
+                               r"|border-(?:top|bottom|left|right):\s*\d+px"
+                               r"|font-size:\s*\d+px|font-weight:\s*\d+"
+                               r"|letter-spacing|border-radius", body))))
+                self.assertNotIn(sig, shapes,
+                                 f"{f.stem}：{c} 与 {shapes.get(sig)} 用了完全一样的手段 {sig}")
+                shapes[sig] = c
 
 
 if __name__ == "__main__":

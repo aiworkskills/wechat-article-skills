@@ -1,0 +1,44 @@
+name: steps
+displayName: 步骤流程
+category: infographic
+body: rows
+row_delimiter: '|'
+row_columns: 2
+when_to_use: '有先后顺序、且顺序错了就做不成的操作流程。教程类文章的主干。
+
+  每步一行：第一列是步骤名，第二列是一句补充（可省略）。
+
+  '
+when_not_to_use: '各项没有先后关系（并列的几个要点）：用 checklist 或普通列表，编号会暗示不存在的顺序。
+
+  步骤超过六步：手机上滚不完，拆成两个阶段或改写成小标题分节。
+
+  每步都要贴代码或截图：组件塞不下，直接用小标题 + 正文。
+
+  '
+anti_pattern: '步骤名写成一句话（「首先我们需要打开配置文件并且找到……」）——步骤名要短，
+
+  超过 12 个字就该把细节挪到第二列。
+
+  第二列重复第一列的意思——那一列的价值是补充「怎么做/注意什么」，不是复述。
+
+  自己在步骤名前手写「1.」「第一步」——序号是组件自动编的，会变成「1 1. 打开配置」。
+
+  把「准备工作」也编成第 1 步——读者会以为流程有 5 步其实只有 4 步。
+
+  '
+example: ':::steps[怎么给一篇文章定媒介]
+
+  看账号调性 | 犀利极客走白板，温暖随笔走方格本
+
+  排除最近三篇 | 避免整个号只剩一种长相
+
+  本篇全部统一 | 三张图三种媒介像三个人做的
+
+  再开始生成 | 媒介定死之后才写 prompt
+
+  :::
+
+  '
+template: "<section style=\"margin:36px 0;\">\n  <section style=\"font-size:13px; letter-spacing:1.5px; font-weight:800; color:#6B7078; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid #E8EAED;\">{arg}</section>\n  {content}\n</section>\n"
+row_template: "<section style=\"display:flex; align-items:baseline; padding:0 0 16px;\">\n    <section style=\"flex:0 0 auto; width:30px; font-size:17px; font-weight:800; color:#14508C; border-bottom:2px solid #14508C; margin-right:12px;\">{n}</section>\n    <section style=\"flex:1;\">\n      <section style=\"font-size:16px; font-weight:800; color:#111318; line-height:1.5;\">{c0}</section>\n      <section style=\"margin-top:4px; font-size:14px; color:#6B7078; line-height:1.7;\">{c1}</section>\n    </section>\n  </section>\n"

@@ -1,0 +1,20 @@
+name: 涂
+variables:
+  primary-color: '#14508C'
+  text-color: '#111318'
+  text-muted: '#6B7078'
+styles:
+  p: font-size:16px; line-height:1.95; color:#111318; margin:0 0 28px; font-weight:400;
+  li: font-size:16px; line-height:1.85; color:#111318; margin:0 0 10px;
+  em: font-style:normal; color:#14508C; font-weight:600;
+  img: display:block; width:100%; height:auto; margin:8px auto 0;
+  strong: 'color:#111318; font-weight:700; background:linear-gradient(transparent 58%, #BBD0E4 58%);'
+  a: 'color:#14508C; text-decoration:none; font-weight:700; border-bottom:1px solid #14508C;'
+  ul: margin:0 0 28px; padding-left:20px; list-style:circle;
+  h2: font-size:20px; font-weight:800; color:#111318; line-height:1.5; margin:56px 0 20px; padding:10px 14px; background:#EAF0F6;
+  h3: font-size:17px; font-weight:800; color:#14508C; line-height:1.6; margin:36px 0 12px; padding:2px 10px; background:#EAF0F6; display:inline-block;
+  blockquote: background:#EAF0F6; color:#111318; font-size:16px; line-height:1.8; padding:16px 18px; margin:0 0 28px;
+  figcaption: background:#EAF0F6; color:#6B7078; font-size:13px; line-height:1.6; padding:8px 12px; margin:0 0 28px; text-align:left;
+  hr: border:none; height:8px; width:64px; background:#BBD0E4; display:block; margin:48px auto;
+  ol: margin:0 0 28px; padding-left:20px; list-style:circle;
+skeleton: tu
