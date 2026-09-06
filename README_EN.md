@@ -110,14 +110,14 @@ All config is done on [aiworkskills.cn](https://aiworkskills.cn/) — no code re
 </details>
 
 <details>
-<summary><b>Image Styles</b> — presets set the visual language; what each image actually shows is derived from the content</summary>
+<summary><b>In-article Image Forms</b> — 8 forms, all on by default; the AI picks one per image slot based on what that slot has to do</summary>
 
 ![Image styles](https://aiworkskills.cn/images/sp/%E6%94%AF%E6%8C%81%E7%9A%84%E6%96%87%E7%AB%A0%E9%85%8D%E5%9B%BE%E9%A3%8E%E6%A0%BC.png)
 
 </details>
 
 <details>
-<summary><b>Cover Styles</b> — pick a cover visual language; 12 cover forms turn it into a finished, titled cover</summary>
+<summary><b>Cover Forms</b> — 12 forms, all on by default; each carries its own title-text spec, so the output is a finished, titled cover</summary>
 
 ![Cover styles](https://aiworkskills.cn/images/sp/%E6%94%AF%E6%8C%81%E7%9A%84%E5%B0%81%E9%9D%A2%E9%85%8D%E5%9B%BE%E9%A3%8E%E6%A0%BC.png)
 

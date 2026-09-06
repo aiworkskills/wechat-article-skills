@@ -212,14 +212,14 @@ cd wechat-article-skills
 </details>
 
 <details open>
-<summary><b>配图风格</b> — 预设定的是画风（账号的视觉语言），每张图具体画什么由 AI 按内容现推</summary>
+<summary><b>正文配图形态</b> — 8 个形态默认全选，AI 按每处图位的作用挑一个（信息位讲清楚，节奏位给眼睛休息）</summary>
 
 ![配图风格](https://aiworkskills.cn/images/sp/%E6%94%AF%E6%8C%81%E7%9A%84%E6%96%87%E7%AB%A0%E9%85%8D%E5%9B%BE%E9%A3%8E%E6%A0%BC.png)
 
 </details>
 
 <details open>
-<summary><b>封面风格</b> — 选定封面视觉语言，配合 12 个封面形态产出带标题的成品封面</summary>
+<summary><b>封面形态</b> — 12 个形态默认全选，AI 按文章内容挑一个；模板自带文案规格，出的是带标题的成品封面</summary>
 
 ![封面风格](https://aiworkskills.cn/images/sp/%E6%94%AF%E6%8C%81%E7%9A%84%E5%B0%81%E9%9D%A2%E9%85%8D%E5%9B%BE%E9%A3%8E%E6%A0%BC.png)
 
