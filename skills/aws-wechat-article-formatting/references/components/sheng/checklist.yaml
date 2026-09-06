@@ -6,9 +6,9 @@ row_delimiter: '|'
 row_columns: 2
 row_map:
   c0:
-    done: '&#10003;'
-    todo: '&#9675;'
-    warn: '&#33;'
+    done: <svg width="15" height="15" viewBox="0 0 16 16" style="display:block;"><path d="M2.5 8.5 L6.2 12.2 L13.5 3.8" fill="none" stroke="{text-color}" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    todo: <svg width="15" height="15" viewBox="0 0 16 16" style="display:block;"><circle cx="8" cy="8" r="6" fill="none" stroke="{text-muted}" stroke-width="1"/></svg>
+    warn: <svg width="15" height="15" viewBox="0 0 16 16" style="display:block;"><path d="M8 3 L8 9.4" stroke="{text-color}" stroke-width="1" stroke-linecap="round"/><circle cx="8" cy="12.4" r="0.9" fill="{text-color}"/></svg>
 row_map_default:
   c0: '&#9675;'
 when_to_use: '并列的检查项、要点、待办——**没有先后顺序**的那种。有顺序用 steps。

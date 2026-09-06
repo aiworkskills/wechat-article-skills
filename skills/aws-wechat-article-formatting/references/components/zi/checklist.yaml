@@ -6,9 +6,9 @@ row_delimiter: '|'
 row_columns: 2
 row_map:
   c0:
-    done: '&#10003;'
-    todo: '&#9675;'
-    warn: '&#33;'
+    done: 完
+    todo: 待
+    warn: 注
 row_map_default:
   c0: '&#9675;'
 when_to_use: '并列的检查项、要点、待办——**没有先后顺序**的那种。有顺序用 steps。
@@ -44,4 +44,4 @@ example: ':::checklist[发文前检查]
 
   '
 template: "<section style=\"margin:52px 0;\">\n  <section style=\"font-size:13px; letter-spacing:4px; color:{text-muted}; margin-bottom:22px;\">{arg}</section>\n  {content}\n</section>\n"
-row_template: "<section style=\"display:flex; align-items:baseline; padding:0 0 16px;\">\n    <section style=\"flex:0 0 auto; width:30px; font-size:13px; letter-spacing:2px; color:{text-muted};\">{nz}</section>\n    <section style=\"flex:1; font-size:16px; line-height:1.75; letter-spacing:0.5px; color:{text-color};\">{c1}</section>\n  </section>\n"
+row_template: "<section style=\"display:flex; align-items:baseline; padding:0 0 16px;\">\n    <section style=\"flex:0 0 auto; width:30px; font-size:13px; letter-spacing:2px; color:{primary-ink};\">{c0}</section>\n    <section style=\"flex:1; font-size:16px; line-height:1.75; letter-spacing:0.5px; color:{text-color};\">{c1}</section>\n  </section>\n"
