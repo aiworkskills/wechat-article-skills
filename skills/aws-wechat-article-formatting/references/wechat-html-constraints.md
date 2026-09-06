@@ -160,9 +160,28 @@ background:linear-gradient(#E9EFF6, #E9EFF6); box-shadow:0 0 0 3px #E9EFF6;
    手法维度：线 / 底 / 彩字 / 重字 / 字距。一个用「线」另一个用「彩字」即可，
    不必两者都花哨。
 2. **列表符号不能取 `none`**。两条列表项在页面上就是两个普通段落，读者认不出是列表。
-   四个可选值 disc / circle / square / decimal 正好够四套主题各占一个。
+   可选值远不止 disc / circle / square / decimal——桌面浏览器实测这些也都生效：
+
+       cjk-ideographic / simp-chinese-informal   一、二、三   中文数字，比 1. 2. 地道
+       decimal-leading-zero                      01. 02.     编辑部气质
+       lower-alpha / upper-alpha / lower-roman   a. / A. / i.
+       hiragana / katakana                       あ、い、
+
+   （微信里是否生效**未测**，见文末待测清单。）
 3. **装饰要「轻但持续」**。出现几十次的元素，重一点就是灾难——这也是上面那条
    「别用 padding」为什么要紧的原因。
+
+### 强调不止「加粗」
+
+中文的正统强调手法有两个是加粗之外的，桌面浏览器实测都生效：
+
+    text-emphasis:filled circle 色         着重号，逐字加点。中文书刊里比加粗更正统
+    text-emphasis-position:under right     点在字下（默认在字上）
+    letter-spacing:3px; font-weight:500    疏排（铅字时代的 Sperrsatz），把字撑开而不加重
+
+疏排 2px 偏弱，3px 配 500 字重才明显可辨。两者都「轻但持续」，正好适合核心层。
+**微信里是否生效未测**——`text-emphasis` 是较新的 CSS 属性，需要连 `-webkit-` 前缀
+一起写，风险比 letter-spacing 高。
 
 ## SVG 的坑
 
@@ -192,6 +211,9 @@ background:linear-gradient(#E9EFF6, #E9EFF6); box-shadow:0 0 0 3px #E9EFF6;
 ## 还没测的
 
 1. `position` / `id`（关系到能否做叠层效果，需单独探针）
+0. **`text-emphasis`（着重号）与 `list-style-type` 的扩展取值** —— 优先级最高。
+   中文着重号和「一、二、三」式列表是中文排版独有的手法，桌面已验证生效，
+   若微信也支持，核心层的可选写法会多出一整个维度。同一份探针稿里一起测。
 2. 嵌套超过三层的 `<section>`
 3. 微信客户端 webview 与桌面浏览器的其它渲染差异（中文字体一项已实测，见开头）
 
