@@ -832,6 +832,13 @@ class ThreeTemplateTest(unittest.TestCase):
         w = re.search(r"font-weight:\s*(\d+)", css)
         if w and int(w.group(1)) >= 800:
             t.add("重字")
+        # 着重号与疏排是中文特有的第五、第六种手法，2026-09-07 探针实测微信保留。
+        # 不认它们的话，「字」那套的加粗会被判成「什么手法都没用」——测试等于瞎了。
+        if "text-emphasis" in css:
+            t.add("着重号")
+        ls = re.search(r"letter-spacing:\s*([\d.]+)px", css)
+        if ls and float(ls.group(1)) >= 2:
+            t.add("疏排")
         return t
 
     def test_bold_and_link_use_different_techniques(self):

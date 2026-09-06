@@ -1,0 +1,55 @@
+name: 字
+displayName: 字
+skeleton: zi
+description: 装饰全部由字本身承担——着重号、疏排、中文数字。零色块、零边框。
+variables:
+  primary-color: '#14508C'
+  text-color: '#111318'
+  text-muted: '#6B7078'
+styles:
+  # ── 核心层：每篇出现几十次的三个元素 ──────────────────────────
+  # 加粗用着重号（中文书刊里比加粗更正统），链接用疏排，列表用中文数字。
+  # 三样都是 2026-09-07 探针稿实测微信保留的写法，其余三套一样都没用。
+  # 着重号放在字下（position:under）——放字上会撞到上一行的降部。
+  strong: 'color:{text-color}; font-weight:500; text-emphasis:dot {primary-ink};
+    -webkit-text-emphasis:dot {primary-ink}; text-emphasis-position:under right;
+    -webkit-text-emphasis-position:under right;'
+  # 疏排单看 3px 才明显，但行内链接用 3px 会把词拆成一个个孤立的字，读起来比不加还费劲。
+  # 这里取 2px：靠彩字认出「能点」，疏排只负责带上这一套的口音。
+  a: 'color:{primary-ink}; text-decoration:none; font-weight:500; letter-spacing:2px;'
+  ul: 'margin:0 0 30px; padding-left:28px; list-style:cjk-ideographic;'
+  ol: 'margin:0 0 30px; padding-left:28px; list-style:cjk-ideographic;'
+  li: 'font-size:16px; line-height:1.9; color:{text-color}; margin:0 0 12px;
+    padding-left:4px;'
+
+  # ── 常用层：层级完全靠字号与疏排，一根线一块底都没有 ─────────────
+  h1: 'font-size:26px; font-weight:600; letter-spacing:2px; color:{text-color};
+    line-height:1.5; margin:0 0 28px;'
+  h2: 'font-size:21px; font-weight:600; letter-spacing:4px; color:{text-color};
+    line-height:1.6; margin:72px 0 24px;'
+  h3: 'font-size:17px; font-weight:700; letter-spacing:3px; color:{primary-ink};
+    line-height:1.7; margin:44px 0 14px;'
+  h4: 'font-size:16px; font-weight:600; letter-spacing:2px; color:{text-muted};
+    margin:32px 0 12px;'
+  p: 'font-size:16px; line-height:1.95; color:{text-color}; margin:0 0 28px;
+    font-weight:400;'
+  em: 'font-style:normal; letter-spacing:2px; color:{text-color}; font-weight:500;'
+  # 引用：整段疏排 + 收窄，靠字距和字号跟正文拉开，不加缩进也不加线。
+  blockquote: 'color:{text-muted}; font-size:16px; line-height:2.1; letter-spacing:1px;
+    padding:0; margin:36px 0; font-weight:400;'
+  # 图注：左对齐宽字距。省 那套是居中，两套并排时这一处能立刻分出来。
+  figcaption: 'color:{text-muted}; font-size:13px; line-height:1.7; letter-spacing:2px;
+    margin:10px 0 32px; text-align:left;'
+  img: 'display:block; width:100%; height:auto; margin:8px auto 0;'
+  # 分隔：hr 装不了字，给它这一套里最不像装饰的形态——一截短细线。
+  hr: 'border:none; height:1px; width:40px; background:{text-muted}; display:block;
+    margin:72px auto;'
+  code: 'font-family:Menlo, Consolas, monospace; font-size:14px; letter-spacing:0;
+    color:{primary-ink};'
+  table: 'width:100%; border-collapse:collapse; margin:0 0 32px; font-size:15px;'
+  th: 'padding:10px 8px; text-align:left; font-weight:600; letter-spacing:2px;
+    color:{text-muted}; font-size:13px; border-bottom:1px solid #E8EAED;'
+  td: 'padding:10px 8px; color:{text-color}; line-height:1.7;
+    border-bottom:1px solid #E8EAED;'
+  highlight: 'color:{text-color}; font-size:16px; line-height:2.1; letter-spacing:1px;
+    margin:36px 0; font-weight:500;'

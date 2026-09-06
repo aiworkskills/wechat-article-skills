@@ -1,0 +1,44 @@
+name: stat
+displayName: 数据卡
+category: infographic
+body: rows
+row_delimiter: '|'
+row_columns: 2
+when_to_use: '文章的核心数字。评测、财报解读、行业观察里，读者记不住三段论证，但记得住一个数。
+
+  每行「数字 | 这个数是什么」，两到三行并排最好看。
+
+  '
+when_not_to_use: '数字之间没有可比性（一个是百分比、一个是美元、一个是天数）：并排会诱导错误对照。
+
+  只有一个数字：写进正文加粗即可，起一个块反而弱化它。
+
+  数字需要大量前提说明才成立：卡片没地方写前提，容易断章取义——这正是本篇会批评的做法。
+
+  '
+anti_pattern: '数字后面跟一长串单位（「62.7 个百分点的标准 harness 得分」）——第一列只放数字和
+
+  简短单位，解释放第二列。
+
+  超过四行——并排会挤成两行且每格变窄，数字的冲击力就没了。
+
+  把没核实的数字放进来——卡片的视觉权重会让读者默认它是硬事实。
+
+  上文说「两个分数」卡片却列三行——把散文改成组件后，上下文的措辞义务跟着变了。
+
+  换完组件必须回头读一遍引出它的那句话，行数、称呼、量词都要对得上。
+
+  '
+example: ':::stat[同一个模型，两个分数]
+
+  62.7% | 标准 harness，可跨厂商横向比较
+
+  99.9% | Provider Adapter，只能跟自己比
+
+  37 分 | 两者之差，来自测试框架不是模型
+
+  :::
+
+  '
+template: "<section style=\"margin:52px 0;\">\n  <section style=\"font-size:13px; letter-spacing:4px; color:{text-muted}; margin-bottom:30px;\">{arg}</section>\n  {content}\n</section>\n"
+row_template: "<section style=\"padding:0 0 30px;\">\n    <section style=\"font-size:34px; font-weight:600; line-height:1.1; letter-spacing:4px; color:{primary-ink}; font-variant-numeric:tabular-nums;\">{c0}</section>\n    <section style=\"margin-top:12px; font-size:14px; letter-spacing:1px; color:{text-muted}; line-height:1.75;\">{c1}</section>\n  </section>\n"

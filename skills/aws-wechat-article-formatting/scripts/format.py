@@ -842,6 +842,21 @@ def _sub_theme_vars(html: str, styles: dict) -> str:
     return html
 
 
+def _cjk_numeral(n: int) -> str:
+    """1 → 一，11 → 十一。给 `{nz}` 用。
+
+    只做 1~99：组件里的行数超过十几条本身就该拆，没必要为三位数写通用算法。
+    超出范围退回阿拉伯数字，宁可难看也不要打出「一百二十三」把一格撑爆。
+    """
+    if not 1 <= n <= 99:
+        return str(n)
+    d = "〇一二三四五六七八九"
+    if n < 10:
+        return d[n]
+    tens, ones = divmod(n, 10)
+    return ("十" if tens == 1 else d[tens] + "十") + (d[ones] if ones else "")
+
+
 def _render_component(spec: dict, arg: str, body_lines: list[str], styles: dict) -> str:
     """把一个 :::块 渲染成 HTML。arg 是方括号里的参数，body_lines 是块内正文。"""
     body_kind = str(spec.get("body") or "free").strip()
@@ -871,7 +886,9 @@ def _render_component(spec: dict, arg: str, body_lines: list[str], styles: dict)
                     cells.insert(pos, str(dft))
             if ncol:
                 cells = (cells + [""] * ncol)[:ncol]
-            row = row_tpl.replace("{n}", str(idx)).replace("{n2}", "%02d" % idx)
+            row = (row_tpl.replace("{n}", str(idx))
+                          .replace("{n2}", "%02d" % idx)
+                          .replace("{nz}", _cjk_numeral(idx)))
             for i, cell in enumerate(cells):
                 # row_map：把某一列的取值映射成符号/短语（如 done → ✓）。
                 # 没有它的话，枚举列只能把 "done" 原样打进去——18px 宽的状态列会截成 "don"。
