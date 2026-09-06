@@ -185,10 +185,31 @@ class ComponentTest(unittest.TestCase):
         self.assertIn("01", html)
         self.assertIn("同一个模型", html)
 
-    def test_free_body_joins_paragraphs(self):
+    def test_free_body_makes_real_paragraphs(self):
+        """多段要有真正的段落间距。早先用 <br /> 连接，两段挤在一起没有气口。"""
         html = self._render(":::quote-card[出处]\n第一段\n\n第二段\n:::")
-        self.assertIn("第一段<br />第二段", html)
+        self.assertNotIn("<br />", html)
+        self.assertIn("第一段", html)
+        self.assertIn("第二段", html)
+        self.assertIn("margin:0 0 0.9em", html, "段间距丢了")
         self.assertIn("出处", html)
+
+    def test_free_body_single_paragraph_has_no_extra_wrapper(self):
+        """只有一句话时不该平白多包一层 section。"""
+        html = self._render(":::quote-card[出处]\n只有一句\n:::")
+        self.assertNotIn("margin:0 0 0.9em", html)
+        self.assertIn("只有一句", html)
+
+    def test_closing_and_lead_components_exist(self):
+        """两个 100% 出现率的位置：7/7 篇文章都有导语和文末区块。"""
+        for name in ("closing", "lead"):
+            self.assertIn(name, self.comps, f"缺组件 {name}")
+        html = self._render(":::closing[马斯]\n点个赞\n:::")
+        self.assertIn("马斯", html)
+        # 导语必须与引用块在视觉上分开：题眉式（上下线）vs 卡片式（底色）
+        lead = self._render(":::lead\n导语内容\n:::")
+        self.assertIn("border-top", lead)
+        self.assertNotIn("border-radius", lead)
 
     def test_theme_color_is_injected(self):
         primary = self.styles["primary-color"]

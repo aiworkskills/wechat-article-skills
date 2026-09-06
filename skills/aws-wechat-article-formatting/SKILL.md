@@ -97,6 +97,11 @@ metadata:
 :::
 ```
 
+**`lead`（导语）与 `closing`（文末区块）几乎每篇都该有**——实测本账号 7/7 篇文章
+开头都有一段导语、结尾都有互动引导与署名，此前一律是裸文本或借用引用块的样式。
+导语刻意做成「上下细线的题眉式」而非带底色的卡片，就是为了和 `blockquote` 分开：
+两者语义不同（作者的开场白 vs 引用别人的话），此前共用样式导致长得一模一样。
+
 内置组件在 [references/components/](references/components/)，用户自定义放
 `.aws-article/presets/components/<名>.yaml`，同名覆盖内置。每个组件的 YAML 里带
 `when_to_use` / `when_not_to_use` / `anti_pattern`——**选组件前先读这三项**，

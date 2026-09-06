@@ -1,0 +1,33 @@
+name: lead
+displayName: 导语
+category: opening
+body: free
+
+when_to_use: |
+  文章开头的一段导语——用两三句话说清「这篇讲什么、为什么值得读」。
+  实测本账号 7/7 篇文章开头都有这么一段，此前一律借用引用块的样式。
+
+when_not_to_use: |
+  正文中间：它是开篇装置，出现在中间读者会以为进了新文章。
+  内容只是复述标题：那不叫导语，删掉更好。
+  超过四行：导语要能一眼扫完，长了读者直接跳过，等于白写。
+
+anti_pattern: |
+  和引用块混用。**这是最要紧的一条**——导语和文中引用是两个语义，
+  此前共用 blockquote 样式，导致「作者自己的开场白」和「引用别人的话」
+  长得一模一样。导语用上下细线的题眉式，引用块保持卡片式，两者必须分开。
+  写成「本文将从三个方面……」的论文摘要腔——公众号读者不吃这套。
+
+example: |
+  :::lead
+  GPT-6 Astra 在 ARC-AGI-3 上拿到 99.9%，但这不是 AGI 的毕业证，更像一张考卷的退休通知。
+
+  真正的问题是：当基准被模型刷满，我们还剩什么可以衡量智能？
+  :::
+
+# 刻意做成「上下细线 + 略小字号」的题眉式，而不是带底色的卡片——
+# 卡片式是 blockquote 的样子，两者必须在视觉上分得开
+template: |
+  <section style="margin:0 0 2.4em; padding:18px 0; border-top:2px solid {primary-color}; border-bottom:1px solid {border-color};">
+    <section style="font-size:15px; line-height:1.95; color:{text-color};">{content}</section>
+  </section>

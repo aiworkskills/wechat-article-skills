@@ -721,7 +721,15 @@ def _render_component(spec: dict, arg: str, body_lines: list[str], styles: dict)
                 paras.append(" ".join(buf)); buf = []
         if buf:
             paras.append(" ".join(buf))
-        content = "<br />".join(_inline_format(x, styles) for x in paras)
+        # 多段时用真正的段落间距，不能只 <br />——那样两段挤在一起没有气口。
+        # 单段时不包 <section>，免得给只有一句话的组件平白多一层。
+        if len(paras) > 1:
+            content = "".join(
+                f'<section style="margin:0 0 {"0.9em" if i < len(paras) - 1 else "0"};">'
+                f'{_inline_format(x, styles)}</section>'
+                for i, x in enumerate(paras))
+        else:
+            content = "".join(_inline_format(x, styles) for x in paras)
 
     html = _sub_theme_vars(str(spec["template"]), styles)
     html = html.replace("{arg}", html_mod.escape(arg))
