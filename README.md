@@ -9,16 +9,37 @@
 [![Release](https://img.shields.io/github/v/release/aiworkskills/wechat-article-skills)](https://github.com/aiworkskills/wechat-article-skills/releases)
 [![Platforms](https://img.shields.io/badge/platforms-13%2B%20Claw%20%7C%20Claude%20Code%20%7C%20Autohand%20Code%20%7C%20Cursor%20%7C%20Codex-blue)](#支持的智能体)
 
+> 📬 项目更新很频繁——点右上角 **Watch → Custom → Releases**，有新版本时会通知你。
+
 ---
 
-## 📚 教程与案例
+## 👀 做出来长什么样
 
-- 📖 [如何用好 aiworkskills 平台？从配置到发文一文读懂](https://mp.weixin.qq.com/s/rcnq_gg3XXRwJ7ovQtBo1A) · 官方使用指南
-- 🔧 [WorkBuddy 如何使用 AI Work Skills 运行公众号](https://mp.weixin.qq.com/s/GQjCY5UsArV9XI5AyoxWZQ) · WorkBuddy 组合案例
-- ⚡ [QClaw + aiworkskills 一键运营公众号](https://mp.weixin.qq.com/s/xLUJBc2bbrJvgeAesbhsFA) · QClaw 组合案例
-- 🔑 [小龙虾的模型怎么选](https://mp.weixin.qq.com/s/u5e7FC-QAzXaMlq36RNIJg) · 写作与配图模型选型指南
-- 🚀 [从写作助手到 AI 运营员工：wechat-article-skills 进化之路](https://mp.weixin.qq.com/s/PRAE37gaEDF92gjwRBEOQg) · 项目演进历程
-- 🌐 [在线试用「改写」功能](https://socialistic.ai/zh/skill/aws-wechat-article-writing-317084?utm_source=github&utm_medium=readme&utm_campaign=20260615-netfeel-meme-copy-skills&utm_content=tutorial-section) · 不装环境，贴段稿子直接体验网感改写
+你在对话框里说一句话：
+
+```
+帮我写一篇讲 AI 提示词技巧的公众号文章
+```
+
+AI 依次交付，**每一步都停下来等你确认**，可以打断、修改、重来：
+
+> **3–5 张选题卡片** → **成稿**（按你的文风规范）→ **审稿报告**（敏感词 / 错别字 / AI 味）→ **微信 HTML 排版**（主题 + 版式组件）→ **封面 + 正文配图**（带标题的成品封面，不是背景图）→ **发进公众号草稿箱**
+
+<!-- TODO 首屏效果图：在此放一张真实成稿在手机微信里的截图（封面 + 正文排版都要能看到）。
+     这是整个 README 转化率最高的位置——95% 的访客只看这一屏。
+     建议存进仓库 assets/ 目录自托管，不要外链，避免源站抖动时裂图。 -->
+
+---
+
+## 这是什么
+
+**wechat-article-skills** 是一套开源的**微信公众号 AI 运营技能包**（AI Agent Skills）。装进你已经在用的 AI 工具后，用自然语言就能跑完公众号从选题到发布的全流程。
+
+- **解决什么**：公众号日更里的重复劳动——找选题、写稿、查敏感词、排版成微信 HTML、做封面和配图、发草稿箱。
+- **适合谁**：自己运营公众号的个人和团队；想让 AI 接管重复环节、但每一步都要保留确认权的人。
+- **不适合谁**：想要全自动无人值守发文的。本项目每一步都会停下来等你确认，这是有意的设计，不是缺功能。
+- **需要什么**：一个支持 Skills 的 AI 工具（Claude Code / Cursor / Codex / OpenClaw / Claw 系列 13+ 任选其一）+ Python 3.10+。写稿和配图的大模型 API **可选**，不配也能跑。
+- **数据在哪**：API Key 和微信凭证只写在本地 `aws.env`，不上传任何服务器。
 
 ---
 
@@ -51,7 +72,8 @@
 
 Claw 会自动把仓库拉到本地、把 9 个技能全部挂进对话，全程不用打一条命令。
 
-**方式 B · 第二快捷**：把下面 9 条命令一键复制到剪贴板，粘到小龙虾对话框回车即可：
+<details>
+<summary><b>方式 B · 逐个装</b>——把 9 条 <code>clawhub install</code> 命令粘到对话框（点开展开）</summary>
 
 ```bash
 clawhub install aws-wechat-article-main       # 必装 · 一条龙总控
@@ -64,6 +86,8 @@ clawhub install aws-wechat-article-images
 clawhub install aws-wechat-article-publish
 clawhub install aws-wechat-sticker
 ```
+
+</details>
 
 > **OpenClaw**（Claw 系列的开源标准底座）直接读取仓库 `skills/` 目录——`git clone` 本仓库后即生效，无需 `clawhub install`。
 
@@ -166,13 +190,20 @@ cd wechat-article-skills
 
 > **业务资料库**：写涉及自家业务的文章前 AI 自动查 `.aws-article/products/{产品名}/`；聊出来的产品介绍也会引导你存进去，下次直接复用——AI 不用每次重新问"你是干什么的"。
 
-> **配图不再是套模板（新）**：
+<details>
+<summary><b>配图不再是套模板</b> — 封面七步推导 / 正文图位判据 / 手绘媒介轮换（点开展开）</summary>
+
 > - **封面**走七步推导——找张力（这篇文章里什么变成了什么）→ 定关系 → 找隐喻（明令躲开机器人、发光大脑、齿轮堆这些 AI 默认值）→ 套你选的视觉语言 → 按 2.35:1 布局 → 写成一段散文 brief → 回看。12 个封面形态各自带**文案规格**（字号 / 颜色 / 位置），出来的是带标题的成品封面，不是背景图。
 > - **正文配图**先问一句「删掉这张图，读者是看不懂还是读不下去」：看不懂＝信息位，图上每个字都从文章里逐字抄；读不下去＝节奏位，不加字；都不影响就**直接删掉这个图位**。
 > - **手绘媒介**每篇选一个（马克笔白板 / 方格笔记本 / 便签 / 黑板粉笔 / 牛皮纸 / 终端等宽 / 打印稿批注 / 扁平矢量），**篇内统一、篇间必换**——避免整个号只有一种图。
 > - **图注**只认显式写的 title：`![信息图：画面指令](imgs/x.png "图注")`。alt 冒号后那段是给生图模型的画面指令，不再兼任图注——它描述的是读者眼睛已经看见的东西，零信息。没写 title 就不出图注。
 
-> **版式组件（新）**：主题只能给标签配颜色和间距，表达不了结构——微信正文没有伪元素，「小标题前的编号角标」「金句卡的大引号」必须**真的插元素**。组件补的就是这一层，写法是 `:::` 块，不破坏普通 Markdown：
+</details>
+
+<details>
+<summary><b>版式组件</b> — 7 个 <code>:::</code> 块，补主题表达不了的结构（点开展开）</summary>
+
+> 主题只能给标签配颜色和间距，表达不了结构——微信正文没有伪元素，「小标题前的编号角标」「金句卡的大引号」必须**真的插元素**。组件补的就是这一层，写法是 `:::` 块，不破坏普通 Markdown：
 >
 > ```
 > :::section-title[01]
@@ -183,6 +214,8 @@ cd wechat-article-skills
 > 内置 7 个：编号小标题 / 金句卡 / 数据卡 / 步骤流程 / 对比两栏 / 结构分层 / 要点清单。模板里的颜色从当前主题取值，和任意主题组合都不脱节；自定义放 `.aws-article/presets/components/`，同名覆盖。每个组件的 YAML 都带 `when_to_use` / `when_not_to_use` / `anti_pattern`——和配图方法里的判据同一个作用：拦住「因为好看所以用」。
 >
 > **配图和组件不许干同一件事**：判据是内容里**有没有空间关系**——有大小 / 流向 / 嵌套就用图（数据图表、流程步骤、结构分层），纯文字并列 / 对照 / 枚举就用组件（对比两栏、清单要点）。实测踩过：同一组数字在一篇文章里出现了三次（数据卡 + 对比配图 + 对比组件）。
+
+</details>
 
 ---
 
@@ -360,6 +393,17 @@ IMAGE_MODEL_API_KEY=sk-...
 - **2026-05-06** · 审稿定稿改用 `write.py strip-citations` 剥离正文「资料路径」标注；写作 skill 收敛为只输出带溯源的 `draft.md`
 - **2026-04-24** · 引入 `products/{产品名}/` 业务资料库（读+写双向流程）；`stock_image_ingest.py` → `product_image_ingest.py`（破坏性，含老用户迁移命令）
 - **2026-04-22** · assets skill 支持 `.aws` 永久 URL 导入；强化 skill 描述与套件完整性校验
+
+---
+
+## 📚 教程与案例
+
+- 📖 [如何用好 aiworkskills 平台？从配置到发文一文读懂](https://mp.weixin.qq.com/s/rcnq_gg3XXRwJ7ovQtBo1A) · 官方使用指南
+- 🔧 [WorkBuddy 如何使用 AI Work Skills 运行公众号](https://mp.weixin.qq.com/s/GQjCY5UsArV9XI5AyoxWZQ) · WorkBuddy 组合案例
+- ⚡ [QClaw + aiworkskills 一键运营公众号](https://mp.weixin.qq.com/s/xLUJBc2bbrJvgeAesbhsFA) · QClaw 组合案例
+- 🔑 [小龙虾的模型怎么选](https://mp.weixin.qq.com/s/u5e7FC-QAzXaMlq36RNIJg) · 写作与配图模型选型指南
+- 🚀 [从写作助手到 AI 运营员工：wechat-article-skills 进化之路](https://mp.weixin.qq.com/s/PRAE37gaEDF92gjwRBEOQg) · 项目演进历程
+- 🌐 [在线试用「改写」功能](https://socialistic.ai/zh/skill/aws-wechat-article-writing-317084?utm_source=github&utm_medium=readme&utm_campaign=20260615-netfeel-meme-copy-skills&utm_content=tutorial-section) · 不装环境，贴段稿子直接体验网感改写
 
 ---
 
