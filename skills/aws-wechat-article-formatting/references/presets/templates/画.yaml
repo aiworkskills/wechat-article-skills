@@ -12,9 +12,10 @@ styles:
   a: color:{primary-ink}; text-decoration:none; font-weight:700;
   ul: margin:0 0 28px; padding-left:20px; list-style:square;
   h2: 'font-size:22px; font-weight:800; color:{text-color}; line-height:1.45; letter-spacing:-0.3px; margin:56px 0 20px; padding-bottom:10px; border-bottom:3px solid {primary-ink};'
-  h3: 'font-size:18px; font-weight:800; color:{text-color}; line-height:1.6; margin:36px 0 12px; padding-left:12px; border-left:3px solid {primary-ink};'
-  blockquote: 'color:{text-muted}; font-size:16px; line-height:1.85; padding:0 0 0 18px; margin:0 0 28px; border-left:2px solid #E8EAED;'
-  figcaption: 'color:{text-muted}; font-size:13px; line-height:1.6; padding-top:8px; margin:0 0 28px; border-top:1px solid #E8EAED; text-align:left;'
+  h3: 'font-size:18px; font-weight:800; color:{text-color}; line-height:1.6; margin:36px 0 12px; padding-left:13px; margin-left:-16px; border-left:3px solid {primary-ink};'
+  blockquote: 'color:{text-muted}; font-size:16px; line-height:1.85; padding:0 0 0 14px; margin:0 0 28px -16px; border-left:2px solid #E8EAED;'
+  # 图注是次要元素，不给招牌。「不装饰」本身就是精致——跟 涂 撤掉图注浅底同一个判断。
+  figcaption: 'color:{text-muted}; font-size:13px; line-height:1.6; margin:10px 0 30px; text-align:left;'
   hr: border:none; height:2px; width:100%; background:#E8EAED; display:block; margin:48px 0;
   ol: margin:0 0 28px; padding-left:20px; list-style:square;
 skeleton: hua
