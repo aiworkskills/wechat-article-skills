@@ -527,6 +527,12 @@ def _build_styles(theme: dict, overrides: dict = None) -> dict:
     for key, val in styles.items():
         resolved[key] = _resolve_vars(str(val), resolved)
 
+    # 主题没写 variables 时（网站导出的主题都是这样），从它自己的样式里反推组件用色，
+    # 否则版式组件会全部落到 DEFAULT_VARIABLES 的兜底蓝，16 套主题的小标题一个色。
+    # 放在 styles 解析之后：反推要读已经解析好的 strong / a / blockquote。
+    if not overrides or not overrides.get("primary-color"):
+        resolved.update(_infer_theme_vars(theme, resolved))
+
     # --font-size 覆盖：主题 p / li 若硬编码了字号（未用 {font-size} 变量），也一并替换
     if overrides and overrides.get("font-size"):
         fs = str(overrides["font-size"])
@@ -634,6 +640,36 @@ _COMPONENT_VARS = (
     "primary-color", "bg-accent-color", "text-color", "text-light",
     "text-muted", "border-color", "link-color", "font-size", "line-height",
 )
+
+
+def _infer_theme_vars(theme: dict, styles: dict) -> dict:
+    """主题没写 variables 时，从它自己的样式里反推组件要用的颜色。
+
+    网站导出的主题（`.aws` 包里的 formatting/*.yaml）只有字面色的 styles，**没有
+    variables 块**——导出格式就不带变量表。而组件模板用 {primary-color} 取色，
+    结果 16 套网站主题的组件全部落到 DEFAULT_VARIABLES 的兜底蓝 #0F4C81，
+    「所有小标题都是蓝的」。
+
+    反推顺序按「最能代表这套主题强调色」排：strong 是行内强调、a 是链接、h3 次之。
+    取每条样式里第一个 color: 值。
+    """
+    if (theme.get("variables") or {}).get("primary-color"):
+        return {}
+    out = {}
+    for var, sources in (("primary-color", ("strong", "a", "h3", "h2")),
+                         ("bg-accent-color", ())):
+        for key in sources:
+            m = re.search(r"(?<!-)\bcolor\s*:\s*(#[0-9A-Fa-f]{3,8})", str(styles.get(key) or ""))
+            if m:
+                out[var] = m.group(1)
+                break
+    # 浅底色：从 blockquote / highlight 的 background 里取
+    for key in ("blockquote", "highlight", "code"):
+        m = re.search(r"background(?:-color)?\s*:\s*(#[0-9A-Fa-f]{3,8})", str(styles.get(key) or ""))
+        if m:
+            out["bg-accent-color"] = m.group(1)
+            break
+    return out
 
 
 def _sub_theme_vars(html: str, styles: dict) -> str:

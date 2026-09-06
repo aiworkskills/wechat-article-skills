@@ -280,3 +280,35 @@ class ComponentTest(unittest.TestCase):
         html = self._render(":::checklist[t]\n完成 | 事项\n:::")
         self.assertIn("完成", html)
         self.assertIn("事项", html)
+
+    def test_component_color_inferred_when_theme_has_no_variables(self):
+        """网站导出的主题只有字面色的 styles、没有 variables 块。
+
+        不反推的话，{primary-color} 会落到 DEFAULT_VARIABLES 的兜底蓝，
+        16 套主题的组件全是同一个 #0F4C81——用户原话「我看到的小标题都是蓝色」。
+        """
+        theme = {"styles": {
+            "strong": "color:#C0392B; font-weight:700;",
+            "blockquote": "background:#FDF2F0; padding:20px;",
+            "p": "font-size:16px; line-height:1.95; color:#1F1F1F; margin:0 0 28px;",
+        }}
+        styles = fmt._build_styles(theme)
+        self.assertEqual(styles["primary-color"], "#C0392B")
+        self.assertEqual(styles["bg-accent-color"], "#FDF2F0")
+        html = fmt._md_to_html(":::section-title[01]\n标题\n:::", styles, components=self.comps)
+        self.assertIn("#C0392B", html)
+        self.assertNotIn(fmt.DEFAULT_VARIABLES["primary-color"], html)
+
+    def test_explicit_variables_win_over_inference(self):
+        theme = {"variables": {"primary-color": "#123456"},
+                 "styles": {"strong": "color:#C0392B;"}}
+        self.assertEqual(fmt._build_styles(theme)["primary-color"], "#123456")
+
+    def test_cli_color_override_still_wins(self):
+        theme = {"styles": {"strong": "color:#C0392B;"}}
+        styles = fmt._build_styles(theme, {"primary-color": "#00FF00"})
+        self.assertEqual(styles["primary-color"], "#00FF00")
+
+    def test_inference_falls_back_to_default_when_no_color_anywhere(self):
+        styles = fmt._build_styles({"styles": {"p": "font-size:16px;"}})
+        self.assertEqual(styles["primary-color"], fmt.DEFAULT_VARIABLES["primary-color"])
