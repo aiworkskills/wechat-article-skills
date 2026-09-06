@@ -127,6 +127,11 @@ iOS 系统本身装着 Songti SC 与 Kaiti SC，Safari 里也能渲染。所以�
 | `display:flex` | **实测通过**（含 `gap`）。资料说的不可靠来自粘贴路径，API 路径没问题。仍建议为老编辑器场景保留 `inline-block` / `<table>` 降级 |
 | 渐变 `background` | **实测通过**。荧光笔底纹与渐变色条都正常渲染 |
 | 百分比做位移 | 如 `margin-top:-100%` 不可靠 |
+| `text-decoration-thickness` | **被删**（2026-09-07 实测）。下划线粗细控不了 |
+| `text-underline-offset` | **被删**（同上）。下划线离字底的距离控不了 |
+
+下划线要控粗细或位置，只能改用 `border-bottom`——它能定粗细与颜色，代价是紧贴内容框
+底边、离字底的距离不可调。`text-decoration:underline` 本身可用。
 
 **单位**：优先 `px`；`vw` / `vh` 可用；**不要用百分比做定位**。
 
@@ -167,21 +172,24 @@ background:linear-gradient(#E9EFF6, #E9EFF6); box-shadow:0 0 0 3px #E9EFF6;
        lower-alpha / upper-alpha / lower-roman   a. / A. / i.
        hiragana / katakana                       あ、い、
 
-   （微信里是否生效**未测**，见文末待测清单。）
+   **2026-09-07 探针稿实测微信保留**（cjk-ideographic / simp-chinese-informal /
+   decimal-leading-zero / lower-alpha 逐项核对，四个全部原样存回）。
 3. **装饰要「轻但持续」**。出现几十次的元素，重一点就是灾难——这也是上面那条
    「别用 padding」为什么要紧的原因。
 
-### 强调不止「加粗」
+### 强调不止「加粗」⭐
 
-中文的正统强调手法有两个是加粗之外的，桌面浏览器实测都生效：
+中文的正统强调手法有两个是加粗之外的，**2026-09-07 探针稿实测微信保留**：
 
     text-emphasis:filled circle 色         着重号，逐字加点。中文书刊里比加粗更正统
     text-emphasis-position:under right     点在字下（默认在字上）
     letter-spacing:3px; font-weight:500    疏排（铅字时代的 Sperrsatz），把字撑开而不加重
 
+着重号三种写法（点 / 实心圆 / 芝麻）连同 `-webkit-` 前缀和 `position` 全部原样保留。
 疏排 2px 偏弱，3px 配 500 字重才明显可辨。两者都「轻但持续」，正好适合核心层。
-**微信里是否生效未测**——`text-emphasis` 是较新的 CSS 属性，需要连 `-webkit-` 前缀
-一起写，风险比 letter-spacing 高。
+
+**这一条把核心层的可选写法扩出了一整个维度**——此前只想到「加粗 / 变色 / 加线 / 加底」
+四种，着重号与疏排是完全不同的第五、第六种，而且是中文特有的。
 
 ## SVG 的坑
 
@@ -211,9 +219,6 @@ background:linear-gradient(#E9EFF6, #E9EFF6); box-shadow:0 0 0 3px #E9EFF6;
 ## 还没测的
 
 1. `position` / `id`（关系到能否做叠层效果，需单独探针）
-0. **`text-emphasis`（着重号）与 `list-style-type` 的扩展取值** —— 优先级最高。
-   中文着重号和「一、二、三」式列表是中文排版独有的手法，桌面已验证生效，
-   若微信也支持，核心层的可选写法会多出一整个维度。同一份探针稿里一起测。
 2. 嵌套超过三层的 `<section>`
 3. 微信客户端 webview 与桌面浏览器的其它渲染差异（中文字体一项已实测，见开头）
 
