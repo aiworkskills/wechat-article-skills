@@ -29,8 +29,8 @@ example: |
 
 # {arg} = 作者名；{content} = 引导语（空行分段）
 template: |
-  <section style="margin:3.2em 0 1em;">
-    <section style="height:1px; background:{border-color}; margin-bottom:24px;"></section>
-    <section style="font-size:15px; line-height:1.95; color:{text-muted};">{content}</section>
-    <section style="margin-top:20px; padding-top:14px; border-top:1px solid {border-color}; text-align:right; font-size:13px; color:{text-muted}; letter-spacing:0.5px;">作者 · {arg}</section>
+  <section style="margin:3.2em 0 0;">
+    <section style="width:36px; height:4px; background:{primary-color}; margin-bottom:16px;"></section>
+    <section style="font-size:15px; line-height:1.85; color:{text-muted};">{content}</section>
+    <section style="margin-top:14px; font-size:13px; letter-spacing:1px; color:{text-muted}; text-align:right;">{arg}</section>
   </section>

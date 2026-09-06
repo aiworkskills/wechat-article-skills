@@ -18,6 +18,7 @@ anti_pattern: |
   步骤名写成一句话（「首先我们需要打开配置文件并且找到……」）——步骤名要短，
   超过 12 个字就该把细节挪到第二列。
   第二列重复第一列的意思——那一列的价值是补充「怎么做/注意什么」，不是复述。
+  自己在步骤名前手写「1.」「第一步」——序号是组件自动编的，会变成「1 1. 打开配置」。
   把「准备工作」也编成第 1 步——读者会以为流程有 5 步其实只有 4 步。
 
 example: |
@@ -29,16 +30,15 @@ example: |
   :::
 
 template: |
-  <section style="margin:2.2em 0;">
-    <section style="font-size:14px; font-weight:600; color:{primary-color}; margin-bottom:12px;">{arg}</section>
+  <section style="margin:2.4em 0;">
+    <section style="font-size:13px; letter-spacing:1px; color:{text-muted}; margin-bottom:16px;">{arg}</section>
     {content}
   </section>
-
-# 左侧竖线把各步串起来，视觉上形成流程感；不用绝对定位，微信会删 position
 row_template: |
-  <section style="display:flex; border-left:2px solid {bg-accent-color}; padding:0 0 14px 14px;">
-      <section style="flex:1;">
-        <section style="font-size:16px; font-weight:600; color:{text-color}; line-height:1.5;">{c0}</section>
-        <section style="margin-top:4px; font-size:14px; color:{text-muted}; line-height:1.7;">{c1}</section>
+  <section style="display:flex; align-items:flex-start; padding:0 0 18px;">
+      <section style="flex:0 0 auto; width:26px; height:26px; border-radius:13px; background:{primary-color}; color:#FFFFFF; text-align:center; line-height:26px; font-size:13px; font-weight:800;">{n}</section>
+      <section style="flex:1; padding-left:14px;">
+        <section style="font-size:16.5px; font-weight:600; color:{text-color}; line-height:1.5;">{c0}</section>
+        <section style="margin-top:5px; font-size:14px; color:{text-muted}; line-height:1.7;">{c1}</section>
       </section>
     </section>

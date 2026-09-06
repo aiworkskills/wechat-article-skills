@@ -181,7 +181,10 @@ class ComponentTest(unittest.TestCase):
 
     def test_single_body_renders_structure(self):
         html = self._render(":::section-title[01]\n同一个模型，两个分数\n:::")
-        self.assertIn("border-radius:15px", html)      # 圆形角标
+        # 断结构不断像素：参数与正文各自成块、且参数块在前。
+        # 早先这里断言的是 border-radius:15px，等于把某一版装饰的具体取值钉死在测试里，
+        # 改一次设计就红一次，而红的并不是坏掉的行为。
+        self.assertLess(html.index("01"), html.index("同一个模型"))
         self.assertIn("01", html)
         self.assertIn("同一个模型", html)
 
@@ -206,10 +209,13 @@ class ComponentTest(unittest.TestCase):
             self.assertIn(name, self.comps, f"缺组件 {name}")
         html = self._render(":::closing[马斯]\n点个赞\n:::")
         self.assertIn("马斯", html)
-        # 导语必须与引用块在视觉上分开：题眉式（上下线）vs 卡片式（底色）
+        # 导语必须与引用块在视觉上分开。两者语义不同——导语是作者的开场白，
+        # 引用块是别人的话——共用「带底色的卡片」这一种长相会让读者分不清。
+        # 断的是「导语正文不坐在底色块上」，而不是某一版具体用了哪根边框。
         lead = self._render(":::lead\n导语内容\n:::")
-        self.assertIn("border-top", lead)
-        self.assertNotIn("border-radius", lead)
+        body = lead[lead.index("导语内容") - 220:lead.index("导语内容")]
+        self.assertNotIn("background", body, "导语正文不该坐在底色块上，那是引用块的长相")
+        self.assertIn(self.styles["primary-color"], lead, "导语需要一处主色标记")
 
     def test_theme_color_is_injected(self):
         primary = self.styles["primary-color"]
@@ -262,7 +268,7 @@ class ComponentTest(unittest.TestCase):
             ":::stat[标题]\n62.7% | 标准 harness\n99.9% | Provider Adapter\n:::")
         self.assertIn("62.7%", html)
         self.assertIn("Provider Adapter", html)
-        self.assertEqual(html.count("border-bottom:1px solid"), 2, "两行应各渲染一次")
+        self.assertEqual(html.count("tabular-nums"), 2, "两行应各渲染一次")
 
     def test_row_template_also_gets_theme_vars(self):
         """行模板是先渲染再塞进 {content} 的，容易漏掉变量替换。"""
@@ -289,7 +295,7 @@ class ComponentTest(unittest.TestCase):
 
     def test_blank_rows_ignored(self):
         html = self._render(":::stat[t]\n1 | a\n\n2 | b\n:::")
-        self.assertEqual(html.count("border-bottom:1px solid"), 2)
+        self.assertEqual(html.count("tabular-nums"), 2)
 
     def test_row_map_maps_enum_to_symbol(self):
         """枚举列必须能映射成符号：直接打 done 会被窄列截成 don。"""

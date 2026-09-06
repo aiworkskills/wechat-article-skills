@@ -27,13 +27,12 @@ example: |
   :::
 
 template: |
-  <section style="margin:2.2em 0;">
-    <section style="font-size:14px; font-weight:600; color:{primary-color}; margin-bottom:12px;">{arg}</section>
+  <section style="margin:2.4em 0;">
+    <section style="font-size:13px; letter-spacing:1px; color:{text-muted}; margin-bottom:12px;">{arg}</section>
     {content}
   </section>
-
 row_template: |
-  <section style="display:flex; align-items:center; margin-bottom:8px; border:1px solid {border-color}; border-left:3px solid {primary-color};">
-      <section style="flex:0 0 auto; min-width:82px; padding:12px 10px; font-size:15px; font-weight:600; color:{text-color};">{c0}</section>
-      <section style="flex:1; padding:12px 10px; font-size:14px; color:{text-muted}; line-height:1.6;">{c1}</section>
+  <section style="background:{bg-accent-color}; border-radius:12px; padding:14px 16px; margin-bottom:8px;">
+      <section style="font-size:13px; letter-spacing:1px; font-weight:700; color:{primary-color};">{c0}</section>
+      <section style="margin-top:5px; font-size:14.5px; line-height:1.65; color:{text-color};">{c1}</section>
     </section>

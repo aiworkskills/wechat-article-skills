@@ -11,6 +11,10 @@ row_map:
     done: "&#10003;"
     todo: "&#9675;"
     warn: "&#33;"
+# 作者漏写状态列时的兜底符号。不设它的话，事项会被当成状态塞进 18px 宽的格子里，
+# 一个字一行，整块塌成一根竖线——这是最容易犯、后果又最难看的一种写法。
+row_map_default:
+  c0: "&#9675;"
 
 when_to_use: |
   并列的检查项、要点、待办——**没有先后顺序**的那种。有顺序用 steps。
@@ -23,7 +27,8 @@ when_not_to_use: |
 
 anti_pattern: |
   全部标 done——检查清单里没有一项待办，读者不知道这块要他干什么。
-  状态列写成中文（完成/待办）——只认 done / todo / warn 三个值，写错会掉成默认样式。
+  状态列写成中文（完成/待办）——只认 done / todo / warn 三个值，写错会当成漏写状态，
+  整行被当作事项、状态取默认空心圈。
   事项写超过 18 字——手机上折行后，状态标记和文字对不齐。
 
 example: |
@@ -34,13 +39,12 @@ example: |
   :::
 
 template: |
-  <section style="margin:2.2em 0; background:{bg-accent-color}; border-radius:8px; padding:18px 16px;">
-    <section style="font-size:14px; font-weight:600; color:{primary-color}; margin-bottom:12px;">{arg}</section>
+  <section style="margin:2.4em 0; background:{bg-accent-color}; border-radius:16px; padding:22px 20px;">
+    <section style="font-size:13px; letter-spacing:1px; font-weight:600; color:{primary-color}; margin-bottom:14px;">{arg}</section>
     {content}
   </section>
-
 row_template: |
-  <section style="display:flex; align-items:flex-start; padding:7px 0;">
-      <section style="flex:0 0 auto; width:18px; font-size:14px; line-height:1.7; color:{primary-color};">{c0}</section>
-      <section style="flex:1; padding-left:8px; font-size:15px; line-height:1.7; color:{text-color};">{c1}</section>
+  <section style="display:flex; align-items:flex-start; padding:8px 0;">
+      <section style="flex:0 0 auto; width:20px; font-size:15px; line-height:1.7; font-weight:700; color:{primary-color};">{c0}</section>
+      <section style="flex:1; padding-left:10px; font-size:15.5px; line-height:1.7; color:{text-color};">{c1}</section>
     </section>

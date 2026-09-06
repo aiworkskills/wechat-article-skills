@@ -28,6 +28,7 @@ example: |
 # 刻意做成「上下细线 + 略小字号」的题眉式，而不是带底色的卡片——
 # 卡片式是 blockquote 的样子，两者必须在视觉上分得开
 template: |
-  <section style="margin:0 0 2.4em; padding:18px 0; border-top:2px solid {primary-color}; border-bottom:1px solid {border-color};">
-    <section style="font-size:15px; line-height:1.95; color:{text-color};">{content}</section>
+  <section style="margin:0 0 2.6em;">
+    <section style="width:36px; height:4px; background:{primary-color}; margin-bottom:16px;"></section>
+    <section style="font-size:17.5px; line-height:1.85; font-weight:500; color:{text-color};">{content}</section>
   </section>

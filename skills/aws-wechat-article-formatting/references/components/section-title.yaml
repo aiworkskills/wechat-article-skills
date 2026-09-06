@@ -14,7 +14,8 @@ when_not_to_use: |
 
 anti_pattern: |
   编号不连续（01、03、04）——读者会以为漏看了一节。
-  编号里写中文「第一节」——圆形角标只有 30px，两个字以上会挤出来，只填 01 这类两位数字。
+  编号里写中文「第一节」——角标会撑成一颗长胶囊，和「编号」的意思对不上；
+  只填 01 这类两位数字。
   标题写超过 14 个字——右侧空间不够，会折成两行把角标顶偏。
 
 example: |
@@ -25,10 +26,9 @@ example: |
 # {arg} = 方括号里的编号；{content} = 下一行的标题文字
 # 颜色与字号占位符从当前主题取，保证组件和主题不脱节
 template: |
-  <section style="margin:2.6em 0 1.2em;">
-    <section style="display:flex; align-items:center;">
-      <section style="flex:0 0 auto; width:30px; height:30px; border-radius:15px; background:{primary-color}; color:#FFFFFF; text-align:center; line-height:30px; font-size:14px; font-weight:700;">{arg}</section>
-      <section style="flex:1; padding-left:10px; font-size:19px; font-weight:600; color:{text-color}; line-height:1.45;">{content}</section>
+  <section style="margin:2.8em 0 1.2em;">
+    <section style="display:flex; align-items:baseline;">
+      <section style="flex:0 0 auto; font-size:30px; font-weight:800; line-height:1; color:{primary-color}; letter-spacing:-1px;">{arg}</section>
+      <section style="flex:1; padding-left:12px; font-size:19px; font-weight:700; color:{text-color}; line-height:1.4;">{content}</section>
     </section>
-    <section style="height:2px; background:linear-gradient(to right, {primary-color}, rgba(0,0,0,0)); margin-top:10px;"></section>
   </section>

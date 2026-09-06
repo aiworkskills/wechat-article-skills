@@ -28,18 +28,17 @@ example: |
 
 # {arg} 用「左标题 / 右标题」格式；{content} 为逐行渲染结果
 template: |
-  <section style="margin:2.2em 0;">
-    <section style="display:flex; margin-bottom:8px;">
-      <section style="flex:1; padding:8px 10px; background:{bg-accent-color}; color:{primary-color}; font-size:14px; font-weight:600; text-align:center;">{arg0}</section>
-      <section style="width:8px;"></section>
-      <section style="flex:1; padding:8px 10px; background:{bg-accent-color}; color:{primary-color}; font-size:14px; font-weight:600; text-align:center;">{arg1}</section>
+  <section style="margin:2.4em 0;">
+    <section style="display:flex; margin-bottom:10px;">
+      <section style="flex:1; font-size:13px; letter-spacing:1px; color:{text-muted};">{arg0}</section>
+      <section style="width:10px;"></section>
+      <section style="flex:1; font-size:13px; letter-spacing:1px; font-weight:600; color:{primary-color};">{arg1}</section>
     </section>
     {content}
   </section>
-
 row_template: |
-  <section style="display:flex; margin-bottom:8px;">
-      <section style="flex:1; padding:12px 10px; border:1px solid {border-color}; font-size:15px; line-height:1.7; color:{text-color};">{c0}</section>
-      <section style="width:8px;"></section>
-      <section style="flex:1; padding:12px 10px; border:1px solid {border-color}; font-size:15px; line-height:1.7; color:{text-color};">{c1}</section>
+  <section style="display:flex; margin-bottom:10px;">
+      <section style="flex:1; padding:14px 14px; background:#F4F5F7; border-radius:12px; font-size:15px; line-height:1.7; color:#5A6068;">{c0}</section>
+      <section style="width:10px;"></section>
+      <section style="flex:1; padding:14px 14px; background:{bg-accent-color}; border-radius:12px; font-size:15px; line-height:1.7; font-weight:500; color:{text-color};">{c1}</section>
     </section>

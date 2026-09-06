@@ -642,6 +642,22 @@ _COMPONENT_VARS = (
 )
 
 
+def _is_accent(hexcolor: str) -> bool:
+    """这个颜色能不能当强调色用——即它是不是「有颜色」。
+
+    反推强调色时不能见 color: 就取。有些主题的 strong 是纯黑加粗（黑白骨架 + 单一
+    强调色的写法里很常见），取到黑，组件就会整块变黑，强调色反而丢了。
+    判据是饱和度：最大与最小通道差 24 以上才算有颜色；同时排除太浅的（当不了前景）。
+    """
+    h = hexcolor.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    if len(h) < 6:
+        return False
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return (max(r, g, b) - min(r, g, b)) >= 24 and (r + g + b) / 3 <= 210
+
+
 def _infer_theme_vars(theme: dict, styles: dict) -> dict:
     """主题没写 variables 时，从它自己的样式里反推组件要用的颜色。
 
@@ -656,13 +672,11 @@ def _infer_theme_vars(theme: dict, styles: dict) -> dict:
     if (theme.get("variables") or {}).get("primary-color"):
         return {}
     out = {}
-    for var, sources in (("primary-color", ("strong", "a", "h3", "h2")),
-                         ("bg-accent-color", ())):
-        for key in sources:
-            m = re.search(r"(?<!-)\bcolor\s*:\s*(#[0-9A-Fa-f]{3,8})", str(styles.get(key) or ""))
-            if m:
-                out[var] = m.group(1)
-                break
+    for key in ("strong", "em", "a", "h3", "h2", "code"):
+        m = re.search(r"(?<!-)\bcolor\s*:\s*(#[0-9A-Fa-f]{3,8})", str(styles.get(key) or ""))
+        if m and _is_accent(m.group(1)):
+            out["primary-color"] = m.group(1)
+            break
     # 浅底色：从 blockquote / highlight 的 background 里取
     for key in ("blockquote", "highlight", "code"):
         m = re.search(r"background(?:-color)?\s*:\s*(#[0-9A-Fa-f]{3,8})", str(styles.get(key) or ""))
@@ -693,14 +707,26 @@ def _render_component(spec: dict, arg: str, body_lines: list[str], styles: dict)
         row_tpl = _sub_theme_vars(str(spec.get("row_template") or ""), styles)
         ncol = int(spec.get("row_columns") or 0)
         row_map = spec.get("row_map") or {}
+        row_map_default = spec.get("row_map_default") or {}
         rows_html = []
+        idx = 0
         for ln in body_lines:
             if not ln.strip():
                 continue
+            idx += 1
             cells = [c.strip() for c in ln.split(delim)]
+            # 枚举列漏写的兜底。checklist 的第一列是状态（done/todo/warn），作者很容易
+            # 直接写事项忘了状态——那样事项会被塞进 18px 宽的状态格，一个字一行整块塌掉。
+            # 判据是「这一列有 row_map 却填了表外的值，且总列数不够」：几乎只可能是漏写，
+            # 于是右移一格、该列取默认符号。宁可猜一次，也不要给用户一坨废墟。
+            for i, dft in row_map_default.items():
+                pos = int(str(i).lstrip("c") or 0)
+                if (ncol and len(cells) < ncol and pos < len(cells)
+                        and cells[pos] not in (row_map.get(str(i)) or {})):
+                    cells.insert(pos, str(dft))
             if ncol:
                 cells = (cells + [""] * ncol)[:ncol]
-            row = row_tpl
+            row = row_tpl.replace("{n}", str(idx)).replace("{n2}", "%02d" % idx)
             for i, cell in enumerate(cells):
                 # row_map：把某一列的取值映射成符号/短语（如 done → ✓）。
                 # 没有它的话，枚举列只能把 "done" 原样打进去——18px 宽的状态列会截成 "don"。
@@ -733,8 +759,10 @@ def _render_component(spec: dict, arg: str, body_lines: list[str], styles: dict)
 
     html = _sub_theme_vars(str(spec["template"]), styles)
     html = html.replace("{arg}", html_mod.escape(arg))
-    # {arg0} {arg1} …：把方括号参数按 / 切开，供「左标题 / 右标题」这类双栏组件用
-    parts = [x.strip() for x in arg.split("/")]
+    # {arg0} {arg1} …：把方括号参数切开，供「左标题 / 右标题」这类双栏组件用。
+    # 斜杠和竖线都认：竖线是行分隔符，作者在参数里顺手也写竖线是常事，
+    # 只认斜杠的话右栏标题会整个空掉——而空标题在并排结构里格外显眼。
+    parts = [x.strip() for x in re.split(r"\s*[/|]\s*", arg)]
     for i in range(max(len(parts), 4)):
         html = html.replace("{arg%d}" % i, html_mod.escape(parts[i]) if i < len(parts) else "")
     html = html.replace("{content}", content)
