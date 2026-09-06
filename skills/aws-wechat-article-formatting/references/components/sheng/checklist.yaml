@@ -43,5 +43,5 @@ example: ':::checklist[发文前检查]
   :::
 
   '
-template: "<section style=\"margin:48px 0;\">\n  <section style=\"font-size:13px; letter-spacing:2px; color:#6B7078; margin-bottom:20px;\">{arg}</section>\n  {content}\n</section>\n"
-row_template: "<section style=\"display:flex; align-items:flex-start; padding:0 0 14px;\">\n    <section style=\"flex:0 0 auto; width:24px; font-size:15px; line-height:1.7; color:#6B7078;\">{c0}</section>\n    <section style=\"flex:1; font-size:16px; line-height:1.7; color:#111318;\">{c1}</section>\n  </section>\n"
+template: "<section style=\"margin:48px 0;\">\n  <section style=\"font-size:13px; letter-spacing:2px; color:{text-muted}; margin-bottom:20px;\">{arg}</section>\n  {content}\n</section>\n"
+row_template: "<section style=\"display:flex; align-items:flex-start; padding:0 0 14px;\">\n    <section style=\"flex:0 0 auto; width:24px; font-size:15px; line-height:1.7; color:{text-muted};\">{c0}</section>\n    <section style=\"flex:1; font-size:16px; line-height:1.7; color:{text-color};\">{c1}</section>\n  </section>\n"

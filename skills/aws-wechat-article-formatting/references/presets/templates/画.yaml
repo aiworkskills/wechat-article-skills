@@ -4,17 +4,17 @@ variables:
   text-color: '#111318'
   text-muted: '#6B7078'
 styles:
-  p: font-size:16px; line-height:1.95; color:#111318; margin:0 0 28px; font-weight:400;
-  li: font-size:16px; line-height:1.85; color:#111318; margin:0 0 10px;
-  em: font-style:normal; color:#14508C; font-weight:600;
+  p: font-size:16px; line-height:1.95; color:{text-color}; margin:0 0 28px; font-weight:400;
+  li: font-size:16px; line-height:1.85; color:{text-color}; margin:0 0 10px;
+  em: font-style:normal; color:{primary-ink}; font-weight:600;
   img: display:block; width:100%; height:auto; margin:8px auto 0;
-  strong: 'color:#111318; font-weight:700; border-bottom:2px solid #14508C; padding-bottom:1px;'
-  a: color:#14508C; text-decoration:none; font-weight:700;
+  strong: 'color:{text-color}; font-weight:700; border-bottom:2px solid {primary-ink}; padding-bottom:1px;'
+  a: color:{primary-ink}; text-decoration:none; font-weight:700;
   ul: margin:0 0 28px; padding-left:20px; list-style:square;
-  h2: 'font-size:22px; font-weight:800; color:#111318; line-height:1.45; letter-spacing:-0.3px; margin:56px 0 20px; padding-bottom:10px; border-bottom:3px solid #14508C;'
-  h3: 'font-size:18px; font-weight:800; color:#111318; line-height:1.6; margin:36px 0 12px; padding-left:12px; border-left:3px solid #14508C;'
-  blockquote: 'color:#6B7078; font-size:16px; line-height:1.85; padding:0 0 0 18px; margin:0 0 28px; border-left:2px solid #E8EAED;'
-  figcaption: 'color:#6B7078; font-size:13px; line-height:1.6; padding-top:8px; margin:0 0 28px; border-top:1px solid #E8EAED; text-align:left;'
+  h2: 'font-size:22px; font-weight:800; color:{text-color}; line-height:1.45; letter-spacing:-0.3px; margin:56px 0 20px; padding-bottom:10px; border-bottom:3px solid {primary-ink};'
+  h3: 'font-size:18px; font-weight:800; color:{text-color}; line-height:1.6; margin:36px 0 12px; padding-left:12px; border-left:3px solid {primary-ink};'
+  blockquote: 'color:{text-muted}; font-size:16px; line-height:1.85; padding:0 0 0 18px; margin:0 0 28px; border-left:2px solid #E8EAED;'
+  figcaption: 'color:{text-muted}; font-size:13px; line-height:1.6; padding-top:8px; margin:0 0 28px; border-top:1px solid #E8EAED; text-align:left;'
   hr: border:none; height:2px; width:100%; background:#E8EAED; display:block; margin:48px 0;
   ol: margin:0 0 28px; padding-left:20px; list-style:square;
 skeleton: hua

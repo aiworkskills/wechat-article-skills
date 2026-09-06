@@ -40,5 +40,5 @@ example: ':::steps[怎么给一篇文章定媒介]
   :::
 
   '
-template: "<section style=\"margin:48px 0;\">\n  <section style=\"font-size:13px; letter-spacing:2px; color:#6B7078; margin-bottom:24px;\">{arg}</section>\n  {content}\n</section>\n"
-row_template: "<section style=\"display:flex; align-items:baseline; padding:0 0 24px;\">\n    <section style=\"flex:0 0 auto; min-width:32px; font-size:13px; font-weight:700; letter-spacing:1px; color:#6B7078; font-variant-numeric:tabular-nums;\">{n2}</section>\n    <section style=\"flex:1;\">\n      <section style=\"font-size:17px; font-weight:800; color:#111318; line-height:1.55;\">{c0}</section>\n      <section style=\"margin-top:6px; font-size:15px; color:#6B7078; line-height:1.8;\">{c1}</section>\n    </section>\n  </section>\n"
+template: "<section style=\"margin:48px 0;\">\n  <section style=\"font-size:13px; letter-spacing:2px; color:{text-muted}; margin-bottom:24px;\">{arg}</section>\n  {content}\n</section>\n"
+row_template: "<section style=\"display:flex; align-items:baseline; padding:0 0 24px;\">\n    <section style=\"flex:0 0 auto; min-width:32px; font-size:13px; font-weight:700; letter-spacing:1px; color:{text-muted}; font-variant-numeric:tabular-nums;\">{n2}</section>\n    <section style=\"flex:1;\">\n      <section style=\"font-size:17px; font-weight:800; color:{text-color}; line-height:1.55;\">{c0}</section>\n      <section style=\"margin-top:6px; font-size:15px; color:{text-muted}; line-height:1.8;\">{c1}</section>\n    </section>\n  </section>\n"

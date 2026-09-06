@@ -28,4 +28,4 @@ example: ':::quote-card[AWS 团队]
   :::
 
   '
-template: "<section style=\"margin:40px 0; padding:0 0 0 18px; border-left:6px solid #14508C;\">\n  <section style=\"font-size:20px; line-height:1.6; font-weight:800; letter-spacing:-0.3px; color:#111318;\">{content}</section>\n  <section style=\"margin-top:14px; font-size:13px; letter-spacing:1.5px; color:#6B7078;\">{arg}</section>\n</section>\n"
+template: "<section style=\"margin:40px 0; padding:0 0 0 18px; border-left:6px solid {primary-ink};\">\n  <section style=\"font-size:20px; line-height:1.6; font-weight:800; letter-spacing:-0.3px; color:{text-color};\">{content}</section>\n  <section style=\"margin-top:14px; font-size:13px; letter-spacing:1.5px; color:{text-muted};\">{arg}</section>\n</section>\n"

@@ -37,4 +37,4 @@ example: ':::closing[马斯]
   :::
 
   '
-template: "<section style=\"margin:64px 0 0;\">\n  <section style=\"font-size:15px; line-height:1.9; color:#6B7078;\">{content}</section>\n  <section style=\"margin-top:20px; font-size:13px; letter-spacing:2px; color:#6B7078; text-align:right;\">{arg}</section>\n</section>\n"
+template: "<section style=\"margin:64px 0 0;\">\n  <section style=\"font-size:15px; line-height:1.9; color:{text-muted};\">{content}</section>\n  <section style=\"margin-top:20px; font-size:13px; letter-spacing:2px; color:{text-muted}; text-align:right;\">{arg}</section>\n</section>\n"

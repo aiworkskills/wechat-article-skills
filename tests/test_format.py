@@ -808,6 +808,11 @@ class ThreeTemplateTest(unittest.TestCase):
         import yaml
         return yaml.safe_load(f.read_text(encoding="utf-8"))
 
+    def _render_with(self, theme, accent):
+        comps = fmt._load_components(str(theme.get("skeleton") or ""))
+        styles = fmt._build_styles(theme, {"primary-color": accent})
+        return fmt._md_to_html(self.SAMPLE, styles, components=comps)
+
     def _render(self, theme):
         comps = fmt._load_components(str(theme.get("skeleton") or ""))
         return fmt._md_to_html(self.SAMPLE, fmt._build_styles(theme), components=comps)
@@ -867,6 +872,48 @@ class ThreeTemplateTest(unittest.TestCase):
             html = self._render(self._theme(f))
             self.assertNotIn("{", html, f"{f.stem} 有残留花括号")
             self.assertEqual(violations(html), [], f"{f.stem} 有读不了的文字")
+
+    def test_accent_colors_are_variables_not_literals(self):
+        """模版和组件不许写死强调色，否则 --color 完全失效。
+
+        这不是假想的洁癖：涂 最初七个组件加模版一共写死了 11 处 #14508C / #EAF0F6 /
+        #BBD0E4，换色时整篇纹丝不动。字面色只允许出现在中性灰和纯白上——那两类不随
+        强调色变。
+        """
+        import yaml
+        d = fmt.SKILL_DIR / "references" / "components"
+        for f in _template_files():
+            paths = [f]
+            sk = str(self._theme(f).get("skeleton") or "")
+            if sk and (d / sk).is_dir():
+                paths += sorted((d / sk).glob("*.yaml"))
+            for path in paths:
+                text = path.read_text(encoding="utf-8")
+                if path == f:  # variables 块里的字面值是唯一真源，跳过
+                    text = text.split("styles:", 1)[-1]
+                for lit in set(re.findall(r"#[0-9A-Fa-f]{6}", text)):
+                    self.assertFalse(
+                        fmt._is_accent(lit),
+                        f"{path.name} 写死了强调色 {lit}，换色时这里不会变")
+
+    def test_changing_the_accent_changes_the_render(self):
+        """换个强调色，产出必须真的不同——上一版写死色值时这条会红。"""
+        for f in _template_files():
+            theme = self._theme(f)
+            a = self._render_with(theme, "#14508C")
+            b = self._render_with(theme, "#8C3A2E")
+            self.assertNotEqual(a, b, f"{f.stem}：换色后产出完全一样")
+
+    def test_every_accent_stays_readable(self):
+        """派生护栏要对任意用户色都成立，包括亮橙、柠檬黄这种压白底本来就读不了的。"""
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from contrast_audit import violations
+        for f in _template_files():
+            theme = self._theme(f)
+            for hexc in ("#FF8C00", "#EFE000", "#2B2F36", "#1F5C4A", "#5B3E8C"):
+                html = self._render_with(theme, hexc)
+                self.assertEqual(violations(html), [], f"{f.stem} 用 {hexc} 时有读不了的文字")
+                self.assertNotIn("{", html, f"{f.stem} 用 {hexc} 时有花括号残留")
 
     def test_no_semantic_reuses_another_semantics_form(self):
         """同一套里七个语义七种形态。上一轮「块」五个语义共用一张圆角卡就是这条没守住。

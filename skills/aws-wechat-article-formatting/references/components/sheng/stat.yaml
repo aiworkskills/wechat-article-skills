@@ -40,5 +40,5 @@ example: ':::stat[同一个模型，两个分数]
   :::
 
   '
-template: "<section style=\"margin:48px 0;\">\n  <section style=\"font-size:13px; letter-spacing:2px; color:#6B7078; margin-bottom:28px;\">{arg}</section>\n  {content}\n</section>\n"
-row_template: "<section style=\"padding:0 0 28px;\">\n    <section style=\"font-size:38px; font-weight:300; line-height:1; letter-spacing:-1.5px; color:#111318; font-variant-numeric:tabular-nums;\">{c0}</section>\n    <section style=\"margin-top:10px; font-size:14px; color:#6B7078; line-height:1.7;\">{c1}</section>\n  </section>\n"
+template: "<section style=\"margin:48px 0;\">\n  <section style=\"font-size:13px; letter-spacing:2px; color:{text-muted}; margin-bottom:28px;\">{arg}</section>\n  {content}\n</section>\n"
+row_template: "<section style=\"padding:0 0 28px;\">\n    <section style=\"font-size:38px; font-weight:300; line-height:1; letter-spacing:-1.5px; color:{primary-ink}; font-variant-numeric:tabular-nums;\">{c0}</section>\n    <section style=\"margin-top:10px; font-size:14px; color:{text-muted}; line-height:1.7;\">{c1}</section>\n  </section>\n"
