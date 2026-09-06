@@ -68,7 +68,7 @@ Works with any **OpenAI-compatible** API. API keys stored locally, never uploade
 | **Topics** | Research trends, recommend 3–5 topic cards | "Find me some topics" |
 | **Writing** | Calls external LLM or writes directly, follows your spec | "Write an article on AI basics" |
 | **Review** | Sensitive words, typos, spec compliance; 3-tier results | "Review this draft" |
-| **Formatting** | Markdown → WeChat HTML, 4 built-in themes | "Format it" |
+| **Formatting** | Markdown → WeChat HTML, 7 built-in themes + 7 layout components | "Format it" |
 | **Images** | 12 cover forms + 8 in-article forms, derived from the article | "Add images" |
 | **Publishing** | WeChat API, multi-account, auto-compress, 2.35:1 cover crop | "Publish" |
 | **Sticker** | Multi-image series flow | "Make a sticker post" |
@@ -77,6 +77,8 @@ Works with any **OpenAI-compatible** API. API keys stored locally, never uploade
 Each step pauses for confirmation. You can interrupt, edit, or restart anytime.
 
 > **Product knowledge base**: before writing about your own product, the AI reads `.aws-article/products/{name}/` — intro docs and product screenshots you saved earlier get reused instead of regenerated.
+
+> **Layout components**: a theme can only assign inline styles to tags — and WeChat article bodies have no pseudo-elements, so decorations like a numbered badge before a section title or the oversized quote mark on a pull quote have to be *real elements*. Components fill that gap, called with a `:::` block that leaves ordinary Markdown untouched. Seven ship built in (numbered section title, quote card, stat card, steps, compare, layers, checklist); their colors are read from the active theme, so any component works with any theme. Each carries `when_to_use` / `when_not_to_use` / `anti_pattern` so the agent can't reach for one just because it looks nice. **Images and components must not do the same job**: if the content has a spatial relationship (magnitude, flow, nesting) it's an image; if it's plain text in parallel, contrast, or a list, it's a component.
 
 > **Images are derived, not templated**: covers go through a seven-step derivation (find the tension → pick the relation → find the metaphor → apply your visual language → lay out for 2.35:1 → write a prose brief → review), and each of the 12 cover forms carries its own title-text spec, so the output is a finished cover, not a background. For in-article images, the AI first asks "if this image were deleted, would the reader be lost or just bored?" — lost means the image must carry text copied verbatim from the article; bored means a pacing image with no text; neither means the slot gets dropped. One hand-drawn medium (whiteboard, grid notebook, sticky notes, chalkboard, kraft paper, terminal, annotated printout, flat vector) is picked per article — consistent within an article, rotated between articles.
 
@@ -101,7 +103,7 @@ All config is done on [aiworkskills.cn](https://aiworkskills.cn/) — no code re
 </details>
 
 <details>
-<summary><b>Formatting Themes</b> — 4 built-in themes (Classic Blue / Elegant Purple / Warm Orange / Minimal Black), plus custom YAML themes</summary>
+<summary><b>Formatting Themes</b> — 16 themes in 5 families on the platform, shipped inside your <code>.aws</code>; 7 built into the skill as a fallback, plus custom YAML themes</summary>
 
 ![Formatting themes](https://aiworkskills.cn/images/sp/%E6%8E%92%E7%89%88%E9%A3%8E%E6%A0%BC%E9%A2%84%E8%AE%BE.png)
 
@@ -157,6 +159,8 @@ python3 skills/aws-wechat-article-main/scripts/validate_env.py
 
 Full history in [CHANGELOG.md](CHANGELOG.md). Recent highlights:
 
+- **2026-09-06** · **Layout component layer**: `:::` blocks for decorations a theme can't express (WeChat has no pseudo-elements); 7 built-in components, colors inherited from the active theme; images vs. components split by whether the content has a spatial relationship
+- **2026-09-06** · Built-in themes up to 7 (added 克制 / 工程笔记 / 杂志); fixed all 16 platform themes rendering components in the fallback blue; captions now come only from an explicit markdown `title`
 - **2026-09-05** · **Image system rebuilt**: covers derived through a seven-step method (12 cover forms with title-text specs); in-article images narrowed to 8 forms judged as "information" vs "pacing" slots; hand-drawn medium rotated between articles
 - **2026-09-05** · Cover crop boxes on publish (`pic_crop_235_1` / `pic_crop_1_1`) — 2.35:1 feed image first, instead of letting WeChat center-crop the cover title away
 - **2026-09-05** · Image script hardening: post-generation code-only check (`image_create.py check`), optional title compositing, structured aspect-ratio params, safer re-runs
