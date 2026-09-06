@@ -35,8 +35,10 @@ template: |
     {content}
   </section>
 
+# 数字列用 tabular-nums（等宽数字）：几行数字竖排时，不等宽的字形会让小数点错位，
+# 读者没法竖着比大小。实测微信支持这个属性。这是功能不是装饰，别删。
 row_template: |
   <section style="display:flex; align-items:baseline; padding:12px 0; border-bottom:1px solid {border-color};">
-      <section style="flex:0 0 auto; min-width:96px; font-size:26px; font-weight:700; color:{primary-color}; line-height:1.2;">{c0}</section>
+      <section style="flex:0 0 auto; min-width:96px; font-size:26px; font-weight:700; color:{primary-color}; line-height:1.2; font-variant-numeric:tabular-nums;">{c0}</section>
       <section style="flex:1; padding-left:12px; font-size:14px; color:{text-muted}; line-height:1.6;">{c1}</section>
     </section>
