@@ -118,13 +118,15 @@ class CaptionStyleTest(unittest.TestCase):
     用户在配置台选「无图注」照样出图注。"""
 
     def _md(self):
+        # 图注写在 markdown 原生的 title 参数里；alt 冒号后那段是给生图模型的画面指令，
+        # 两者用途完全不同，不能互相兼任（见 test_caption_only_from_explicit_title）。
         return (
             "正文一段。\n\n"
-            "![流程步骤：怎么定媒介](imgs/a.png)\n\n"
-            "![概念隐喻：完美就是破绽](imgs/b.png)\n\n"
-            "![对比两栏：改前 vs 改后](imgs/c.png)\n\n"
-            "![封面：不该进正文](imgs/cover.png)\n\n"
-            "![没有冒号的alt](imgs/d.png)\n"
+            '![流程步骤：白板上四个手写方框](imgs/a.png "怎么定媒介")\n\n'
+            '![概念隐喻：马克笔笔尖是打印喷头](imgs/b.png "完美就是破绽")\n\n'
+            '![对比两栏：左右两栏并排](imgs/c.png "改前 vs 改后")\n\n'
+            '![封面：不该进正文](imgs/cover.png "封面图注")\n\n'
+            '![没有冒号的alt](imgs/d.png "无类型前缀")\n'
         )
 
     def _captions(self, style):
@@ -149,9 +151,10 @@ class CaptionStyleTest(unittest.TestCase):
     def test_empty_value_falls_back_to_always(self):
         self.assertEqual(len(self._captions("")), 3)
 
-    def test_alt_without_colon_never_gets_caption(self):
+    def test_alt_without_type_prefix_never_gets_caption(self):
+        """alt 没有类型前缀时判断不出图位，一律不配图注。"""
         for style in ("有图注", "关键图有"):
-            self.assertNotIn("没有冒号的alt", self._captions(style))
+            self.assertNotIn("无类型前缀", self._captions(style))
 
 
 class ComponentTest(unittest.TestCase):
@@ -312,3 +315,32 @@ class ComponentTest(unittest.TestCase):
     def test_inference_falls_back_to_default_when_no_color_anywhere(self):
         styles = fmt._build_styles({"styles": {"p": "font-size:16px;"}})
         self.assertEqual(styles["primary-color"], fmt.DEFAULT_VARIABLES["primary-color"])
+
+    def test_caption_only_from_explicit_title(self):
+        """alt 里冒号后那段是给生图模型的画面指令，不能兼任图注。
+
+        实例：![氛围：开发者站在巨型99.9分数牌前，视线越过分数望向复杂而开放的城市]
+        —— 拿它当图注是把读者眼睛已经看见的东西复述一遍，零信息。
+        """
+        styles = fmt._build_styles(fmt._load_theme("default"))
+        html = fmt._md_to_html('![氛围：开发者站在巨型99.9分数牌前](a.png)', styles)
+        self.assertIn("<img", html)
+        self.assertNotIn("开发者站在巨型99.9分数牌前</p>", html)
+
+    def test_caption_rendered_when_title_given(self):
+        styles = fmt._build_styles(fmt._load_theme("default"))
+        html = fmt._md_to_html('![信息图：画面指令](a.png "同一模型两个分数，差 37 个百分点")', styles)
+        self.assertIn("同一模型两个分数", html)
+        self.assertNotIn("画面指令</p>", html)
+
+    def test_title_does_not_leak_into_src(self):
+        """title 必须从 src 里摘干净，否则图片路径带上引号会直接 404。"""
+        styles = fmt._build_styles(fmt._load_theme("default"))
+        html = fmt._md_to_html('![x：y](imgs/a.png "图注")', styles)
+        self.assertIn('src="imgs/a.png"', html)
+
+    def test_single_quoted_and_curly_quoted_title(self):
+        styles = fmt._build_styles(fmt._load_theme("default"))
+        for mark in ('"图注A"', "'图注B'", '“图注C”'):
+            html = fmt._md_to_html(f'![x：y](a.png {mark})', styles)
+            self.assertIn(mark.strip('"\'“”'), html)

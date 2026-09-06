@@ -920,11 +920,14 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
                 html_parts.append(table_html)
             continue
 
-        img_match = re.match(r'^!\[(.*?)\]\((.+?)\)$', stripped)
+        # 第三个分组是 markdown 原生的 title 参数，用来放图注：
+        #   ![信息图：画面指令给模型看](imgs/x.png "图注给读者看")
+        img_match = re.match(r'^!\[(.*?)\]\(\s*(\S+?)(?:\s+["\u201c\u2018\'](.*?)["\u201d\u2019\'])?\s*\)$', stripped)
         if img_match:
             flush_paragraph()
             alt = img_match.group(1)
             src = img_match.group(2)
+            caption_text = (img_match.group(3) or "").strip()
 
             # 封面图不进正文 HTML（通过 API 单独上传）
             if ("封面" in alt) or alt.startswith("cover"):
@@ -937,8 +940,12 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
                 f'<img src="{src}" alt="{alt_escaped}" style="{img_style}" />'
                 f'</p>'
             )
-            if _want_caption(alt, caption_style):
-                caption = alt.split("：", 1)[1]
+            # 图注只用显式写的 title 参数。alt 里冒号后那段是**给生图模型的画面指令**
+            # （「开发者站在巨型 99.9 分数牌前，视线越过分数望向……」），拿它当图注等于
+            # 把读者眼睛已经看见的东西复述一遍，零信息；图没生成出来时更会同一句话出现
+            # 两次（一次破图 alt、一次图注）。没写 title 就不出图注——错的图注比没有更糟。
+            if caption_text and _want_caption(alt, caption_style):
+                caption = caption_text
                 fc_style = styles.get("figcaption", "") or (
                     f'text-align:center; font-size:14px; '
                     f'color:{styles["text-muted"]}; margin-top:-0.8em; margin-bottom:1.5em;'
