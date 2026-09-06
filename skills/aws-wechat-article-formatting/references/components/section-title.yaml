@@ -28,7 +28,7 @@ example: |
 template: |
   <section style="margin:2.8em 0 1.2em;">
     <section style="display:flex; align-items:baseline;">
-      <section style="flex:0 0 auto; font-size:30px; font-weight:800; line-height:1; color:{primary-color}; letter-spacing:-1px;">{arg}</section>
+      <section style="flex:0 0 auto; font-size:30px; font-weight:800; line-height:1; color:{primary-ink}; letter-spacing:-1px;">{arg}</section>
       <section style="flex:1; padding-left:12px; font-size:19px; font-weight:700; color:{text-color}; line-height:1.4;">{content}</section>
     </section>
   </section>

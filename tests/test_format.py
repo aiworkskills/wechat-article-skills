@@ -109,8 +109,6 @@ class BuildStylesTest(unittest.TestCase):
         self.assertIn("font-size:16px", _styles()["p"])
 
 
-if __name__ == "__main__":
-    unittest.main()
 
 
 class CaptionStyleTest(unittest.TestCase):
@@ -218,10 +216,9 @@ class ComponentTest(unittest.TestCase):
         self.assertIn(self.styles["primary-color"], lead, "导语需要一处主色标记")
 
     def test_theme_color_is_injected(self):
-        primary = self.styles["primary-color"]
         html = self._render(":::section-title[01]\n标题\n:::")
-        self.assertIn(primary, html, "组件必须继承主题主色，否则和主题脱节")
-        for leftover in ("{arg}", "{content}", "{primary-color}", "{text-color}"):
+        self.assertIn(self.styles["primary-ink"], html, "组件必须继承主题主色，否则和主题脱节")
+        for leftover in ("{arg}", "{content}", "{primary-color}", "{primary-ink}", "{text-color}"):
             self.assertNotIn(leftover, html, f"占位符 {leftover} 未被替换")
 
     def test_arg_is_escaped(self):
@@ -275,7 +272,7 @@ class ComponentTest(unittest.TestCase):
         html = self._render(":::stat[t]\n1 | a\n:::")
         self.assertNotIn("{primary-color}", html)
         self.assertNotIn("{text-muted}", html)
-        self.assertIn(self.styles["primary-color"], html)
+        self.assertIn(self.styles["primary-ink"], html)
 
     def test_missing_column_does_not_break_row(self):
         """作者少写一列时补空串，不能整块渲染失败。"""
@@ -326,7 +323,7 @@ class ComponentTest(unittest.TestCase):
         self.assertEqual(styles["primary-color"], "#C0392B")
         self.assertEqual(styles["bg-accent-color"], "#FDF2F0")
         html = fmt._md_to_html(":::section-title[01]\n标题\n:::", styles, components=self.comps)
-        self.assertIn("#C0392B", html)
+        self.assertIn(styles["primary-ink"], html)
         self.assertNotIn(fmt.DEFAULT_VARIABLES["primary-color"], html)
 
     def test_explicit_variables_win_over_inference(self):
@@ -371,3 +368,32 @@ class ComponentTest(unittest.TestCase):
         for mark in ('"图注A"', "'图注B'", '“图注C”'):
             html = fmt._md_to_html(f'![x：y](a.png {mark})', styles)
             self.assertIn(mark.strip('"\'“”'), html)
+
+
+class AccentInkTest(unittest.TestCase):
+    """强调色分成两个：面积用 primary-color，文字用压深过的 primary-ink。
+
+    同一个颜色既要当大面积块底（h2 实心块、steps 的编号圈），又要当正文级文字
+    （h3、链接、行内代码），而这两件事对明度的要求是反的。16 套里有四套
+    （暖橙、马卡龙粉、薄荷绿、莫兰迪）的强调色压白底只有 3.1~3.9，当块底够用、
+    当 17px 的文字就低于可读线。不分开就只能改色相，那等于把主题的身份也改了。
+    """
+
+    def test_low_contrast_accent_is_darkened_for_text(self):
+        theme = {"variables": {"primary-color": "#17A398"}}     # 薄荷绿，压白底 3.12
+        styles = fmt._build_styles(theme)
+        self.assertEqual(styles["primary-color"], "#17A398", "面积用色不该被动")
+        self.assertGreaterEqual(fmt._contrast_on_white(styles["primary-ink"]), 4.5)
+
+    def test_already_readable_accent_is_left_alone(self):
+        theme = {"variables": {"primary-color": "#14508C"}}     # 金融蓝，压白底 8.22
+        styles = fmt._build_styles(theme)
+        self.assertEqual(styles["primary-ink"], "#14508C", "够读的颜色不该被平白压深")
+
+    def test_theme_can_declare_its_own_ink(self):
+        theme = {"variables": {"primary-color": "#17A398", "primary-ink": "#005B54"}}
+        self.assertEqual(fmt._build_styles(theme)["primary-ink"], "#005B54")
+
+
+if __name__ == "__main__":
+    unittest.main()

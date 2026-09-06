@@ -51,6 +51,7 @@ COMPONENT_SEARCH_DIRS = [USER_COMPONENTS_DIR, BUILTIN_COMPONENTS_DIR]
 
 DEFAULT_VARIABLES = {
     "primary-color": "#0F4C81",
+    "primary-ink": "#0F4C81",
     "bg-accent-color": "#F0F4F8",
     "text-color": "#333333",
     "text-light": "#666666",
@@ -533,6 +534,11 @@ def _build_styles(theme: dict, overrides: dict = None) -> dict:
     if not overrides or not overrides.get("primary-color"):
         resolved.update(_infer_theme_vars(theme, resolved))
 
+    # primary-ink：强调色的「能当文字用」版本。主题没显式给就自动压深。
+    # 组件里凡是文字位置一律用它，色块/色条位置用 primary-color，见 _darken_to_readable。
+    if not (theme.get("variables") or {}).get("primary-ink"):
+        resolved["primary-ink"] = _darken_to_readable(resolved["primary-color"])
+
     # --font-size 覆盖：主题 p / li 若硬编码了字号（未用 {font-size} 变量），也一并替换
     if overrides and overrides.get("font-size"):
         fs = str(overrides["font-size"])
@@ -637,9 +643,48 @@ def _load_components() -> dict:
 
 # 组件模板里可用的占位符 → 从当前主题取值，保证组件与主题不脱节
 _COMPONENT_VARS = (
-    "primary-color", "bg-accent-color", "text-color", "text-light",
+    # primary-ink 必须排在 primary-color 前面：替换是逐个字符串 replace，
+    # "primary-color" 不是 "primary-ink" 的前缀所以其实不冲突，但把它放前面能
+    # 少一次「以后新增 primary-color-xxx 时被前缀吃掉」的隐患。
+    "primary-ink", "primary-color", "bg-accent-color", "text-color", "text-light",
     "text-muted", "border-color", "link-color", "font-size", "line-height",
 )
+
+
+def _relative_luminance(hexcolor: str) -> float:
+    h = hexcolor.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    def ch(v):
+        v = int(v, 16) / 255
+        return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+    return 0.2126 * ch(h[0:2]) + 0.7152 * ch(h[2:4]) + 0.0722 * ch(h[4:6])
+
+
+def _contrast_on_white(hexcolor: str) -> float:
+    return 1.05 / (_relative_luminance(hexcolor) + 0.05)
+
+
+def _darken_to_readable(hexcolor: str, target: float = 4.5) -> str:
+    """把强调色压深到在白底上够读，色相不变。
+
+    为什么需要两个强调色：同一个颜色既要当大面积块底（h2 的实心色块、steps 的编号圈），
+    又要当正文级文字（h3、链接、行内代码），而这两件事对明度的要求是反的。薄荷绿
+    #17A398 压白字的对比是 3.12——当块底够用，当 17px 的文字就低于可读线了。
+    所以面积用品牌色本身，文字用这里压深的版本。四套（暖橙、马卡龙粉、薄荷绿、莫兰迪）
+    实测都卡在 3.1~3.9，不分开就只能改色相，那等于把主题的身份也改了。
+    """
+    h = hexcolor.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    if len(h) < 6:
+        return hexcolor
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    for _ in range(40):
+        if _contrast_on_white("#%02X%02X%02X" % (r, g, b)) >= target:
+            break
+        r, g, b = (max(0, round(c * 0.94)) for c in (r, g, b))
+    return "#%02X%02X%02X" % (r, g, b)
 
 
 def _is_accent(hexcolor: str) -> bool:

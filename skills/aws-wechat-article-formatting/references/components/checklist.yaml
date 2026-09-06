@@ -40,11 +40,11 @@ example: |
 
 template: |
   <section style="margin:2.4em 0; background:{bg-accent-color}; border-radius:16px; padding:22px 20px;">
-    <section style="font-size:13px; letter-spacing:1px; font-weight:600; color:{primary-color}; margin-bottom:14px;">{arg}</section>
+    <section style="font-size:13px; letter-spacing:1px; font-weight:600; color:{primary-ink}; margin-bottom:14px;">{arg}</section>
     {content}
   </section>
 row_template: |
   <section style="display:flex; align-items:flex-start; padding:8px 0;">
-      <section style="flex:0 0 auto; width:20px; font-size:15px; line-height:1.7; font-weight:700; color:{primary-color};">{c0}</section>
+      <section style="flex:0 0 auto; width:20px; font-size:15px; line-height:1.7; font-weight:700; color:{primary-ink};">{c0}</section>
       <section style="flex:1; padding-left:10px; font-size:15.5px; line-height:1.7; color:{text-color};">{c1}</section>
     </section>

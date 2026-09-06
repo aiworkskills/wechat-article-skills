@@ -33,6 +33,6 @@ template: |
   </section>
 row_template: |
   <section style="background:{bg-accent-color}; border-radius:12px; padding:14px 16px; margin-bottom:8px;">
-      <section style="font-size:13px; letter-spacing:1px; font-weight:700; color:{primary-color};">{c0}</section>
+      <section style="font-size:13px; letter-spacing:1px; font-weight:700; color:{primary-ink};">{c0}</section>
       <section style="margin-top:5px; font-size:14.5px; line-height:1.65; color:{text-color};">{c1}</section>
     </section>

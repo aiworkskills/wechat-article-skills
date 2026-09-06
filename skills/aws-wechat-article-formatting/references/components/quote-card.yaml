@@ -25,7 +25,7 @@ example: |
 # {arg} = 方括号里的出处，可为空；{content} = 引文正文
 template: |
   <section style="margin:2.6em 0; background:{bg-accent-color}; border-radius:16px; padding:26px 22px 24px;">
-    <section style="font-size:44px; line-height:0.8; font-weight:800; color:{primary-color}; margin-bottom:6px;">&#8220;</section>
+    <section style="font-size:44px; line-height:0.8; font-weight:800; color:{primary-ink}; margin-bottom:6px;">&#8220;</section>
     <section style="font-size:19px; line-height:1.72; font-weight:600; color:{text-color};">{content}</section>
-    <section style="margin-top:16px; font-size:13px; letter-spacing:1px; color:{primary-color};">{arg}</section>
+    <section style="margin-top:16px; font-size:13px; letter-spacing:1px; color:{primary-ink};">{arg}</section>
   </section>

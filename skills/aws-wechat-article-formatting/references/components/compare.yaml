@@ -32,7 +32,7 @@ template: |
     <section style="display:flex; margin-bottom:10px;">
       <section style="flex:1; font-size:13px; letter-spacing:1px; color:{text-muted};">{arg0}</section>
       <section style="width:10px;"></section>
-      <section style="flex:1; font-size:13px; letter-spacing:1px; font-weight:600; color:{primary-color};">{arg1}</section>
+      <section style="flex:1; font-size:13px; letter-spacing:1px; font-weight:600; color:{primary-ink};">{arg1}</section>
     </section>
     {content}
   </section>

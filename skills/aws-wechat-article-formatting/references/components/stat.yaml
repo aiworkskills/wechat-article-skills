@@ -36,6 +36,6 @@ template: |
   </section>
 row_template: |
   <section style="display:flex; align-items:baseline; padding:0 0 16px;">
-      <section style="flex:0 0 auto; min-width:96px; font-size:30px; font-weight:800; line-height:1.1; letter-spacing:-1px; color:{primary-color}; font-variant-numeric:tabular-nums;">{c0}</section>
+      <section style="flex:0 0 auto; min-width:96px; font-size:30px; font-weight:800; line-height:1.1; letter-spacing:-1px; color:{primary-ink}; font-variant-numeric:tabular-nums;">{c0}</section>
       <section style="flex:1; padding-left:14px; font-size:14px; line-height:1.6; color:{text-muted};">{c1}</section>
     </section>
