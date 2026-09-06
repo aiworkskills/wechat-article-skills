@@ -8,7 +8,7 @@ variables:
   text-muted: '#8A8F98'
 styles:
   h1: font-size:26px; font-weight:800; color:#14161A; line-height:1.35; letter-spacing:-0.5px; margin:0 0 32px;
-  h2: display:inline-block; font-size:19px; font-weight:700; color:#FFFFFF; line-height:1.45; margin:52px 0 20px; padding:13px 18px; background:#EF7060; border-radius:14px;
+  h2: display:inline-block; font-size:19px; font-weight:700; color:#FFFFFF; line-height:1.45; margin:52px 0 20px; padding:13px 18px; background:#E1695A; border-radius:14px;
   h3: font-size:17px; font-weight:700; color:#BB574B; line-height:1.6; margin:38px 0 12px;
   h4: font-size:15px; font-weight:700; color:#14161A; line-height:1.6; margin:28px 0 10px;
   p: font-size:16px; line-height:1.95; color:#14161A; margin:0 0 28px; font-weight:400;

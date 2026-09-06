@@ -133,8 +133,10 @@ class CaptionStyleTest(unittest.TestCase):
         return re.findall(r'<p style="text-align:center; font-size:\d+px[^>]*>([^<]*)</p>', html)
 
     def test_always(self):
+        # 包含最后那张 alt 没有类型前缀的图。「有图注」就是有图注——作者显式写了 title，
+        # 却因为 alt 里没冒号被丢掉，是判据没跟着「图注改由 title 指定」一起改。
         self.assertEqual(self._captions("有图注"),
-                         ["怎么定媒介", "完美就是破绽", "改前 vs 改后"])
+                         ["怎么定媒介", "完美就是破绽", "改前 vs 改后", "无类型前缀"])
 
     def test_never(self):
         self.assertEqual(self._captions("无图注"), [])
@@ -144,15 +146,18 @@ class CaptionStyleTest(unittest.TestCase):
         self.assertEqual(self._captions("关键图有"), ["怎么定媒介", "改前 vs 改后"])
 
     def test_unknown_value_falls_back_to_always(self):
-        self.assertEqual(len(self._captions("随便写的")), 3)
+        self.assertEqual(len(self._captions("随便写的")), 4)
 
     def test_empty_value_falls_back_to_always(self):
-        self.assertEqual(len(self._captions("")), 3)
+        self.assertEqual(len(self._captions("")), 4)
 
-    def test_alt_without_type_prefix_never_gets_caption(self):
-        """alt 没有类型前缀时判断不出图位，一律不配图注。"""
-        for style in ("有图注", "关键图有"):
-            self.assertNotIn("无类型前缀", self._captions(style))
+    def test_key_only_drops_caption_when_slot_is_unknown(self):
+        """「关键图有」是用户主动收窄的设置，认不出图位时宁可不出。
+
+        「有图注」下则相反——那是最宽的设置，显式写的 title 必须出。
+        """
+        self.assertNotIn("无类型前缀", self._captions("关键图有"))
+        self.assertIn("无类型前缀", self._captions("有图注"))
 
 
 class ComponentTest(unittest.TestCase):
@@ -393,6 +398,383 @@ class AccentInkTest(unittest.TestCase):
     def test_theme_can_declare_its_own_ink(self):
         theme = {"variables": {"primary-color": "#17A398", "primary-ink": "#005B54"}}
         self.assertEqual(fmt._build_styles(theme)["primary-ink"], "#005B54")
+
+
+
+
+class CaptionGateTest(unittest.TestCase):
+    """图注的判据必须和「图注从哪来」保持一致。
+
+    图注早先是从 alt 的全角冒号后面切出来的，所以 `_want_caption` 里有一条
+    「alt 没冒号就不出图注」。后来图注改成由 markdown 的 title 参数显式指定——
+    alt 变成了给生图模型看的画面指令——那条判据就没跟着改，结果是作者明明写了
+    图注，却因为 alt 里没冒号被静默丢掉。
+    """
+
+    def _render(self, md, caption_style=None):
+        theme = {"styles": {"img": "max-width:100%;", "figcaption": "font-size:13px;",
+                            "strong": "font-weight:700;"}}
+        styles = fmt._build_styles(theme)
+        kw = {"caption_style": caption_style} if caption_style else {}
+        return fmt._md_to_html(md, styles, **kw)
+
+    def test_explicit_caption_survives_plain_alt(self):
+        html = self._render('![排版对比](x.png "图 1：阅读时长分布")')
+        self.assertIn("图 1：阅读时长分布", html)
+
+    def test_no_title_means_no_caption(self):
+        """alt 冒号后那段是给生图模型的画面指令，拿它当图注等于复述读者已经看见的东西。
+
+        它出现在 alt="" 属性里是应该的（图没加载出来时给读者兜底），
+        断的是它没有另外变成一段图注。
+        """
+        html = self._render("![数据图表：开发者站在巨型分数牌前](x.png)")
+        after_img = html.split("/>", 1)[1] if "/>" in html else html
+        self.assertNotIn("开发者站在巨型分数牌前", after_img)
+
+    def test_never_wins_over_explicit_title(self):
+        html = self._render('![数据图表：画面指令](x.png "图 1：说明")', fmt.CAPTION_NEVER)
+        self.assertNotIn("图 1：说明", html)
+
+    def test_key_only_filters_by_slot(self):
+        info = self._render('![数据图表：画面指令](x.png "图 1：说明")', fmt.CAPTION_KEY_ONLY)
+        self.assertIn("图 1：说明", info)
+        rhythm = self._render('![概念隐喻：画面指令](x.png "图 1：说明")', fmt.CAPTION_KEY_ONLY)
+        self.assertNotIn("图 1：说明", rhythm)
+
+    def test_key_only_drops_unknown_slot(self):
+        """「关键图有」认不出图位时不出图注——不替用户放宽他刚设的限制。"""
+        html = self._render('![随手写的 alt](x.png "图 1：说明")', fmt.CAPTION_KEY_ONLY)
+        self.assertNotIn("图 1：说明", html)
+
+
+class HighlightBlockTest(unittest.TestCase):
+    """highlight 一度是只活在预览里的死样式。
+
+    16 套主题全都给它写了样式、门户预览也一直在渲染它，但没有任何 markdown 语法
+    能产出它——预览里那个提示框，真实文章根本做不出来。
+    """
+
+    def _render(self, md, styles=None):
+        theme = {"styles": styles or {"highlight": "background:#EDF3F9; padding:20px;",
+                                      "p": "font-size:16px;", "strong": "font-weight:800;"}}
+        return fmt._md_to_html(md, fmt._build_styles(theme), components=_load_comps())
+
+    def test_highlight_block_uses_theme_style(self):
+        html = self._render(":::highlight\n先确定风格模板，再开始写作。\n:::")
+        self.assertIn("background:#EDF3F9", html)
+        self.assertIn("先确定风格模板", html)
+        self.assertNotIn(":::", html)
+
+    def test_note_is_an_alias(self):
+        self.assertIn("background:#EDF3F9", self._render(":::note\n注意事项\n:::"))
+
+    def test_inline_format_applies_inside(self):
+        html = self._render(":::highlight\n这里有**重点**\n:::")
+        self.assertIn("font-weight:800", html)
+
+    def test_multi_paragraph_gets_real_spacing(self):
+        html = self._render(":::highlight\n第一段\n\n第二段\n:::")
+        self.assertIn("margin:0 0 0.8em", html)
+
+    def test_falls_back_to_blockquote_when_theme_lacks_highlight(self):
+        html = self._render(":::highlight\n内容\n:::",
+                            styles={"blockquote": "border-left:3px solid #DDD;", "p": ""})
+        self.assertIn("border-left:3px solid #DDD", html)
+
+    def test_real_component_file_wins_over_the_builtin_fallback(self):
+        """骨架想给提示框做结构时，放一个同名组件文件就能覆盖这条兜底。"""
+        comps = dict(_load_comps())
+        comps["highlight"] = {"name": "highlight", "body": "free",
+                              "template": '<section style="border:2px solid red;">{content}</section>'}
+        theme = {"styles": {"highlight": "background:#EDF3F9;", "p": ""}}
+        html = fmt._md_to_html(":::highlight\n内容\n:::", fmt._build_styles(theme), components=comps)
+        self.assertIn("border:2px solid red", html)
+        self.assertNotIn("background:#EDF3F9", html)
+
+
+def _load_comps():
+    return fmt._load_components()
+
+
+def _skeleton_files():
+    """骨架 YAML。palette.yaml 与它们同目录但不是骨架，遍历时必须排除。
+
+    骨架目前只存在于 design/skeletons 分支——那套设计还没定稿，不在主线上。
+    目录不存在时返回空，相关用例整体跳过，这样两个分支共用同一份测试文件。
+    """
+    d = fmt.SKILL_DIR / "references" / "presets" / "skeletons"
+    if not d.is_dir():
+        return []
+    return [f for f in sorted(d.glob("*.yaml")) if f.name != "palette.yaml"]
+
+
+_HAS_SKELETONS = bool(_skeleton_files())
+_SKIP_NO_SKELETON = unittest.skipUnless(_HAS_SKELETONS, "骨架只在 design/skeletons 分支上")
+
+
+class PaletteTest(unittest.TestCase):
+    """整套配色由一个强调色派生，用户只需要选一个颜色。
+
+    此前 16 套主题里有 14 套，所有用色都能从强调色算出来——把一个只有一个自由度的
+    连续参数固化成 16 个离散选项，本身就是设计错误。
+    """
+
+    def test_three_roles_have_different_requirements(self):
+        """强调色有三种角色，混成一个变量必然出事。
+
+        明黄 #FFD400 当色条完全没问题，当块底时白字对比只有 1.36，糊得看不见。
+        """
+        p = fmt._derive_palette("#FFD400")
+        self.assertEqual(p["primary-fill"], fmt._darken_to_readable("#FFD400", target=3.0))
+        self.assertGreaterEqual(fmt._contrast_with_white(p["primary-fill"]), 3.0)
+        self.assertGreaterEqual(1.05 / (fmt._relative_luminance(p["primary-ink"]) + 0.05), 4.5)
+
+    def test_ordinary_brand_colors_are_left_alone(self):
+        """多数品牌色本来就够，不该平白改掉用户的颜色。"""
+        for c in ("#1A6DB5", "#B01F24", "#5B4BFF"):
+            p = fmt._derive_palette(c)
+            self.assertEqual(p["primary-fill"], c, f"{c} 不该被压深")
+
+    def test_accepts_loose_hex_input(self):
+        for raw in ("#1a6db5", "1A6DB5", "#1A6DB5 "):
+            self.assertEqual(fmt._derive_palette(raw)["primary-fill"], "#1A6DB5")
+        self.assertEqual(fmt._normalize_hex("#abc"), "#AABBCC")
+        self.assertIsNone(fmt._normalize_hex("红色"))
+
+    def test_bad_input_falls_back_instead_of_crashing(self):
+        self.assertEqual(fmt._derive_palette("红色")["primary-fill"],
+                         fmt.DEFAULT_VARIABLES["primary-color"])
+
+    def test_color_override_recomputes_every_derived_value(self):
+        """--color 换了强调色，主题里写死的派生色就过期了，必须一并重算。
+
+        不重算会出现「块底换了颜色、文字色还停在旧的」这种半换不换的状态。
+        """
+        theme = {"variables": {"primary-color": "#1A6DB5", "primary-ink": "#1A6DB5",
+                               "bg-accent-color": "#EDF3F9"},
+                 "styles": {"h3": "color:{primary-ink};", "p": "background:{bg-accent-color};"}}
+        styles = fmt._build_styles(theme, {"primary-color": "#B01F24"})
+        self.assertNotIn("#1A6DB5", styles["h3"])
+        self.assertNotIn("#EDF3F9", styles["p"])
+        self.assertEqual(styles["primary-ink"], fmt._derive_palette("#B01F24")["primary-ink"])
+
+    @_SKIP_NO_SKELETON
+    def test_skeletons_have_no_hardcoded_brand_color(self):
+        """骨架的样式必须走变量，否则换色只换一半。"""
+        import yaml
+        for f in _skeleton_files():
+            css = yaml.safe_dump(yaml.safe_load(f.read_text(encoding="utf-8"))["styles"],
+                                 allow_unicode=True)
+            self.assertNotIn("1A6DB5", css, f"{f.stem} 里还有写死的强调色")
+
+    @_SKIP_NO_SKELETON
+    def test_no_unreadable_text_on_any_background(self):
+        """扫描渲染产物：所有「文字压在某个背景上」的组合，对比度都要 ≥3.0。
+
+        必须追踪嵌套。第一版审计只比对同一个 style 属性里的前景/背景，而组件模板里
+        背景在外层 section、白字在内层——整类问题被漏掉了：明黄配色下导语的白字压在
+        原色 #FFD400 上，对比只有 1.43，肉眼一看就糊，审计却报「全部达标」。
+        """
+        import yaml
+        from contrast_audit import violations
+        md = (":::lead\n导语文字\n:::\n\n## 小标题\n\n正文**重点**与[链接](x)。\n\n"
+              ":::stat[数据]\n3.2× | 平均阅读时长\n:::\n\n"
+              ":::quote-card[出处]\n值得转发的一句\n:::\n\n:::closing[署名]\n收尾\n:::")
+        for f in _skeleton_files():
+            theme = yaml.safe_load(f.read_text(encoding="utf-8"))
+            comps = fmt._load_components(str(theme.get("skeleton") or ""))
+            for accent in ("#FFD400", "#00E676", "#1A6DB5", "#B01F24"):
+                styles = fmt._build_styles(theme, {"primary-color": accent})
+                bad = violations(fmt._md_to_html(md, styles, components=comps))
+                self.assertEqual(bad, [], f"{f.stem} / {accent} 有读不了的文字：{bad[:3]}")
+
+
+@_SKIP_NO_SKELETON
+class PresetPaletteTest(unittest.TestCase):
+    """预设强调色的硬标准：压白底对比 ≥4.5。
+
+    对比度是对称的——「白字压色块」和「色块字压白底」是同一个数——所以过了 4.5 的颜色，
+    在 primary-color / primary-fill / primary-ink 三个角色里取值相同：用户选什么就是
+    什么，护栏一次都不介入。选不出这样的色，用户就会发现「我选的橙色，出来不是这个橙」。
+    """
+
+    def _palette(self):
+        import yaml
+        f = fmt.SKILL_DIR / "references" / "presets" / "skeletons" / "palette.yaml"
+        return yaml.safe_load(f.read_text(encoding="utf-8"))["colors"]
+
+    def test_every_preset_needs_no_adjustment(self):
+        for c in self._palette():
+            p = fmt._derive_palette(c["hex"])
+            self.assertEqual(p["primary-fill"], c["hex"], f"{c['name']} 当块底会被压深")
+            self.assertEqual(p["primary-ink"], c["hex"], f"{c['name']} 当文字会被压深")
+
+    def test_presets_cover_the_hue_wheel(self):
+        """至少要覆盖到冷暖两端，否则用户找不到接近自己品牌色的那一档。"""
+        import colorsys
+        hues = []
+        for c in self._palette():
+            h = c["hex"].lstrip("#")
+            r, g, b = (int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
+            hh, ll, ss = colorsys.rgb_to_hls(r, g, b)
+            if ss > 0.15:                      # 中性色不计入色相覆盖
+                hues.append(int(hh * 360))
+        self.assertGreaterEqual(len(hues), 8)
+        self.assertTrue(any(h < 60 or h > 300 for h in hues), "缺暖色")
+        self.assertTrue(any(120 < h < 260 for h in hues), "缺冷色")
+
+    def test_each_skeleton_defaults_to_a_preset(self):
+        """骨架的默认色必须来自预设，否则默认状态就已经不是「所见即所得」。"""
+        import yaml
+        presets = {c["hex"] for c in self._palette()}
+        for f in _skeleton_files():
+            theme = yaml.safe_load(f.read_text(encoding="utf-8"))
+            self.assertIn(theme["variables"]["primary-color"], presets,
+                          f"{f.stem} 的默认色不在预设里")
+
+
+class NoLeftoverBracesTest(unittest.TestCase):
+    """渲染产物里不该剩下任何花括号。
+
+    起因是一处双大括号：模板里写成 `{{primary-color}}`，替换后变成 `{#3B4CC0}`——
+    无效 CSS，背景直接不生效，那条色带在页面上是隐形的。而按 `\{[a-z-]+\}` 去找残留
+    的检查完全抓不到它，因为剩下的是 `{#3B4CC0}`。
+
+    判据要改成「一个花括号都不许剩」，这样双写、错写、漏定义的变量全都会被抓住。
+    """
+
+    @_SKIP_NO_SKELETON
+    def test_no_braces_in_rendered_output(self):
+        import yaml
+        md = ("正文一段。\n\n## 小标题\n\n带**重点**与[链接](x)的一段。\n\n"
+              "- 列表\n\n> 引用\n\n:::lead\n导语\n:::\n\n:::quote-card[出处]\n金句\n:::\n\n"
+              ":::steps[标题]\n第一步 | 说明\n:::\n\n:::stat[数据]\n3.2× | 说明\n:::\n\n"
+              ":::checklist[清单]\ndone | 事项\n:::\n\n:::compare[左|右]\na|b\n:::\n\n"
+              ":::highlight\n提示\n:::\n\n:::closing[署名]\n收尾\n:::")
+        for f in _skeleton_files():
+            theme = yaml.safe_load(f.read_text(encoding="utf-8"))
+            comps = fmt._load_components(str(theme.get("skeleton") or ""))
+            html = fmt._md_to_html(md, fmt._build_styles(theme), components=comps)
+            self.assertNotIn("{", html, f"{f.stem} 的产物里有残留花括号")
+            self.assertNotIn("}", html, f"{f.stem} 的产物里有残留花括号")
+
+    def test_component_templates_have_no_double_braces(self):
+        """双大括号在模板里就该拦住，不用等到渲染。"""
+        import re as _re
+        d = fmt.SKILL_DIR / "references" / "components"
+        for f in sorted(d.rglob("*.yaml")):
+            s = f.read_text(encoding="utf-8")
+            self.assertIsNone(_re.search(r"\{\{[a-z][a-z0-9-]*\}\}", s),
+                              f"{f.parent.name}/{f.name} 里有双大括号")
+
+
+@_SKIP_NO_SKELETON
+class DesignTokenTest(unittest.TestCase):
+    """所有数值必须落在设计 token 上。
+
+    定过规则（4px 网格、圆角每套一档、线宽两档、字号 1.2 音阶），然后一路手写数值把
+    规则忘光了：块的圆角有 2/12/14/16 四档，场的线宽七种，间距里到处是 6/10/14/18/22。
+    「不精致」的技术原因就在这——不是设计想法不对，是执行时手里没有一把尺。
+
+    修法不是再手调一遍（那还会漂），是把尺做成测试。
+    """
+
+    GRID = 4
+    SCALE = {13, 16, 19, 23, 28, 34, 40}
+    # name → (线宽两档, 圆角, SVG 描边)。和 scripts/dev_apply_tokens.py 保持一致
+    TOKENS = {"kan": ((1, 2), "0", "1.5"), "kuai": ((2, 4), "16", "2"),
+              "bai": ((1, 2), "0", "1.5"), "chang": ((4, 12), "0", "1.5")}
+
+    def _css(self, name):
+        import yaml
+        d = fmt.SKILL_DIR / "references"
+        out = yaml.safe_dump(
+            yaml.safe_load((d / "presets" / "skeletons" / f"{name}.yaml").read_text(encoding="utf-8"))["styles"],
+            allow_unicode=True)
+        for f in sorted((d / "components" / name).glob("*.yaml")):
+            spec = yaml.safe_load(f.read_text(encoding="utf-8"))
+            out += str(spec.get("template", "")) + str(spec.get("row_template", "")) + str(spec.get("row_map", ""))
+        return out
+
+    def test_spacing_is_on_the_grid(self):
+        for name in self.TOKENS:
+            css = self._css(name)
+            vals = set()
+            for m in re.findall(r"(?:margin|padding|gap)[a-z-]*:\s*([^;]+)", css):
+                vals |= {float(x) for x in re.findall(r"(?<![-\d.])(\d+(?:\.\d+)?)px", m)}
+            # 0~2px 是光学微调（如 padding-bottom:1px 让下划线离开基线），不计
+            off = sorted(v for v in vals if v > 2 and v % self.GRID != 0)
+            self.assertEqual(off, [], f"{name} 的间距离开 {self.GRID}px 网格：{off}")
+
+    def test_only_two_rule_widths_per_skeleton(self):
+        for name, (rules, _, _) in self.TOKENS.items():
+            css = self._css(name)
+            # border-radius 也匹配 border[a-z-]*，要排掉
+            got = {float(m.group(1)) for m in re.finditer(r"border(?!-radius)[a-z-]*:\s*([\d.]+)px", css)}
+            self.assertTrue(got <= set(map(float, rules)),
+                            f"{name} 的线宽超出档位 {rules}：{sorted(got)}")
+
+    def test_one_radius_per_skeleton(self):
+        for name, (_, radius, _) in self.TOKENS.items():
+            got = set(re.findall(r"border-radius:\s*([\d]+)", self._css(name)))
+            self.assertTrue(got <= {radius}, f"{name} 的圆角不止一档：{sorted(got)}")
+
+    def test_font_sizes_are_on_the_scale(self):
+        for name in self.TOKENS:
+            got = {float(x) for x in re.findall(r"font-size:\s*([\d.]+)px", self._css(name))}
+            off = sorted(x for x in got if x not in self.SCALE)
+            self.assertEqual(off, [], f"{name} 的字号不在 1.2 音阶上：{off}")
+
+    def test_one_svg_stroke_width_per_skeleton(self):
+        for name, (_, _, stroke) in self.TOKENS.items():
+            got = set(re.findall(r'stroke-width="([\d.]+)"', self._css(name)))
+            self.assertTrue(got <= {stroke}, f"{name} 的 SVG 描边不止一档：{sorted(got)}")
+
+    def test_color_bands_use_a_rule_width(self):
+        """色带的粗细不自动吸（吸过一版，把装饰方块也当色带压扁了），改由测试拦。
+
+        要能区分「带」和「块」：白的分隔符是一枚 8×8 旋转 45° 的方块，宽高相同，
+        那是图形不是带；带的特征是宽度撑满（100% 或没写 width）而高度很小。
+        """
+        for name, (rules, _, _) in self.TOKENS.items():
+            css = self._css(name)
+            bad = []
+            for m in re.finditer(r"height:\s*([\d.]+)px\s*;\s*background", css):
+                h = float(m.group(1))
+                # 往前看一段找同一条声明里的 width。前缀里可能隔着分号
+                # （`border:none; width:8px; height:8px; background:…`），所以不能用 [^;]*
+                w = re.search(r"width:\s*([\d.]+)px(?!.*width:\s*[\d.]+px)",
+                              css[max(0, m.start() - 90):m.start()])
+                if w and abs(float(w.group(1)) - h) < h:      # 宽高相近 → 是方块，不是带
+                    continue
+                if h not in set(map(float, rules)):
+                    bad.append(h)
+            self.assertEqual(sorted(set(bad)), [],
+                             f"{name} 的色带粗细超出档位 {rules}：{sorted(set(bad))}")
+
+
+class BuiltinThemeContrastTest(unittest.TestCase):
+    """内置 7 套主题也要过可读性这一关。
+
+    它们的样式是写死的十六进制色，不走 primary-fill 那套护栏——`modern` 的 h2 是白字
+    压在 #EF7060 上，对比度只有 2.93，卡在 3.0 线下。这类问题不看渲染产物发现不了：
+    主题文件本身没有任何异常，是「白字」和「块底」两个声明凑在一起才出事。
+    """
+
+    def test_no_unreadable_text_in_builtin_themes(self):
+        import yaml
+        from contrast_audit import violations
+        md = ("## 小标题\n\n正文**重点**与[链接](x)。\n\n> 引用\n\n- 列表\n\n"
+              ":::lead\n导语\n:::\n\n:::steps[标题]\n第一步 | 说明\n:::\n\n"
+              ":::stat[数据]\n3.2× | 说明\n:::\n\n:::closing[署名]\n收尾\n:::")
+        comps = fmt._load_components()
+        d = fmt.SKILL_DIR / "references" / "presets" / "themes"
+        for f in sorted(d.glob("*.yaml")):
+            theme = yaml.safe_load(f.read_text(encoding="utf-8"))
+            html = fmt._md_to_html(md, fmt._build_styles(theme), components=comps)
+            bad = violations(html)
+            self.assertEqual(bad, [], f"{f.stem} 有读不了的文字：{bad[:3]}")
 
 
 if __name__ == "__main__":

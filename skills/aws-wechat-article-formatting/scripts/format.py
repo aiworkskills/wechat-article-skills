@@ -51,8 +51,12 @@ COMPONENT_SEARCH_DIRS = [USER_COMPONENTS_DIR, BUILTIN_COMPONENTS_DIR]
 
 DEFAULT_VARIABLES = {
     "primary-color": "#0F4C81",
+    # 下面四个由 primary-color 派生，见 _derive_palette；这里的值只是没主题时的兜底
+    "primary-fill": "#0F4C81",
     "primary-ink": "#0F4C81",
+    "bg-accent-soft": "#F7F9FB",
     "bg-accent-color": "#F0F4F8",
+    "highlight-pen": "#C6D6E6",
     "text-color": "#333333",
     "text-light": "#666666",
     "text-muted": "#999999",
@@ -519,6 +523,14 @@ def _build_styles(theme: dict, overrides: dict = None) -> dict:
     if overrides:
         variables.update(overrides)
 
+    # 整套配色由一个强调色派生。--color 换了强调色时，主题里写死的那几个派生色就过期了，
+    # 必须一并重算——否则会出现「块底换了颜色、文字色还是旧的」这种半换不换的状态。
+    pinned = set((theme.get("variables") or {}).keys())
+    if overrides and overrides.get("primary-color"):
+        pinned -= set(_DERIVED_COLORS)
+    variables.update({k: v for k, v in _derive_palette(variables["primary-color"]).items()
+                      if k not in pinned})
+
     resolved = {}
     for key, val in variables.items():
         resolved[key] = _resolve_vars(str(val), variables)
@@ -532,12 +544,15 @@ def _build_styles(theme: dict, overrides: dict = None) -> dict:
     # 否则版式组件会全部落到 DEFAULT_VARIABLES 的兜底蓝，16 套主题的小标题一个色。
     # 放在 styles 解析之后：反推要读已经解析好的 strong / a / blockquote。
     if not overrides or not overrides.get("primary-color"):
-        resolved.update(_infer_theme_vars(theme, resolved))
-
-    # primary-ink：强调色的「能当文字用」版本。主题没显式给就自动压深。
-    # 组件里凡是文字位置一律用它，色块/色条位置用 primary-color，见 _darken_to_readable。
-    if not (theme.get("variables") or {}).get("primary-ink"):
-        resolved["primary-ink"] = _darken_to_readable(resolved["primary-color"])
+        inferred = _infer_theme_vars(theme, resolved)
+        if inferred.get("primary-color") and inferred["primary-color"] != resolved["primary-color"]:
+            # 反推出了别的强调色，派生色要跟着重算，否则文字色仍停在兜底蓝上。
+            # 但反推自己给出的值优先：那是主题作者实际写在 styles 里的颜色（比如引用块的
+            # 底色），比我们按比例算出来的更能代表这套主题的本意。
+            for k, v in _derive_palette(inferred["primary-color"]).items():
+                if k not in pinned and k not in inferred:
+                    inferred[k] = v
+        resolved.update(inferred)
 
     # --font-size 覆盖：主题 p / li 若硬编码了字号（未用 {font-size} 变量），也一并替换
     if overrides and overrides.get("font-size"):
@@ -616,21 +631,41 @@ INFO_SLOT_FORMS = frozenset({"流程步骤", "结构分层", "数据图表", "�
 
 
 def _want_caption(alt: str, caption_style: str) -> bool:
-    """按 caption_style 决定这张图要不要图注。alt 形如 `形态：描述`。"""
+    """按 caption_style 决定这张图要不要图注。alt 形如 `形态：给生图模型的画面指令`。
+
+    调用点已经保证了「作者显式写了 title」才会进来，这里只做 caption_style 的过滤。
+
+    早先这里有一条 `"：" not in alt → False`：那是图注还从 alt 切出来的年代留下的，
+    当时没有冒号确实无图注可出。图注改成由 markdown 的 title 参数显式指定之后，这条
+    就变成了「作者明明写了图注，却因为 alt 里没冒号被静默丢掉」——两处的判据对不上。
+    """
     style = (caption_style or "").strip() or CAPTION_ALWAYS
-    if "：" not in alt:
-        return False          # 没有描述部分，本来就无图注可出
     if style == CAPTION_NEVER:
         return False
     if style == CAPTION_KEY_ONLY:
-        return alt.split("：", 1)[0].strip() in INFO_SLOT_FORMS
+        # 「关键图有」是用户主动收窄的设置。认不出图位就说明它不是已知的信息位，
+        # 这时候出图注等于替用户放宽他刚设的限制——宁可不出。
+        return alt.split("：", 1)[0].strip() in INFO_SLOT_FORMS if "：" in alt else False
     return True               # 有图注，以及无法识别的取值都按默认走
 
 
-def _load_components() -> dict:
-    """加载版式组件；同名时用户目录覆盖内置。"""
+def _load_components(skeleton: str = "") -> dict:
+    """加载版式组件；同名时后加载的覆盖先加载的。
+
+    查找顺序：内置基础版 → 内置的骨架专属版 → 用户自定义。
+
+    为什么要有「骨架专属版」：组件此前是全局资产，一个 steps.yaml 全部主题共用，
+    只有颜色不同。而导语、金句卡、步骤、数字块这些恰恰是一篇文章里视觉重量最集中
+    的地方——它们全都一样，主题之间就只剩色相的差别。骨架要成立，装饰语言必须能
+    按骨架整套替换，不只是换几个数字。
+    """
+    dirs = [BUILTIN_COMPONENTS_DIR]
+    if skeleton:
+        dirs.append(BUILTIN_COMPONENTS_DIR / skeleton)
+        dirs.append(USER_COMPONENTS_DIR / skeleton)
+    dirs.append(USER_COMPONENTS_DIR)
     out: dict[str, dict] = {}
-    for d in reversed(COMPONENT_SEARCH_DIRS):      # 后加载的覆盖先加载的
+    for d in dirs:
         if not d.is_dir():
             continue
         for f in sorted(d.glob("*.yaml")) + sorted(d.glob("*.yml")):
@@ -646,7 +681,9 @@ _COMPONENT_VARS = (
     # primary-ink 必须排在 primary-color 前面：替换是逐个字符串 replace，
     # "primary-color" 不是 "primary-ink" 的前缀所以其实不冲突，但把它放前面能
     # 少一次「以后新增 primary-color-xxx 时被前缀吃掉」的隐患。
-    "primary-ink", "primary-color", "bg-accent-color", "text-color", "text-light",
+    "primary-ink", "primary-fill", "primary-color", "bg-accent-soft",
+    "bg-accent-color", "highlight-pen",
+    "text-color", "text-light",
     "text-muted", "border-color", "link-color", "font-size", "line-height",
 )
 
@@ -685,6 +722,69 @@ def _darken_to_readable(hexcolor: str, target: float = 4.5) -> str:
             break
         r, g, b = (max(0, round(c * 0.94)) for c in (r, g, b))
     return "#%02X%02X%02X" % (r, g, b)
+
+
+# 由强调色派生、不需要用户填的颜色。用户换强调色时它们必须一起重算。
+_DERIVED_COLORS = ("primary-fill", "primary-ink", "bg-accent-soft",
+                   "bg-accent-color", "highlight-pen")
+
+
+def _normalize_hex(value: str) -> str | None:
+    """`#1a6db5` / `1A6DB5` / `#abc` 都收下，统一成 `#RRGGBB`；认不出返回 None。"""
+    h = str(value or "").strip().lstrip("#")
+    if len(h) == 3 and all(c in "0123456789abcdefABCDEF" for c in h):
+        h = "".join(c * 2 for c in h)
+    if len(h) != 6 or any(c not in "0123456789abcdefABCDEF" for c in h):
+        return None
+    return "#" + h.upper()
+
+
+def _mix_to_white(hexcolor: str, ratio: float) -> str:
+    r, g, b = (int(hexcolor.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
+    f = lambda c: round(c + (255 - c) * ratio)
+    return "#%02X%02X%02X" % (f(r), f(g), f(b))
+
+
+def _contrast_with_white(hexcolor: str) -> float:
+    """白字压在这个颜色上的对比度。"""
+    return 1.05 / (_relative_luminance(hexcolor) + 0.05)
+
+
+def _derive_palette(accent: str) -> dict:
+    """从用户选的一个强调色派生出整套用色。
+
+    强调色有三种角色，对明度的要求各不相同，混成一个变量必然出事：
+
+        primary-color  纯装饰面积（色条、底线、竖条）——上面没有文字，用户的原色，不动
+        primary-fill   白字压在上面的实心块——白字对比须 ≥3.0
+        primary-ink    文字压白底（h3、链接、行内代码）——须 ≥4.5
+
+    实测：明黄 #FFD400 当块底时白字对比只有 1.36，糊得看不见；而它当一根色条完全没问题。
+
+    为什么只让用户选一个：整套配色本来就只有一个自由度。此前 16 套主题里有 14 套，
+    所有用色都能从强调色算出来——把一个连续参数固化成 16 个离散选项，本身就是设计错误。
+
+    护栏只管可读性，不管审美——审美是用户的品牌，不该被我们改：
+
+    - **面积色**：白字要压在它上面（h2 色块、导语出血块），对比度不足 3.0 就压深。
+      太浅的品牌色（明黄、浅粉）直接当块底会让白字糊掉。
+    - **文字色**：h3、链接、行内代码是正文级文字，压白底要够 4.5。同一个颜色没法既当
+      大面积块底又当正文级文字——这两件事对明度的要求是反的。
+    - 浅底与高亮笔按固定比例混白，不需要判断。
+    """
+    accent = _normalize_hex(accent) or DEFAULT_VARIABLES["primary-color"]
+    # 白字要压上去的实心块才需要压深。纯装饰的色条、底线上面没有文字，
+    # 压深它等于平白改掉用户的品牌色——多数品牌色（蓝红紫绿）本来就够，两者相同。
+    fill = accent if _contrast_with_white(accent) >= 3.0 else _darken_to_readable(accent, target=3.0)
+    return {
+        "primary-fill": fill,                         # 白字压在上面的实心块
+        "primary-ink": _darken_to_readable(accent),   # 文字压白底：h3、链接、行内代码
+        # 浅底分两档：大面积底（导语、数字块这种整块的）要比小卡片更淡，
+        # 否则一块 400px 高的浅色域会跟正文抢注意力。只有一档时两者只能共用一个值。
+        "bg-accent-soft": _mix_to_white(accent, 0.96),    # 大面积底
+        "bg-accent-color": _mix_to_white(accent, 0.92),   # 卡片底
+        "highlight-pen": _mix_to_white(accent, 0.74),     # strong 的高亮笔
+    }
 
 
 def _is_accent(hexcolor: str) -> bool:
@@ -776,8 +876,11 @@ def _render_component(spec: dict, arg: str, body_lines: list[str], styles: dict)
                 # row_map：把某一列的取值映射成符号/短语（如 done → ✓）。
                 # 没有它的话，枚举列只能把 "done" 原样打进去——18px 宽的状态列会截成 "don"。
                 mapped = (row_map.get("c%d" % i) or {}).get(cell)
+                # 映射值也要走变量替换——枚举列的符号常常是内联 SVG 图标，
+                # 里面的描边色要跟着主题走；不替换的话图标会带着 {primary-color} 字面量。
                 row = row.replace("{c%d}" % i,
-                                  str(mapped) if mapped is not None else _inline_format(cell, styles))
+                                  _sub_theme_vars(str(mapped), styles) if mapped is not None
+                                  else _inline_format(cell, styles))
             row = re.sub(r"\{c\d+\}", "", row)      # 未用到的列位清掉
             rows_html.append(row.strip())
         content = "\n".join(rows_html)
@@ -919,6 +1022,26 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
                 if lines[look].strip() == ":::":
                     end = look
                     break
+            # highlight 是主题里定义的样式键，不是组件文件。16 套主题全都给它写了样式、
+            # 门户预览也一直在渲染它，但此前**没有任何语法能产出它**——预览里那个提示框
+            # 真实文章根本做不出来，和当初 formatDecorations 是同一类问题：预览承诺了
+            # 交付不了的东西。这里给它接上 :::highlight（别名 :::note），沿用主题样式。
+            # 真有骨架想给它做结构，放一个同名组件文件即可覆盖这条兜底。
+            if not spec and name in ("highlight", "note") and end is not None:
+                flush_paragraph()
+                close_list()
+                close_blockquote()
+                body = [x.strip() for x in lines[line_idx + 1:end] if x.strip()]
+                inner = "".join(
+                    f'<section style="margin:0 0 {"0.8em" if i < len(body) - 1 else "0"};">'
+                    f'{_inline_format(x, styles)}</section>'
+                    for i, x in enumerate(body)) if len(body) > 1 else \
+                    "".join(_inline_format(x, styles) for x in body)
+                hl = styles.get("highlight") or styles.get("blockquote", "")
+                html_parts.append(f'<section style="{hl}">{inner}</section>')
+                for skip_i in range(line_idx + 1, end + 1):
+                    lines[skip_i] = ""
+                continue
             if spec and end is not None:
                 flush_paragraph()
                 close_list()
@@ -1194,7 +1317,9 @@ def _wrap_document(body_html: str, styles: dict) -> str:
         f'font-size:{styles["font-size"]}; '
         f'line-height:{styles["line-height"]}; '
         f'color:{styles["text-color"]}; '
-        f'padding:16px; text-align:left;'
+        # 行长（左右留白）必须由容器统一控制。此前是在 p 上打 padding:0 12px，
+        # 标题、引用、表格都不跟随，于是标题比正文宽出 12px——一条一直没被发现的对齐 bug。
+        f'padding:16px {styles.get("page-padding", "16px")}; text-align:left;'
         f'">\n{body_html}\n</section>'
     )
 
@@ -1274,9 +1399,12 @@ def main():
     _info(f"主题: {theme_name}")
     styles = _build_styles(theme, overrides)
     caption_style = str(_merge_format_context(draft_dir).get("caption_style") or CAPTION_ALWAYS)
-    components = _load_components()
+    skeleton = str(theme.get("skeleton") or "").strip()
+    components = _load_components(skeleton)
     if components:
-        _info(f"已加载版式组件 {len(components)} 个: {', '.join(sorted(components))}")
+        _info(f"已加载版式组件 {len(components)} 个"
+              + (f"（骨架 {skeleton}）" if skeleton else "")
+              + f": {', '.join(sorted(components))}")
     body_html = _md_to_html(md_text, styles, caption_style=caption_style, components=components)
 
     embeds = _resolve_embeds_config(draft_dir)

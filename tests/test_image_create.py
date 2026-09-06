@@ -338,6 +338,7 @@ class WriteIfNotWorseTest(unittest.TestCase):
             self.assertTrue(wrote, "同名 .md 不是图，不该拦住写入")
 
 
+@unittest.skipUnless(Image is not None, "缺少 Pillow")
 class StaleSiblingTest(unittest.TestCase):
     """返回格式会变（PNG/JPEG 交替），同名旧后缀残留会让后续 glob 取到旧图。"""
 
