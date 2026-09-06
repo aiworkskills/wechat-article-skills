@@ -1,26 +1,32 @@
 name: 经典蓝
 description: 沉稳大气的编辑风格，适合科技、商业类账号
-
 variables:
-  primary-color: "#1A6DB5"
-  bg-accent-color: "#EBF5FF"
-
+  primary-color: '#1A6DB5'
+  primary-ink: '#1A6DB5'
+  bg-accent-color: '#EDF3F9'
+  text-color: '#111318'
+  text-muted: '#8A8F98'
 styles:
-  h1: "text-align:center; font-size:22px; font-weight:bold; color:{primary-color}; border-bottom:2px solid {primary-color}; padding-bottom:10px; margin-bottom:24px;"
-  h2: "font-size:17px; font-weight:bold; color:#fff; background:{primary-color}; padding:5px 14px 4px; border-top-left-radius:3px; border-top-right-radius:3px; display:inline-block; margin:2em 0 0; border-bottom:2px solid #14527D;"
-  h3: "font-size:16px; font-weight:bold; color:{primary-color}; padding-left:10px; border-left:3px solid {primary-color}; margin:1.5em 0 0.8em;"
-  h4: "font-size:15px; font-weight:bold; color:#444; margin:1.2em 0 0.6em;"
-  p: "font-size:{font-size}; line-height:1.8; color:#3a3a3a; margin:10px 0; letter-spacing:0.5px;"
-  strong: "color:{primary-color}; font-weight:bold;"
-  em: "font-style:italic; color:#555;"
-  a: "color:{primary-color}; text-decoration:none; border-bottom:1px solid {primary-color};"
-  blockquote: "border-left:4px solid {primary-color}; background:#f7fbff; padding:14px 16px; margin:1.2em 0; color:#555;"
-  ul: "padding-left:20px; margin:0.6em 0;"
-  ol: "padding-left:20px; margin:0.6em 0;"
-  li: "margin-bottom:6px; line-height:1.75; color:#3a3a3a;"
-  hr: "border:none; height:1px; background:linear-gradient(to right, rgba(26,109,181,0), rgba(26,109,181,0.6), rgba(26,109,181,0)); margin:2em 0;"
-  img: "max-width:100%; border-radius:5px; display:block; margin:0 auto; box-shadow:#84A1A8 0px 6px 12px;"
-  figcaption: "text-align:center; font-size:12px; color:#999; margin-top:6px;"
-  code: "color:{primary-color}; background:{bg-accent-color}; padding:2px 6px; border-radius:3px; font-size:90%;"
-  pre: "background:#0F2A44; color:#93C5FD; padding:16px; border-radius:10px; font-size:13px; line-height:1.8; overflow-x:auto; box-shadow:0 8px 24px rgba(0,0,0,0.2);"
-  strong-color: "{primary-color}"
+  h1: font-size:26px; font-weight:800; color:#111318; line-height:1.35; letter-spacing:-0.5px; margin:0 0 32px;
+  h2: 'font-size:22px; font-weight:800; color:#111318; line-height:1.4; letter-spacing:-0.3px; margin:56px 0 20px; padding-bottom:12px; border-bottom:3px solid #1A6DB5;'
+  h3: font-size:17px; font-weight:800; color:#1A6DB5; line-height:1.6; letter-spacing:0.5px; margin:40px 0 12px;
+  h4: font-size:15px; font-weight:700; color:#111318; line-height:1.6; margin:28px 0 10px;
+  p: font-size:16px; line-height:1.95; color:#111318; margin:0 0 28px; font-weight:400;
+  strong: 'color:#111318; font-weight:700; background:linear-gradient(transparent 62%, #C3D9EC 62%);'
+  em: font-style:normal; color:#1A6DB5; font-weight:600;
+  a: color:#1A6DB5; text-decoration:none; font-weight:500;
+  blockquote: 'color:#111318; font-size:16.5px; line-height:1.8; font-weight:500; padding:2px 0 2px 18px; margin:0 0 30px; border-left:3px solid #D6D9DE;'
+  ul: margin:0 0 28px; padding-left:20px; list-style:disc;
+  ol: margin:0 0 28px; padding-left:20px; list-style:decimal;
+  li: font-size:16px; line-height:1.9; color:#111318; margin:0 0 10px; font-weight:400;
+  hr: border:none; height:4px; width:36px; background:#1A6DB5; display:block; margin:56px auto;
+  img: display:block; max-width:100%; height:auto; margin:8px auto 10px; border-radius:12px;
+  figcaption: text-align:center; font-size:13px; line-height:1.7; color:#8A8F98; margin:10px 0 32px;
+  code: font-family:Menlo, Consolas, monospace; font-size:14px; color:#1A6DB5; background:#EDF3F9; border-radius:5px; padding:1px 6px;
+  pre: background:#141519; color:#E6E8EB; font-family:Menlo, Consolas, monospace; font-size:13px; line-height:1.8; padding:20px 18px; margin:0 0 30px; border-radius:14px; overflow-x:auto;
+  highlight: background:#EDF3F9; color:#111318; font-size:16px; line-height:1.9; padding:22px 20px; margin:0 0 30px; border-radius:16px;
+  table: width:100%; border-collapse:collapse; font-size:14.5px; margin:0 0 30px; font-variant-numeric:tabular-nums;
+  th: 'color:#8A8F98; font-size:12.5px; font-weight:700; letter-spacing:1px; text-align:left; padding:10px 12px; border-bottom:2px solid #1A6DB5; font-variant-numeric:tabular-nums;'
+  td: 'color:#111318; font-size:14.5px; line-height:1.7; padding:13px 12px; border-bottom:1px solid #EFF0F2; font-variant-numeric:tabular-nums;'
+  del: text-decoration:line-through; color:#8A8F98;
+  u: 'text-decoration:none; border-bottom:2px solid #1A6DB5; padding-bottom:1px;'

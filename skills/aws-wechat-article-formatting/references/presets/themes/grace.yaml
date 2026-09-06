@@ -1,26 +1,32 @@
 name: 优雅紫
 description: 柔和圆润的风格，适合文化、美学类账号
-
 variables:
-  primary-color: "#664D9D"
-  bg-accent-color: "#F6EEFF"
-
+  primary-color: '#664D9D'
+  primary-ink: '#664D9D'
+  bg-accent-color: '#F3F1F7'
+  text-color: '#14161A'
+  text-muted: '#8A8F98'
 styles:
-  h1: "text-align:center; font-size:22px; font-weight:bold; color:#595959; margin-bottom:24px;"
-  h2: "font-size:18px; font-weight:bold; color:#595959; padding-left:10px; border-left:5px solid #DEC6FB; margin:2em 0 1em;"
-  h3: "font-size:16px; font-weight:bold; color:#595959; text-align:center; border-bottom:2px solid #DEC6FB; display:inline-block; padding-bottom:4px; margin:1.5em 0 0.8em;"
-  h4: "font-size:15px; font-weight:bold; color:#595959; margin:1.2em 0 0.6em;"
-  p: "font-size:{font-size}; line-height:1.75; color:#595959; margin:10px 0; letter-spacing:2px;"
-  strong: "color:#595959; font-weight:bold;"
-  em: "font-style:normal; color:#595959; background:{bg-accent-color};"
-  a: "color:{primary-color}; font-weight:normal; border-bottom:1px solid {primary-color};"
-  blockquote: "border:1px solid #DEC6FB; background:{bg-accent-color}; padding:15px 20px; border-radius:6px; margin:1.2em 0; color:#595959; border-left-width:1px;"
-  ul: "padding-left:20px; margin:0.6em 0; list-style-type:circle;"
-  ol: "padding-left:20px; margin:0.6em 0;"
-  li: "margin-bottom:6px; line-height:1.75; color:#595959; font-size:{font-size};"
-  hr: "border:none; border-top:2px solid #DEC6FB; padding:0; margin:2em 0;"
-  img: "max-width:100%; border-radius:6px; display:block; margin:20px auto;"
-  figcaption: "text-align:center; font-size:13px; color:#595959; margin-top:4px;"
-  code: "color:{primary-color}; background:{bg-accent-color}; padding:2px 8px; border-radius:10px; font-size:90%;"
-  pre: "background:#F9F5FF; padding:16px; border-radius:10px; border:1px solid #E9D5FF; font-size:13px; line-height:1.8; overflow-x:auto; color:#5B3A8C;"
-  strong-color: "#595959"
+  h1: font-size:26px; font-weight:800; color:#14161A; line-height:1.35; letter-spacing:-0.5px; margin:0 0 32px;
+  h2: text-align:center; font-size:19px; font-weight:700; color:#FFFFFF; line-height:1.45; margin:52px 0 20px; padding:13px 18px; background:#664D9D; border-radius:20px;
+  h3: font-size:17px; font-weight:700; color:#664D9D; line-height:1.6; margin:38px 0 12px;
+  h4: font-size:15px; font-weight:700; color:#14161A; line-height:1.6; margin:28px 0 10px;
+  p: font-size:16px; line-height:1.95; color:#14161A; margin:0 0 28px; font-weight:400; letter-spacing:1.2px;
+  strong: 'color:#14161A; font-weight:700; background:linear-gradient(transparent 62%, #D7D1E6 62%);'
+  em: font-style:normal; color:#664D9D; font-weight:600;
+  a: color:#664D9D; text-decoration:none; font-weight:500;
+  blockquote: 'color:#14161A; font-size:16.5px; line-height:1.8; font-weight:500; padding:2px 0 2px 18px; margin:0 0 30px; border-left:3px solid #D6D9DE;'
+  ul: margin:0 0 28px; padding-left:20px; list-style:disc;
+  ol: margin:0 0 28px; padding-left:20px; list-style:decimal;
+  li: font-size:16px; line-height:1.9; color:#14161A; margin:0 0 10px; font-weight:400; letter-spacing:1.2px;
+  hr: border:none; height:4px; width:36px; background:#664D9D; display:block; margin:56px auto;
+  img: display:block; max-width:100%; height:auto; margin:8px auto 10px; border-radius:12px;
+  figcaption: text-align:center; font-size:13px; line-height:1.7; color:#8A8F98; margin:10px 0 32px;
+  code: font-family:Menlo, Consolas, monospace; font-size:14px; color:#664D9D; background:#F3F1F7; border-radius:5px; padding:1px 6px;
+  pre: background:#141519; color:#E6E8EB; font-family:Menlo, Consolas, monospace; font-size:13px; line-height:1.8; padding:20px 18px; margin:0 0 30px; border-radius:14px; overflow-x:auto;
+  highlight: background:#F3F1F7; color:#14161A; font-size:16px; line-height:1.9; padding:22px 20px; margin:0 0 30px; border-radius:16px;
+  table: width:100%; border-collapse:collapse; font-size:14.5px; margin:0 0 30px; font-variant-numeric:tabular-nums;
+  th: 'color:#8A8F98; font-size:12.5px; font-weight:700; letter-spacing:1px; text-align:left; padding:10px 12px; border-bottom:2px solid #664D9D; font-variant-numeric:tabular-nums;'
+  td: 'color:#14161A; font-size:14.5px; line-height:1.7; padding:13px 12px; border-bottom:1px solid #EFF0F2; font-variant-numeric:tabular-nums;'
+  del: text-decoration:line-through; color:#8A8F98;
+  u: 'text-decoration:none; border-bottom:2px solid #664D9D; padding-bottom:1px;'

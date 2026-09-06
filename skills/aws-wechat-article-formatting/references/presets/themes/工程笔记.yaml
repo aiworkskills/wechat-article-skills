@@ -1,37 +1,32 @@
 name: 工程笔记
-description: 开发者账号的排版。小标题带 # 前缀与等宽字，代码块深色，行内代码醒目。信息密度略高，适合教程、实测、技术拆解。
-
+description: 开发者账号的排版。小标题带
 variables:
-  primary-color: "#2F6FEB"
-  bg-accent-color: "#F2F4F7"
-  font-size: "16.5px"
-  line-height: "1.85"
-  text-color: "#24292F"
-  text-muted: "#8B949E"
-
+  primary-color: '#2F6FEB'
+  primary-ink: '#2F6FEB'
+  bg-accent-color: '#EEF3FD'
+  text-color: '#111318'
+  text-muted: '#8A8F98'
 styles:
-  p: "font-size:{font-size}; line-height:{line-height}; color:{text-color}; margin:0 0 1.3em;"
-
-  # 小标题前缀用等宽 # 号，是开发者一眼认得的记号；标题本身不加色块。
-  h1: "font-size:21px; font-weight:700; color:{text-color}; line-height:1.5; margin:0 0 1.2em;"
-  h2: "font-size:19px; font-weight:700; color:{text-color}; line-height:1.5; margin:2.4em 0 0.9em; padding-left:0.7em; border-left:3px solid {primary-color};"
-  h3: "font-size:17px; font-weight:700; color:{text-color}; margin:1.8em 0 0.7em;"
-  h4: "font-family:Menlo,Consolas,monospace; font-size:15px; font-weight:600; color:{text-muted}; margin:1.5em 0 0.6em;"
-
-  strong: "color:{primary-color}; font-weight:700;"
-  strong-color: "{primary-color}"
-  em: "font-style:normal; color:{text-color}; background:#FFF6D6;"
-
-  blockquote: "background:{bg-accent-color}; padding:16px 18px; margin:1.8em 0; color:#4B5563; font-size:15.5px; line-height:1.8; border-left:3px solid #D0D7DE;"
-
-  ul: "margin:0 0 1.3em; padding-left:1.2em;"
-  ol: "margin:0 0 1.3em; padding-left:1.2em;"
-  li: "font-size:{font-size}; line-height:1.8; color:{text-color}; margin-bottom:0.45em;"
-
-  img: "max-width:100%; display:block; margin:1.8em auto 0; border-radius:4px;"
-  figcaption: "text-align:center; font-size:13px; color:{text-muted}; margin:0.7em 0 1.8em;"
-
-  hr: "border:none; border-top:1px dashed #D0D7DE; margin:2.6em 0;"
-  a: "color:{primary-color}; text-decoration:none; border-bottom:1px solid #BFD3F5;"
-  code: "font-family:Menlo,Consolas,monospace; font-size:14px; color:#0550AE; background:{bg-accent-color}; padding:2px 6px; border-radius:4px;"
-  pre: "background:#0D1117; color:#C9D1D9; font-family:Menlo,Consolas,monospace; padding:18px; font-size:13px; line-height:1.75; border-radius:8px; overflow-x:auto; margin:1.8em 0;"
+  h1: font-size:26px; font-weight:800; color:#111318; line-height:1.35; letter-spacing:-0.5px; margin:0 0 32px;
+  h2: 'display:inline-block; font-size:22px; font-weight:800; color:#111318; line-height:1.4; letter-spacing:-0.3px; margin:56px 0 20px; padding-bottom:12px; border-bottom:6px solid #2F6FEB;'
+  h3: font-size:17px; font-weight:800; color:#2F6FEB; line-height:1.6; letter-spacing:0.5px; margin:40px 0 12px;
+  h4: font-size:15px; font-weight:700; color:#111318; line-height:1.6; margin:28px 0 10px;
+  p: font-size:16px; line-height:1.95; color:#111318; margin:0 0 28px; font-weight:400; letter-spacing:0.3px; font-family:Menlo, Consolas, monospace;
+  strong: 'color:#111318; font-weight:700; background:linear-gradient(transparent 62%, #C9DAFA 62%);'
+  em: font-style:normal; color:#2F6FEB; font-weight:600;
+  a: color:#2F6FEB; text-decoration:none; font-weight:500;
+  blockquote: 'color:#111318; font-size:16.5px; line-height:1.8; font-weight:500; padding:2px 0 2px 18px; margin:0 0 30px; border-left:3px solid #D6D9DE; font-family:Menlo, Consolas, monospace;'
+  ul: margin:0 0 28px; padding-left:20px; list-style:disc;
+  ol: margin:0 0 28px; padding-left:20px; list-style:decimal;
+  li: font-size:16px; line-height:1.9; color:#111318; margin:0 0 10px; font-weight:400; letter-spacing:0.3px; font-family:Menlo, Consolas, monospace;
+  hr: border:none; height:4px; width:36px; background:#2F6FEB; display:block; margin:56px auto;
+  img: display:block; max-width:100%; height:auto; margin:8px auto 10px; border-radius:12px;
+  figcaption: text-align:center; font-size:13px; line-height:1.7; color:#8A8F98; margin:10px 0 32px;
+  code: font-family:Menlo, Consolas, monospace; font-size:14px; color:#2F6FEB; background:#EEF3FD; border-radius:5px; padding:1px 6px;
+  pre: background:#141519; color:#E6E8EB; font-family:Menlo, Consolas, monospace; font-size:13px; line-height:1.8; padding:20px 18px; margin:0 0 30px; border-radius:14px; overflow-x:auto;
+  highlight: background:#EEF3FD; color:#111318; font-size:16px; line-height:1.9; padding:22px 20px; margin:0 0 30px; border-radius:16px;
+  table: width:100%; border-collapse:collapse; font-size:14.5px; margin:0 0 30px; font-variant-numeric:tabular-nums;
+  th: 'color:#8A8F98; font-size:12.5px; font-weight:700; letter-spacing:1px; text-align:left; padding:10px 12px; border-bottom:2px solid #2F6FEB; font-variant-numeric:tabular-nums;'
+  td: 'color:#111318; font-size:14.5px; line-height:1.7; padding:13px 12px; border-bottom:1px solid #EFF0F2; font-variant-numeric:tabular-nums; font-family:Menlo, Consolas, monospace;'
+  del: text-decoration:line-through; color:#8A8F98;
+  u: 'text-decoration:none; border-bottom:2px solid #2F6FEB; padding-bottom:1px;'
