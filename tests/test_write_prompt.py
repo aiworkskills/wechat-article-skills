@@ -70,6 +70,24 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
         提示词要教，否则模型不会稳定输出它。"""
         self.assertIn("**标签**", self._prompt())
 
+    def test_private_block_syntax_is_not_taught(self):
+        """提示词不再教 `:::` 语法。
+
+        链路定为「markdown 语法 → 按语法输出 → 渲染器排版」：让写手同时掌握标准
+        markdown 和一套私有语法就是耦合，而且那套语法只有本套件认得，稿子换个工具就废了。
+
+        这条也挡住一种更隐蔽的回归：既教 `:::` 又禁止 `:::`，同一份提示词自相矛盾。
+        """
+        sp = self._prompt()
+        for token in (":::steps", ":::quote-card", ":::stat", "版式组件"):
+            self.assertNotIn(token, sp, f"提示词又开始教 {token} 了")
+        self.assertIn("**不要**使用 `:::`", sp)
+
+    def test_prompt_stays_lean(self):
+        """空配置下的系统提示词不该失控。组件表曾经占了 4608 字符——
+        提示词里每多一段，模型的注意力就薄一分。"""
+        self.assertLess(len(self._prompt()), 2600)
+
 
 if __name__ == "__main__":
     unittest.main()

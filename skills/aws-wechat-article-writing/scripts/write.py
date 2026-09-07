@@ -536,65 +536,15 @@ def _validate_reference_path(p: Path, repo_root: Path) -> Path:
     return rel
 
 
-def build_components_block() -> str:
-    """把可用的版式组件及其选用判据写进提示词。
-
-    不写进来的后果很直接：模型不知道 `:::` 语法存在，组件做得再多也永远不会被调用。
-    每个组件带 when_to_use / when_not_to_use / anti_pattern，全部原样给模型——
-    这三项就是拦住「因为好看所以用」的判据，删掉任何一项都会让组件被滥用。
-    """
-    from pathlib import Path as _P
-    # 组件属于 formatting skill（跨 skill 引用，与套件内其它相对引用同一模式）；
-    # 套件未装齐时该目录不存在，函数返回空串，提示词里就没有组件段，不报错。
-    dirs = [_P(".aws-article/presets/components"),
-            _P(__file__).resolve().parents[2] / "aws-wechat-article-formatting"
-            / "references" / "components"]
-    # 同名时用户目录优先，所以先收内置再让用户覆盖
-    specs: dict[str, dict] = {}
-    for d in reversed(dirs):
-        if not d.is_dir():
-            continue
-        for f in sorted(d.glob("*.yaml")) + sorted(d.glob("*.yml")):
-            try:
-                spec = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
-            except (OSError, yaml.YAMLError):
-                continue
-            name = str(spec.get("name") or f.stem).strip()
-            if name and spec.get("template"):
-                specs[name] = spec
-    if not specs:
-        return ""
-
-    out = ["\n## 版式组件（写之前先对一遍这张表）\n",
-           "**下面这些情况出现时，优先用组件而不是写成散文或普通列表**——",
-           "组件是排好版的结构块，普通列表在手机上只是几行带点的字：\n",
-           "| 你正要写的东西 | 用这个 |",
-           "|---|---|",
-           "| 有先后顺序的操作步骤（第一步…第二步…） | `:::steps` |",
-           "| 两个方案/版本/改前改后的逐条对照 | `:::compare` |",
-           "| 两个以上可比的核心数字 | `:::stat` |",
-           "| 没有先后顺序的检查项、要点 | `:::checklist` |",
-           "| 系统由哪几层组成 | `:::layers` |",
-           "| 全文最值得截图转发的那一句 | `:::quote-card` |",
-           "| 并列或递进的分节标题 | `:::section-title` |",
-           "| 开头那段「这篇讲什么」的导语 | `:::lead` |",
-           "| 文末的互动引导与作者署名 | `:::closing` |",
-           "\n**`lead` 和 `closing` 几乎每篇都该有**——开头一段导语、结尾一块收尾，",
-           "这两处不用组件就是裸文本，是「业余账号」最明显的特征。\n",
-           "正文里可以用 `:::组件名[参数]` … `:::` 调用下列版式组件，会渲染成设计过的",
-           "HTML 结构。**每个组件都写了什么时候不该用和反模式，选之前先对一遍**；",
-           "拿不准就别用——普通段落永远是安全的，滥用组件比不用更伤阅读。\n"]
-    for name, spec in sorted(specs.items()):
-        out.append(f"\n### :::{name}　{spec.get('displayName', '')}")
-        for label, key in (("何时用", "when_to_use"), ("何时不用", "when_not_to_use"),
-                           ("反模式", "anti_pattern")):
-            v = str(spec.get(key) or "").strip()
-            if v:
-                out.append(f"- **{label}**：" + " ".join(v.split()))
-        ex = str(spec.get("example") or "").strip()
-        if ex:
-            out.append("```\n" + ex + "\n```")
-    return "\n".join(out) + "\n"
+# 版式组件的 `:::` 语法**不再写进提示词**（原 build_components_block，2026-09-07 移除）。
+#
+# 链路定为「markdown 语法 → 按语法输出 → 渲染器排版」：写手只产出标准 markdown，
+# 识别结构是排版层的事。让写手同时掌握标准 markdown 和一套私有语法，就是耦合——
+# 而且那套语法只有本套件认得，稿子换个工具就废了。
+#
+# 排版侧仍然认 `:::`（存量草稿、用户手写时可用），只是不再主动教。markdown 表达得了的
+# 都走标准写法：有序列表、两列表格、任务列表、`>` 引用、`##`、首段。markdown 表达不了的
+# （stat 的大数字对、layers 的层级图）目前就不产出——这是这个取舍明确付出的代价。
 
 
 def build_reference_library_block(raw_paths: list[str], cwd: Path) -> str:
@@ -694,7 +644,6 @@ def build_system_prompt(
         )
 
     out_lines = [
-        build_components_block(),
         "\n## 输出要求\n",
         "- 输出完整的 Markdown 格式文章\n",
         "- 包含：标题（# 开头）、摘要（> 引用块，80-128字）、正文（## 小标题分节）、结尾、文末区块\n",
