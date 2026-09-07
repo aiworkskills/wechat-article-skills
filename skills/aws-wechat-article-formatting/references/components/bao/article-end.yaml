@@ -1,2 +1,2 @@
 name: article-end
-template: <section style="margin:60px 0 0;"><section style="height:3px; background:{text-color};"></section><section style="margin-top:8px; height:1px; background:#E6E8EB;"></section></section>
+template: <section style="margin:56px 0 0;"><section style="font-size:14px; color:#111111; margin:0 0 10px;">&#9632;</section><section style="height:3px; background:#111111;"></section><section style="height:1px; background:#C9CED3; margin-top:4px;"></section></section>

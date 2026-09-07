@@ -1,0 +1,2 @@
+name: hr-deco
+template: <section style="margin:48px 0;"><section style="height:1px; background:#C9CED3;"></section><section style="height:3px; background:#111111; margin-top:4px;"></section></section>
