@@ -33,4 +33,4 @@ example: ':::lead
   :::
 
   '
-template: "<section style=\"margin:4px 0 36px;\">\n  <section style=\"font-size:12px; letter-spacing:5px; font-weight:600; color:{primary-ink}; margin-bottom:9px;\">导读</section>\n  <svg width=\"343\" height=\"3\" viewBox=\"0 0 343 3\" style=\"display:block;\"><rect width=\"343\" height=\"1.4\" fill=\"{primary-ink}\"/></svg>\n  <section style=\"font-size:17px; line-height:2.0; letter-spacing:0.5px; color:{text-color}; padding:15px 0 13px;\">{content}</section>\n  <svg width=\"343\" height=\"2\" viewBox=\"0 0 343 2\" style=\"display:block;\"><rect width=\"343\" height=\"1\" fill=\"{text-muted}\" opacity=\"0.5\"/></svg>\n</section>\n"
+template: "<section style=\"margin:2px 22px 11px;\">\n  <section style=\"font-size:16px; line-height:2.2; letter-spacing:0.8px; color:{text-color};\">{content}</section>\n</section>\n<section style=\"font-size:11px; letter-spacing:5px; color:{text-muted}; margin:0 0 42px 22px;\">导读</section>\n"

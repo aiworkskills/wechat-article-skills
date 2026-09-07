@@ -1433,34 +1433,36 @@ class LeadFrameTest(unittest.TestCase):
 
     @staticmethod
     def _shape(tpl: str) -> tuple:
-        """导语框「画了什么形状」。
+        """导语的形态签名。
 
-        只看「有没有 SVG」太粗——四角框线和上下夹线都只归约成「有 SVG」，
-        而它们是两种完全不同的形状。所以要看路径本身：通栏的横线、只有一截的角、
-        竖向的端点短线，是三件不同的事。
+        第一版是照着「框」写的（只认 SVG 路径和底色块）。后来整个方向改了——
+        导语不是一个盒子，是读者从标题跨进正文的门槛，门槛靠**栏宽、行距、留白**做。
+        四套共用同一个结构动作（窄栏 + 松行距），差异只在收尾那一个小记号上。
+        所以签名要认的是：有没有收窄、行距多松、收尾记号是什么。
         """
         feats = set()
-        # 浅底和实心块是两回事：一个是 92%/96% 兑白的浅色，一个是饱和的品牌色压白字。
-        # 只记「有底色」会把涂的导语（浅底）和金句卡（实心块）判成同一形态。
-        if re.search(r"background:\s*\{bg-accent|background:#(E|F)[0-9A-F]", tpl):
+        # 窄栏：左右 margin 大于 0（正文是贴着容器内边距的）
+        if re.search(r"margin:[^;\"]*\s\d{2,}px\s", tpl):
+            feats.add("窄栏")
+        lh = re.search(r"line-height:\s*([\d.]+)", tpl)
+        if lh and float(lh.group(1)) >= 2.1:
+            feats.add("松行距")
+        # 收尾记号
+        if re.search(r"height:\s*[4-9]px;\s*background", tpl):
+            feats.add("记号:色块")
+        if re.search(r"height:\s*[12](\.\d)?px;\s*background", tpl):
+            feats.add("记号:细线")
+        if re.search(r"letter-spacing:\s*[4-9]", tpl):
+            feats.add("记号:疏排小字")
+        # 旧词汇仍然要能认出来——万一有人改回框，签名不能装看不见
+        if re.search(r"background:\s*\{bg-accent", tpl):
             feats.add("浅底")
         if re.search(r"background:\s*\{(primary-fill|primary-color)\}", tpl):
             feats.add("实心块")
+        if "<svg" in tpl:
+            feats.add("SVG 图形")
         if "M0 20 L0 9 C0 3.5" in tpl or "&#12300;" in tpl:
             feats.add("引号")
-        if re.search(r"letter-spacing:\s*[3-9]", tpl):
-            feats.add("疏排标签")
-        for d in re.findall(r'<path[^>]*\bd="([^"]+)"', tpl) + \
-                 ["RECT" for _ in re.findall(r"<rect", tpl)]:
-            if d == "RECT":
-                feats.add("实心条")
-                continue
-            if re.search(r"M0 \d+(\.\d+)? L343", d):      # 通栏横线
-                feats.add("通栏线")
-            if re.search(r"L\d+ 0 M|L0 0 L[123]\d ", d):    # 只画到 30 就停：角
-                feats.add("角")
-            if re.search(r"M[\d.]+ 0 L[\d.]+ \d", d):       # 端点竖线
-                feats.add("端竖线")
         return tuple(sorted(feats))
 
     def test_every_skeleton_has_its_own_lead_shape(self):
