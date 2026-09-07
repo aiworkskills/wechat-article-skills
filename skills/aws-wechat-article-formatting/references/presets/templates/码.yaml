@@ -1,33 +1,29 @@
 name: 码
 displayName: 码
 skeleton: ma
-description: 终端。导语与金句是带红黄绿圆点的深色终端窗口，章节 // 01 大号绿字，Latin 与数字全等宽，EOF 收尾。像开发者号。
+description: 开发者文档感。等宽只用于小标签与元数据，正文干净，发丝线网格，大量留白，一个冷静的蓝。像 Stripe / Linear 的技术博客。
 variables:
-  primary-color: '#2F855A'
-  text-color: '#1F2328'
-  text-muted: '#57606A'
-  secondary-color: '#FFF8C5'
+  primary-color: '#2563EB'
+  text-color: '#111827'
+  text-muted: '#6B7280'
+  secondary-color: '#E5E7EB'
 styles:
-  p: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:15.5px; line-height:1.95; letter-spacing:0.2px; color:#1F2328; margin:0 0 26px; font-variant-numeric:tabular-nums;
-  strong: color:#1F2328; font-weight:700; background:linear-gradient(transparent 12%, {secondary-color} 12%);
-  em: font-style:normal; color:{primary-ink}; font-weight:700;
-  a: color:{primary-ink}; text-decoration:underline;
-  h1: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:23px; font-weight:800; color:#1F2328; line-height:1.4; margin:0 0 28px;
-  h2: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:20px; font-weight:800; color:#1F2328; line-height:1.5; margin:10px 0 20px;
-  h3: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:16px; font-weight:700; color:{primary-ink}; margin:34px 0 12px;
+  p: font-size:16px; line-height:1.95; letter-spacing:0.2px; color:#111827; margin:0 0 26px; font-variant-numeric:tabular-nums;
+  strong: 'font-weight:600; color:#111827; background:#F6F8FA; box-shadow:0 0 0 3px #F6F8FA; border-bottom:1px solid #D1D5DB;'
+  em: font-style:normal; color:{primary-ink}; font-weight:600;
+  a: color:{primary-ink}; text-decoration:none; font-weight:500;
+  h1: font-size:25px; font-weight:700; color:#111827; line-height:1.4; letter-spacing:-0.3px; margin:0 0 28px;
+  h2: font-size:20px; font-weight:700; color:#111827; line-height:1.5; letter-spacing:-0.2px; margin:8px 0 20px;
+  h3: font-size:16px; font-weight:700; color:#111827; margin:36px 0 12px;
   ul: margin:0 0 26px; padding-left:22px; list-style:square;
-  ol: margin:0 0 26px; padding-left:22px; list-style:decimal-leading-zero;
-  li: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:15.5px; line-height:1.85; color:#1F2328; margin:0 0 10px;
-  blockquote: 'font-family:Menlo, Consolas, ''SF Mono'', monospace; color:#57606A; font-size:15px; line-height:1.9; padding:0 0 0 16px; margin:0 0 28px; border-left:3px solid #D0D7DE;'
-  figcaption: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:12.5px; color:#57606A; margin:8px 0 32px;
-  img: 'display:block; width:100%; height:auto; border:1px solid #D0D7DE; border-radius:6px;'
-  code: 'font-family:Menlo, Consolas, ''SF Mono'', monospace; font-size:14px; background:#F6F8FA; color:#1F2328; padding:2px 6px; border:1px solid #D0D7DE; border-radius:4px;'
-  pre: font-family:Menlo, Consolas, 'SF Mono', monospace; background:#0D1117; color:#E6EDF3; font-size:13px; line-height:1.8; padding:18px 16px; margin:0 0 28px; border-radius:8px;
-  table: font-family:Menlo, Consolas, 'SF Mono', monospace; width:100%; border-collapse:collapse; margin:0 0 28px; font-size:14px;
-  th: 'color:#1F2328; font-size:13px; font-weight:700; text-align:left; padding:9px 8px; background:#F6F8FA; border:1px solid #D0D7DE;'
-  td: 'color:#1F2328; padding:9px 8px; border:1px solid #D0D7DE;'
-  hr: 'border:none; border-top:1px dashed #D0D7DE; margin:48px 0;'
-constants:
-- '#FF5F56'
-- '#FFBD2E'
-- '#27C93F'
+  ol: margin:0 0 26px; padding-left:22px; list-style:decimal;
+  li: font-size:16px; line-height:1.85; color:#111827; margin:0 0 10px; font-variant-numeric:tabular-nums;
+  blockquote: color:#6B7280; font-size:16px; line-height:1.9; padding:2px 0 2px 18px; margin:0 0 28px; border-left:2px solid {primary-ink};
+  figcaption: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#6B7280; margin:10px 0 34px;
+  img: 'display:block; width:100%; height:auto; border:1px solid #E5E7EB; border-radius:6px;'
+  code: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:14px; background:#F6F8FA; color:#111827; padding:1px 6px; border-radius:4px;
+  pre: font-family:Menlo, Consolas, 'SF Mono', monospace; background:#111827; color:#E2E8F0; font-size:13px; line-height:1.8; padding:18px 16px; margin:0 0 28px; border-radius:8px;
+  table: width:100%; border-collapse:collapse; margin:0 0 28px; font-size:14.5px; font-variant-numeric:tabular-nums;
+  th: 'font-family:Menlo, Consolas, ''SF Mono'', monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#6B7280; font-weight:600; text-align:left; padding:10px 8px; border-bottom:1px solid #111827;'
+  td: 'color:#111827; padding:11px 8px; border-bottom:1px solid #E5E7EB;'
+  hr: border:none; height:1px; background:#E5E7EB; margin:52px 0;

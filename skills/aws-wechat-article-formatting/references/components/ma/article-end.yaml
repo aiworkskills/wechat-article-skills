@@ -1,2 +1,2 @@
 name: article-end
-template: <section style="margin:56px 0 0; font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:13px; letter-spacing:2px; color:{primary-ink};">EOF</section>
+template: <section style="margin:60px 0 0;"><section style="height:1px; background:#E5E7EB;"></section><section style="font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#6B7280; margin-top:14px;">End</section></section>

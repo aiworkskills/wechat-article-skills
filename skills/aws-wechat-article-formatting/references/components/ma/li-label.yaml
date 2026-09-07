@@ -1,2 +1,2 @@
 name: li-label
-template: <li style="margin:0 0 12px;"><span style="font-family:Menlo, Consolas, 'SF Mono', monospace; font-weight:700; color:#1F2328;">{c0}</span><br><span style="font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:15px; line-height:1.85; color:#57606A;">{c1}</span></li>
+template: <li style="margin:0 0 12px;"><span style="font-weight:600; color:#111827;">{c0}</span><br><span style="font-size:15.5px; line-height:1.85; color:#6B7280;">{c1}</span></li>
