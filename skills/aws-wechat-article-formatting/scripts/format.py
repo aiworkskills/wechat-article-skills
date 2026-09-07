@@ -1173,6 +1173,7 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
                 heading = (_sub_theme_vars(str(deco["template"]), styles)
                            .replace("{n2}", "%02d" % section_no)
                            .replace("{nr}", _roman(section_no))
+                           .replace("{nz}", _cjk_numeral(section_no))
                            .replace("{n}", str(section_no))
                            .replace("{content}", heading))
             html_parts.append(heading)

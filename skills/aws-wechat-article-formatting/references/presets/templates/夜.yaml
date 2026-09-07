@@ -13,7 +13,7 @@ styles:
   em: font-style:normal; color:{secondary-on-fill}; font-weight:700;
   a: color:{primary-ink}; text-decoration:none; border-bottom:1px solid {primary-ink};
   h1: font-size:24px; font-weight:800; color:{text-color}; line-height:1.4; margin:0 0 28px;
-  h2: font-size:19px; font-weight:700; color:#FFFFFF; line-height:1.5; letter-spacing:1px; margin:0; padding:14px 16px; background:{primary-fill}; border-left:4px solid {secondary-color};
+  h2: font-size:20px; font-weight:700; color:{text-color}; line-height:1.5; letter-spacing:0.5px; margin:0 0 22px; padding:2px 0 2px 16px; border-left:4px solid {primary-fill};
   h3: font-size:17px; font-weight:700; color:{primary-fill}; line-height:1.6; margin:36px 0 12px; padding-left:12px; border-left:3px solid {secondary-color};
   ul: margin:0 0 26px; padding-left:22px; list-style:square;
   ol: margin:0 0 26px; padding-left:22px; list-style:decimal;

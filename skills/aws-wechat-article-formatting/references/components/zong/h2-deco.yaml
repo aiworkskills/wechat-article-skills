@@ -1,2 +1,2 @@
 name: h2-deco
-template: <section style="margin:60px 0 28px; display:flex; justify-content:flex-end;">{content}</section>
+template: <section style="margin:60px 0 30px; display:flex; align-items:flex-start;">{content}<section style="flex:1; margin-left:22px;"><section style="height:1px; background:#C9BFB5; margin-top:14px;"></section><section style="font-size:56px; line-height:1; font-weight:300; color:{primary-ink}; opacity:.22; margin-top:18px; letter-spacing:2px;">{nz}</section></section></section>
