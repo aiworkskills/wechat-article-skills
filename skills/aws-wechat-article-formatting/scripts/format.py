@@ -1205,6 +1205,12 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             flush_paragraph()
             close_list()
             if not in_blockquote:
+                # 大引号原先只给了 `:::quote-card`，而真稿里从来没人写那个语法——
+                # 每篇实际出现的是普通的 `>` 引用。骨架放 `quote-mark.yaml`
+                # （纯装饰、无占位符）就在引用块前面补一个引号。
+                mark = (components or {}).get("quote-mark") or {}
+                if mark.get("template"):
+                    html_parts.append(_sub_theme_vars(str(mark["template"]), styles))
                 html_parts.append(f'<blockquote style="{styles.get("blockquote", "")}">')
                 in_blockquote = True
             quote_text = stripped[1:].strip()
@@ -1280,8 +1286,24 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
                 raw_text = re.sub(r'^\d+\.\s+', '', stripped).strip()
             if not raw_text:
                 continue
-            text = _inline_format(raw_text, styles)
-            html_parts.append(f'<li style="{li_style}">{text}</li>')
+            # 「**标签**：说明」是真稿里最常见的列表形态——五篇稿 34 个列表项里 21 个
+            # 是这个样子（62%），4/5 篇文章有。它现在只是一个普通 li 里加粗了几个字。
+            # 骨架放 `li-label.yaml`（{c0}=标签，{c1}=说明）就能把标签在视觉上提出来。
+            #
+            # 只认形态，不推断语义。有序列表在 markdown 里只表示「枚举」，不表示「顺序」，
+            # 所以不能因为看见 1. 2. 3. 就渲染成「第一步 第二步」——那是替作者断言了一个
+            # 他没说的顺序。真稿实测：三组多项有序列表里，只有一组真有先后，另外两组
+            # （配置台的五个板块、三个要问自己的问题）都是并列的。
+            label = _load_components and (components or {}).get("li-label") or {}
+            m = re.match(r"^\*\*([^*]+)\*\*[：:]?\s*(.*)$", raw_text, re.S)
+            if label.get("template") and m and m.group(2).strip():
+                row = _sub_theme_vars(str(label["template"]), styles)
+                html_parts.append(
+                    row.replace("{c0}", _inline_format(m.group(1).strip(), styles))
+                       .replace("{c1}", _inline_format(m.group(2).strip(), styles)))
+            else:
+                html_parts.append(f'<li style="{li_style}">'
+                                  f'{_inline_format(raw_text, styles)}</li>')
             in_list = list_type
             continue
 

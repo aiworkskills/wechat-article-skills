@@ -1,0 +1,2 @@
+name: li-label
+template: <li style="margin:0 0 18px; list-style:disc;"><span style="font-size:16px; font-weight:900; color:{text-color};">{c0}</span><section style="margin-top:4px; font-size:16px; line-height:1.8; color:{text-muted};">{c1}</section></li>

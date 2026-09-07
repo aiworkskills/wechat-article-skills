@@ -1135,5 +1135,60 @@ class OrnamentHookTest(unittest.TestCase):
         self.assertIn("<hr", a)
 
 
+class PlainMarkdownDetectionTest(unittest.TestCase):
+    """从标准 markdown 里认形态，而不是要写手学一套 `:::` 语法。
+
+    背景：五篇真稿里 `:::` 组件出现 0 次——那套语法只写在 formatting/SKILL.md 里，
+    而写文章的是 writing skill，它一次都没提过。写手照常写标准 markdown 才是对的，
+    该由排版层去认。
+
+    **只认形态，不推断语义。** 有序列表在 markdown 里只表示「枚举」不表示「顺序」，
+    所以不能因为看见 1. 2. 3. 就渲染成「第一步 第二步」——那是替作者断言一个他没说的
+    顺序。真稿实测：三组多项有序列表里只有一组真有先后，另外两组（配置台的五个板块、
+    三个要问自己的问题）都是并列的。
+    """
+
+    STYLES = {"p": "", "li": "font-size:16px;", "ul": "", "ol": "",
+              "blockquote": "color:#333;", "primary-ink": "#14508C",
+              "text-color": "#111318", "text-muted": "#6B7078",
+              "bg-accent-color": "#ECF1F6", "highlight-pen": "#C2D2E1",
+              "font-size": "16px", "line-height": "1.8"}
+    LABEL = {"li-label": {"template": '<li data-lab="1"><b>{c0}</b><i>{c1}</i></li>'}}
+
+    def test_labeled_item_is_promoted(self):
+        html = fmt._md_to_html("- **账号与读者**：领域、读者是谁。", self.STYLES,
+                               components=self.LABEL)
+        self.assertIn('data-lab="1"', html)
+        self.assertIn("<b>账号与读者</b>", html)
+        self.assertIn("领域、读者是谁。", html)
+        self.assertNotIn("：<", html)         # 冒号被吃掉，不该漏进说明里
+
+    def test_plain_item_stays_plain(self):
+        """没有标签的列表项必须照旧。半数列表项是这种，不能被误伤。"""
+        html = fmt._md_to_html("- 同一篇文章至少换两套版式对比一次", self.STYLES,
+                               components=self.LABEL)
+        self.assertNotIn("data-lab", html)
+        self.assertIn("<li", html)
+
+    def test_bold_only_item_stays_plain(self):
+        """整项就是一个加粗短语、没有说明的（真稿里有四个），提升了会剩个空壳。"""
+        html = fmt._md_to_html("1. **克隆**", self.STYLES, components=self.LABEL)
+        self.assertNotIn("data-lab", html)
+
+    def test_quote_mark_goes_on_plain_blockquote(self):
+        """大引号原先只给 `:::quote-card`，而真稿里每篇出现的是 `>`。"""
+        comps = {"quote-mark": {"template": '<section data-qm="1"></section>'}}
+        html = fmt._md_to_html("> 版式的目标从来不是好看。", self.STYLES, components=comps)
+        self.assertIn('data-qm="1"', html)
+        self.assertLess(html.index('data-qm="1"'), html.index("<blockquote"))
+
+    def test_no_hooks_no_change(self):
+        md = "- **标签**：说明\n\n> 引用\n"
+        a = fmt._md_to_html(md, self.STYLES)
+        b = fmt._md_to_html(md, self.STYLES, components={"lead": {"template": "{content}"}})
+        self.assertEqual(a, b)
+        self.assertIn("<li", a)
+
+
 if __name__ == "__main__":
     unittest.main()
