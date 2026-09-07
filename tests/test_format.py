@@ -1047,5 +1047,50 @@ class BrushSvgTest(unittest.TestCase):
         self.assertNotIn("#FFF", b.dry(tail=True))
 
 
+class SvgWechatSafeTest(unittest.TestCase):
+    """随包发布的组件里，SVG 不许用需要 id 的特性。
+
+    微信会把 SVG 的 `id` 属性删掉，于是所有 `url(#…)` 引用全断——渐变变成黑色或
+    透明，pattern / clipPath / mask / filter 直接失效。这类东西在浏览器里预览
+    一切正常，发到微信才塌，是最难发现的一类问题，所以用测试挡在前面。
+
+    渐变要用就用 CSS 的 linear-gradient（在 style 属性里是活的），不要用 SVG 的。
+    """
+
+    ID_FEATURES = ("linearGradient", "radialGradient", "<pattern", "clipPath",
+                   "<mask", "<filter", "<use", "<marker")
+
+    def _component_files(self):
+        d = fmt.SKILL_DIR / "references" / "components"
+        return sorted(d.rglob("*.yaml")) if d.is_dir() else []
+
+    def test_no_id_dependent_svg_features(self):
+        for f in self._component_files():
+            text = f.read_text(encoding="utf-8")
+            if "<svg" not in text:
+                continue
+            for feat in self.ID_FEATURES:
+                self.assertNotIn(feat, text,
+                                 f"{f.name} 用了 {feat}，微信删掉 id 后会失效")
+
+    def test_no_id_attribute_inside_svg(self):
+        """连 id 本身都不该出现——留着它只会让人以为引用是通的。"""
+        for f in self._component_files():
+            text = f.read_text(encoding="utf-8")
+            for m in re.finditer(r"<svg.*?</svg>", text, re.S):
+                self.assertNotRegex(m.group(0), r'\sid\s*=',
+                                    f"{f.name} 的 SVG 里有 id，微信会删掉")
+
+    def test_svg_never_carries_growing_content(self):
+        """SVG 高度写死，不会跟着内容长。竖线、底色这类要长高的交给 CSS。
+        判据：SVG 里不许出现 {content} / {c0} 这类会变长的占位符。"""
+        for f in self._component_files():
+            text = f.read_text(encoding="utf-8")
+            for m in re.finditer(r"<svg.*?</svg>", text, re.S):
+                for ph in ("{content}", "{c0}", "{c1}", "{arg}"):
+                    self.assertNotIn(ph, m.group(0),
+                                     f"{f.name}：把 {ph} 塞进了 SVG，内容一长就溢出")
+
+
 if __name__ == "__main__":
     unittest.main()
