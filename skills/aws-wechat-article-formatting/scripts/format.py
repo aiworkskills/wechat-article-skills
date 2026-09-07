@@ -217,10 +217,13 @@ def _write_preview(theme_name: str, output: str | None) -> None:
         # 样张的配图是相对路径，对照页可能写到任何目录——换成绝对 file:// 才不会断图
         for img in sorted({p.name for p in SAMPLE_MD.parent.glob("_sample-image*")}):
             body = body.replace(f'src="{img}"', f'src="{(SAMPLE_MD.parent / img).resolve().as_uri()}"')
+        # 每栏 375px 是 iPhone 逻辑宽；里面再留 20px —— 微信正文外面还套着一层固定边距，
+        # 不补上的话对照页里的正文会比真机宽一圈，行长和留白都对不上。
         panes.append(
             '<div style="flex:0 0 auto; width:375px; margin-right:14px;">'
             f'<div style="font:600 13px/2 -apple-system,\'PingFang SC\',sans-serif; color:#111;">{label}</div>'
-            f'<div style="border:1px solid #DDD; background:#fff;">{_wrap_document(body, styles)}</div>'
+            '<div style="border:1px solid #DDD; background:#fff; padding:0 20px;">'
+            f'{_wrap_document(body, styles)}</div>'
             "</div>"
         )
     html = (
