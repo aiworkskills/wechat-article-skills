@@ -1,0 +1,2 @@
+name: lead
+template: <section style="margin:6px 14px 48px;"><section style="font-family:Didot, 'Bodoni 72', Baskerville, serif; font-size:11px; letter-spacing:5px; color:{text-muted}; text-transform:uppercase;">Feature</section><section style="margin-top:16px; font-size:17px; line-height:1.95; letter-spacing:0.5px; color:{text-color};">{content}</section><section style="width:36px; height:1px; background:{primary-ink}; margin-top:24px;"></section></section>

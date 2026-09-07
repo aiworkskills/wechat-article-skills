@@ -962,6 +962,7 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
     paragraph_lines = []
     first_h1_skipped = not skip_first_h1
     seen_section = False   # 是否已经出现过 `##`——用来区分「摘要」和「正文引用」
+    section_no = 0         # `##` 计数。杂志风的章节编号（01 / 02）靠它，h2-deco 里用 {n} / {n2}
 
     def _p_style():
         """段落样式：主题提供则直接用，否则用变量拼接。"""
@@ -1108,6 +1109,8 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             level = min(len(heading_match.group(1)), 4)
             if level >= 2:
                 seen_section = True
+            if level == 2:
+                section_no += 1
             # 跳过第一个 h1（文章标题），公众号后台单独填写标题，正文不再重复
             if level == 1 and not first_h1_skipped:
                 first_h1_skipped = True
@@ -1124,7 +1127,10 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             # 标题经常折两行，而 SVG 不会跟着文字换行，宽度是写死的。
             deco = (components or {}).get(f"{tag}-deco") or {}
             if deco.get("template"):
-                heading = _sub_theme_vars(str(deco["template"]), styles).replace("{content}", heading)
+                heading = (_sub_theme_vars(str(deco["template"]), styles)
+                           .replace("{n2}", "%02d" % section_no)
+                           .replace("{n}", str(section_no))
+                           .replace("{content}", heading))
             html_parts.append(heading)
             continue
 

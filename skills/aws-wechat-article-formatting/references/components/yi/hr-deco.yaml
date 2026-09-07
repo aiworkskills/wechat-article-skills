@@ -1,0 +1,2 @@
+name: hr-deco
+template: <section style="margin:56px 14px;"><svg width="180" height="22" viewBox="0 0 180 22" style="display:block;"><path d="M0 11 C36 -3 72 25 108 11 C132 2 156 4 180 11" fill="none" stroke="{primary-ink}" stroke-width="1" stroke-linecap="round"/></svg></section>

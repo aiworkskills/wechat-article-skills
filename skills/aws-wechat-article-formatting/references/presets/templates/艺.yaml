@@ -1,0 +1,30 @@
+name: 艺
+displayName: 艺
+skeleton: yi
+description: 杂志风。Didot 英文小字与章节大数字做纹理，配图垫浅色块偏移挂左，正文窄栏松行距，S 曲线分隔，END 圆章收尾。
+variables:
+  primary-color: '#4A5D6E'
+  text-color: '#1F1F1F'
+  text-muted: '#8A8A8A'
+styles:
+  # 正文：比 16 套小一号、行距更松、两侧各再收 14px——杂志的窄栏与留白
+  p: 'font-size:15px; line-height:2.0; letter-spacing:0.4px; color:#2A2A2A; margin:0 14px 24px;'
+  # 加粗只用彩字（低饱和的板岩蓝）。37 处/篇，任何线或底都会把杂志感压没
+  strong: 'color:{primary-ink}; font-weight:600;'
+  em: 'font-style:normal; color:{primary-ink};'
+  a: 'color:{text-color}; text-decoration:none; border-bottom:1px solid #C9CED3;'
+  h1: 'font-size:24px; font-weight:600; letter-spacing:1px; color:{text-color}; line-height:1.5; margin:0 14px 24px;'
+  # h2 本体只管字；编号和细线由 h2-deco 负责
+  h2: 'font-size:19px; font-weight:600; letter-spacing:1px; color:{text-color}; line-height:1.55; margin:12px 14px 20px;'
+  h3: 'font-size:15px; font-weight:600; letter-spacing:2.5px; color:{primary-ink}; margin:36px 14px 12px;'
+  ul: 'margin:0 14px 24px; padding-left:18px; list-style:circle;'
+  ol: 'margin:0 14px 24px; padding-left:18px; list-style:decimal;'
+  li: 'font-size:15px; line-height:1.9; letter-spacing:0.3px; color:#2A2A2A; margin:0 0 8px;'
+  blockquote: 'color:#555555; font-size:15px; line-height:2.0; letter-spacing:0.3px; padding:0 0 0 16px; margin:8px 14px 28px; border-left:1px solid #C9CED3;'
+  figcaption: 'font-size:11px; letter-spacing:2px; color:{text-muted}; margin:12px 14px 40px; text-transform:uppercase;'
+  img: 'display:block; width:100%; height:auto;'
+  code: 'font-family:Menlo, Consolas, monospace; font-size:13px; background:#F2F3F5; color:{text-color}; padding:1px 5px;'
+  table: 'width:100%; border-collapse:collapse; margin:0 0 28px; font-size:14px;'
+  th: 'padding:10px 8px; text-align:left; font-weight:600; letter-spacing:2px; font-size:11px; text-transform:uppercase; color:{text-muted}; border-bottom:1px solid #C9CED3;'
+  td: 'padding:10px 8px; color:#2A2A2A; line-height:1.7; border-bottom:1px solid #EEF0F2;'
+  hr: 'border:none; height:1px; background:#D9DDE1; margin:56px 14px;'
