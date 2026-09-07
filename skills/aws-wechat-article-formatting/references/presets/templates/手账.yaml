@@ -1,6 +1,7 @@
 name: 手账
 displayName: 手账
 skeleton: shou
+sort_order: 2
 description: 手作。小标题下一笔真笔锋，荧光笔黄底强调，手绘抖动分隔线，手写体小标，配图顶一条斜贴胶带。像个人手记 / 生活号。
 when_to_use: 个人笔记、复盘、学习记录。手写体小标、荧光笔和胶带贴图，像翻别人的笔记本，适合第一人称。
 when_not_to_use: '对外的官方公告、白皮书——手作感会削弱权威。

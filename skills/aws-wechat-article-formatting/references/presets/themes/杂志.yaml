@@ -1,6 +1,7 @@
 name: 杂志
 displayName: 杂志
 skeleton: yi
+sort_order: 4
 description: 杂志风。Didot 英文小字与章节大数字做纹理，配图垫浅色块偏移挂左，正文窄栏松行距，S 曲线分隔，END 圆章收尾。
 when_to_use: 品牌故事、人物访谈、生活方式。竖排小字和大号章节数字做出版面感，图片多的稿子最出彩。
 when_not_to_use: '纯文字、没有配图的稿子——这套的版面感有一半靠图撑。

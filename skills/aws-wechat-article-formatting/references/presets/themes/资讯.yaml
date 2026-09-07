@@ -1,6 +1,7 @@
 name: 资讯
 displayName: 资讯
 skeleton: bao
+sort_order: 6
 description: 媒体号语法。辨识度在字不在线：17px 大字、0.8px 松字距、整句彩色粗体、灰底圆角块；全篇只有发丝线。像量子位、新智元。
 when_to_use: 快讯、评测、行业观察。全篇只有发丝线，靠大字和松字距撑住节奏，信息密度高也不显吵。
 when_not_to_use: '抒情散文、个人随笔——这套的语法是新闻体，读起来偏硬。

@@ -1,6 +1,7 @@
 name: 书卷
 displayName: 书卷
 skeleton: shu
+sort_order: 3
 description: 纸书感。Georgia 衬线西文，标题居中带上方色条，正文段距收紧，加粗用 900 黑字，配图上下双线。像文化类账号。
 when_to_use: 人文、读书、历史、深度长文。衬线加罗马数字章节，读起来像一本书，适合需要读者慢下来的内容。
 when_not_to_use: '工程文档、数据密集的评测——衬线体在手机上读代码和数字会吃力。

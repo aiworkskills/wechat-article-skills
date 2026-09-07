@@ -1,6 +1,7 @@
 name: 技术
 displayName: 技术
 skeleton: ma
+sort_order: 8
 description: 开发者文档感。等宽只用于小标签与元数据，正文干净，发丝线网格，大量留白，一个冷静的蓝。像 Stripe / Linear 的技术博客。
 when_to_use: 工程实践、技术文档、代码讲解。等宽体小标加发丝线网格，是八套里最像一份文档的一档。
 when_not_to_use: '情绪向和故事向的内容：这套刻意没有情绪。

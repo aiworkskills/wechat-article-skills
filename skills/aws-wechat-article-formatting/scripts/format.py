@@ -280,6 +280,7 @@ def _list_themes() -> list[dict]:
                 "description": data.get("description", ""),
                 "source": source,
                 "skeleton": str(data.get("skeleton") or ""),
+                "sort_order": data.get("sort_order"),
                 "when_to_use": str(data.get("when_to_use") or "").strip(),
                 "when_not_to_use": str(data.get("when_not_to_use") or "").strip(),
                 "schemes": [
@@ -291,6 +292,9 @@ def _list_themes() -> list[dict]:
                     for x in (data.get("schemes") or []) if x.get("name")
                 ],
             })
+    # 按模版自己声明的顺序排；没声明的（用户自定义主题）排在后面，内部按名字。
+    # 文件名的 unicode 顺序对读者没有意义，而这份列表是 agent 选模版时唯一的菜单。
+    themes.sort(key=lambda t: (t.get("sort_order") is None, t.get("sort_order") or 0, t["name"]))
     return themes
 
 
@@ -307,7 +311,7 @@ def _export_theme(name: str) -> None:
         "variables": {**DEFAULT_VARIABLES, **(theme.get("variables") or {})},
         "styles": {**DEFAULT_STYLES, **(theme.get("styles") or {})},
     }
-    for key in ("skeleton", "when_to_use", "when_not_to_use", "constants", "schemes"):
+    for key in ("skeleton", "sort_order", "when_to_use", "when_not_to_use", "constants", "schemes"):
         if theme.get(key):
             data[key] = theme[key]
     sys.stdout.write(yaml.safe_dump(data, allow_unicode=True, sort_keys=False, width=1000))
