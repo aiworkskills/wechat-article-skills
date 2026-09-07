@@ -88,6 +88,47 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
         提示词里每多一段，模型的注意力就薄一分。"""
         self.assertLess(len(self._prompt()), 2600)
 
+    # 配图这一节写错，后面整条配图链路（生图、上传、排版）都接不上，
+    # 但提示词本身不会报错——所以逐条钉住，不能靠「改的时候记得别碰」。
+    IMAGE_RULES = [
+        "![类型名：画面内容](placeholder)",   # 占位格式
+        "封面、信息图、氛围、流程图、对比、实证",  # 类型名白名单
+        "配图密度必须遵循",
+        "不能写成 []()",                     # 少一个 ! 会被排版成链接
+        "每个配图标记独占一行",
+        "封面标记放在标题之前",
+        "图注单独写",
+    ]
+
+    def test_image_rules_survive_empty_config(self):
+        """配图规范是系统不变量，用户什么都没配也必须完整出现。"""
+        sp = self._prompt()
+        for rule in self.IMAGE_RULES:
+            self.assertIn(rule, sp, f"配图规范丢了「{rule}」")
+
+    def test_image_rules_survive_user_spec(self):
+        sp = self._prompt(writing_spec="全程用「你」称呼读者。")
+        for rule in self.IMAGE_RULES:
+            self.assertIn(rule, sp)
+
+    def test_user_supplied_image_branch_is_complete(self):
+        """用户供图模式是另一条分支，规则不同但同样是硬性的：
+        不得再出 placeholder、封面只能一张、不得虚构文件名。"""
+        sp = self._prompt(image_source="user", img_analysis="文件名：imgs/a.png")
+        for rule in ("不得再输出 placeholder", "封面只能出现 1 张",
+                     "不得虚构不存在的文件名", "imgs/a.png"):
+            self.assertIn(rule, sp, f"用户供图分支丢了「{rule}」")
+
+    def test_the_two_image_branches_are_exclusive(self):
+        """两条分支不能同时出现——同时说「用 placeholder」和「不得用 placeholder」
+        就是又一处自相矛盾。"""
+        gen = self._prompt()
+        usr = self._prompt(image_source="user", img_analysis="文件名：imgs/a.png")
+        self.assertIn("placeholder)", gen)
+        self.assertNotIn("## 用户供图模式", gen)
+        self.assertIn("## 用户供图模式", usr)
+        self.assertNotIn("配图密度必须遵循", usr)
+
 
 if __name__ == "__main__":
     unittest.main()
