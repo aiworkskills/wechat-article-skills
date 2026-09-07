@@ -9,7 +9,7 @@ variables:
   secondary-color: '#E5E7EB'
 styles:
   p: font-size:16px; line-height:1.95; letter-spacing:0.2px; color:#111827; margin:0 0 26px; font-variant-numeric:tabular-nums;
-  strong: 'font-weight:600; color:#111827; background:#F6F8FA; box-shadow:0 0 0 3px #F6F8FA; border-bottom:1px solid #D1D5DB;'
+  strong: 'font-weight:600; color:#111827; background:#F6F8FA; box-shadow:0 0 0 3px #F6F8FA; border-bottom:1px solid #E5E7EB;'
   em: font-style:normal; color:{primary-ink}; font-weight:600;
   a: color:{primary-ink}; text-decoration:none; font-weight:500;
   h1: font-size:25px; font-weight:700; color:#111827; line-height:1.4; letter-spacing:-0.3px; margin:0 0 28px;

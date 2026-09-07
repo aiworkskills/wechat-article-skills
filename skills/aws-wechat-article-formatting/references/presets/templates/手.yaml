@@ -9,7 +9,7 @@ variables:
   secondary-color: '#FFE066'
 styles:
   p: font-size:16px; line-height:2.0; letter-spacing:0.4px; color:#2A2622; margin:0 0 26px;
-  strong: color:#2A2622; font-weight:700; background:linear-gradient(transparent 55%, {secondary-color} 55%);
+  strong: color:#2A2622; font-weight:700; background:linear-gradient(transparent 70%, {secondary-color} 70%);
   em: font-style:normal; color:{primary-ink}; font-weight:700;
   a: color:{primary-ink}; text-decoration:none; border-bottom:2px dotted {primary-ink};
   h1: font-size:25px; font-weight:800; color:#2A2622; line-height:1.4; margin:0 0 28px;
