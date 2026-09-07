@@ -1087,7 +1087,17 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             text = _inline_format(heading_match.group(2), styles)
             tag = f"h{level}"
             style = styles.get(tag, "")
-            html_parts.append(f'<{tag} style="{style}">{text}</{tag}>')
+            heading = f'<{tag} style="{style}">{text}</{tag}>'
+            # 标题装饰层：骨架目录里放一个 `h2-deco.yaml`（模板含 {content}），标题就被
+            # 它包起来。这是给内联 SVG 开的口子——h2 的样式是一串 CSS，SVG 塞不进去，
+            # 而 SVG 能做的形状（笔刷、括号、编号环）CSS 一个都做不出来。
+            #
+            # 只能放在标题的上方 / 下方 / 旁边，不能当「跟着字走的下划线」：375px 下
+            # 标题经常折两行，而 SVG 不会跟着文字换行，宽度是写死的。
+            deco = (components or {}).get(f"{tag}-deco") or {}
+            if deco.get("template"):
+                heading = _sub_theme_vars(str(deco["template"]), styles).replace("{content}", heading)
+            html_parts.append(heading)
             continue
 
         if re.match(r'^---+$', stripped):

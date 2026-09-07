@@ -955,5 +955,53 @@ class ThreeTemplateTest(unittest.TestCase):
                 shapes[sig] = c
 
 
+class HeadingDecoTest(unittest.TestCase):
+    """标题装饰层：骨架放 `h2-deco.yaml`，`##` 就被它包起来。
+
+    这是给内联 SVG 开的口子——h2 的样式是一串 CSS，SVG 塞不进去，而 SVG 能做的形状
+    （笔刷底线、折角块、编号环）CSS 一个都做不出来。
+    """
+
+    STYLES = {"h2": "font-size:20px;", "h3": "font-size:17px;", "p": "font-size:16px;",
+              "primary-ink": "#14508C"}
+
+    def test_without_deco_the_heading_is_unchanged(self):
+        """没放装饰组件时必须什么都不变——这个口子不能有默认副作用。"""
+        plain = fmt._md_to_html("## 标题", self.STYLES)
+        with_other = fmt._md_to_html("## 标题", self.STYLES,
+                                     components={"lead": {"template": "<i>{content}</i>"}})
+        self.assertEqual(plain, with_other)
+        self.assertIn("<h2", plain)
+
+    def test_deco_wraps_the_heading_and_substitutes_vars(self):
+        tpl = '<section><svg><circle fill="{primary-ink}"/></svg>{content}</section>'
+        html = fmt._md_to_html("## 标题", self.STYLES, components={"h2-deco": {"template": tpl}})
+        self.assertIn("<svg>", html)
+        self.assertIn("#14508C", html)          # 变量替换过了
+        self.assertNotIn("{", html)             # 没有残留占位符
+        self.assertIn("<h2", html)              # 标题标签还在，没被吃掉
+        self.assertLess(html.index("<svg>"), html.index("<h2"))
+
+    def test_deco_is_per_level(self):
+        """h2-deco 不该套到 h3 上，否则整篇每一级标题都戴同一顶帽子。"""
+        html = fmt._md_to_html("## 二级\n\n### 三级", self.STYLES,
+                               components={"h2-deco": {"template": "<b>{content}</b>"}})
+        self.assertIn("<b><h2", html)
+        self.assertNotIn("<b><h3", html)
+
+    def test_text_over_svg_is_not_used_in_shipped_templates(self):
+        """SVG 高度写死，不跟着文字换行。用负 margin 把标题垫到 SVG 上，两行时必塌：
+        实测笔刷只盖住第一行，折角块的第二行直接漏到白底外面。
+
+        要「有形状又能长高」得拆两段——SVG 只做固定高度的顶边，会长高的部分交给
+        CSS background。所以随包发布的装饰组件里不许出现负的 margin-top。
+        """
+        d = fmt.SKILL_DIR / "references" / "components"
+        for f in d.rglob("h?-deco.yaml"):
+            css = f.read_text(encoding="utf-8")
+            self.assertNotRegex(css, r"margin-top:\s*-",
+                                f"{f}：把标题垫到 SVG 上了，标题折两行时会塌")
+
+
 if __name__ == "__main__":
     unittest.main()
