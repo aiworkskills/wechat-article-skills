@@ -1003,5 +1003,49 @@ class HeadingDecoTest(unittest.TestCase):
                                 f"{f}：把标题垫到 SVG 上了，标题折两行时会塌")
 
 
+class BrushSvgTest(unittest.TestCase):
+    """笔锋 / 飞白路径生成器。这些路径会跟着每篇文章发出去，得盯住三件事：
+    坐标不能跑出 viewBox、路径必须闭合（不闭合 fill 出来是烂的）、字节数不能失控。
+    """
+
+    @staticmethod
+    def _brush():
+        import importlib.util
+        p = fmt.SKILL_DIR / "scripts" / "brush_svg.py"
+        spec = importlib.util.spec_from_file_location("brush_svg", p)
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        return m
+
+    def test_every_preset_is_closed_and_in_bounds(self):
+        b = self._brush()
+        for name, make in b.PRESETS.items():
+            _, d, h = make()
+            self.assertTrue(d.startswith("M"), name)
+            # 每个子路径都要闭合。飞白是多段，段数与 Z 的个数必须相等。
+            self.assertEqual(d.count("M"), d.count("Z"), f"{name}：有子路径没闭合")
+            nums = [float(x) for x in re.findall(r"-?\d+\.?\d*", d)]
+            xs, ys = nums[0::2], nums[1::2]
+            self.assertGreaterEqual(min(xs), -0.5, f"{name}：x 跑到左边界外")
+            self.assertLessEqual(max(xs), b.WIDTH + 0.5, f"{name}：x 跑到右边界外")
+            self.assertGreaterEqual(min(ys), -0.5, f"{name}：y 跑到上边界外")
+            self.assertLessEqual(max(ys), h + 0.5, f"{name}：y 跑到下边界外（会被裁掉）")
+
+    def test_paths_stay_small(self):
+        """实测 n=48 与 n=12 在 375px 下肉眼无差，n=8 才开始出现折角。
+        默认点数按这个结论定，一根笔画压在 1.3KB 以内——一篇六个标题就是六份。"""
+        b = self._brush()
+        for name, make in b.PRESETS.items():
+            _, d, _ = make()
+            self.assertLess(len(d), 1300, f"{name}：路径 {len(d)} B，点数或精度该降了")
+
+    def test_dry_brush_has_real_gaps(self):
+        """飞白必须是真的断开。早先拿白色线条盖出缺口，浅色底上就露馅——
+        那是划伤不是飞白。判据：多于一个子路径。"""
+        b = self._brush()
+        self.assertGreater(b.dry(tail=True).count("M"), 1)
+        self.assertNotIn("#FFF", b.dry(tail=True))
+
+
 if __name__ == "__main__":
     unittest.main()
