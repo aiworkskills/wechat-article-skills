@@ -129,6 +129,8 @@ iOS 系统本身装着 Songti SC 与 Kaiti SC，Safari 里也能渲染。所以�
 | 百分比做位移 | 如 `margin-top:-100%` 不可靠 |
 | `text-decoration-thickness` | **被删**（2026-09-07 实测）。下划线粗细控不了 |
 | `text-underline-offset` | **被删**（同上）。下划线离字底的距离控不了 |
+| `calc()` | **含 calc 的整条属性被删**（2026-09-07 实测）。`width:calc(100% + 32px)` 连 `width` 一起没了，`margin:0 0 0 calc(50% - 50vw)` 连 `margin` 一起没了。`100vw` / `vw` 单位本身保留。要冲出边距用固定负值 `margin:0 -16px`，不要用 calc 算 |
+| `<img width="…">` 属性 | **被剥掉**，`height` 属性保留（2026-09-07 回读实测）。微信同时把 `src` 改成 `data-src` 懒加载、`http` 改 `https`、尾缀 `/0` 改 `/640`。style 里的 `width:` 不受影响 |
 
 下划线要控粗细或位置，只能改用 `border-bottom`——它能定粗细与颜色，代价是紧贴内容框
 底边、离字底的距离不可调。`text-decoration:underline` 本身可用。
@@ -218,6 +220,56 @@ h2 的样式是一串 CSS，SVG 塞不进去。骨架目录里放一个 `h2-deco
       <svg height="20">…右上角切一刀的路径…</svg>   ← 固定高度，只管形状
       <section style="background:同色; padding:…">{content}</section>  ← 自动长高
     </section>
+
+## 参照设计手法的能力表 ⭐（2026-09-07 探针稿 · 25 条 · 手机微信实测）
+
+对着两组杂志风参照图（满版照片、文字压图、描边字、竖排、Didot 大字）把用到的手法
+逐条发进草稿箱，回读 HTML 比对 + 手机微信逐条看渲染。**HTML 层 25 条只删了 calc()**，
+但手机上又倒了 3 条——第二次证实「HTML 里活着 ≠ 渲得出来」（第一次是中文字体）。
+
+### 能用（手机实测渲染正确）
+
+| 手法 | 写法 | 意味着什么 |
+|---|---|---|
+| **文字压在照片上** | `section` 的 `background:url(微信CDN) center/cover` + 内部文字 | position 死了，但这条活着，**杂志风最核心的手法可用** |
+| 文字叠图底部 | `<img>` 后接 `section` 用 `margin-top:-64px` 拉上去 | 第二条叠图路径 |
+| 半透明色带压图 | 同上 + `background:rgba(0,0,0,.45)` | 图上标注条 |
+| **描边空心字** | `-webkit-text-stroke:2px #111; color:transparent` | 「Hot」空心 +「Spring」实心那种 |
+| **竖排** | `writing-mode:vertical-rl` | 竖排英文/中文标题 |
+| **iOS 自带西文字体** | `font-family:Didot` / `Baskerville` / `"Snell Roundhand"` / `"Avenir Next"` / `Futura` | 全部渲染出真字形。**Didot 可做高对比衬线 masthead**。带数字的名字必须加引号（`"Bodoni 72"`，不加引号整条失效——这是 CSS 语法不是微信限制） |
+| 渐变填充文字 | `background:linear-gradient(...)` + `-webkit-background-clip:text` + `color:transparent` | 渐变色大字 |
+| 巨号字 + 紧行距 | `font-size:96px; line-height:.85` + `vertical-align:top; margin-left:-30px` | 2023/4 叠数字那种 |
+| `text-shadow` | `0 2px 8px rgba(0,0,0,.7)` | 白字压浅图的可读性 |
+| **`object-fit:cover`** | 配固定 `height` | 裁成横条/方块不变形。微信剥掉 `width` 属性也不影响 |
+| **`mask-image` 渐隐** | `-webkit-mask-image:linear-gradient(#000 45%, transparent)` | 图下缘淡进白底，「Light」沙丘那种 |
+| **`clip-path`** | `polygon(0 0,100% 0,100% 70%,0 100%)` | 斜切、异形裁图 |
+| 圆形裁图 | `border-radius:50%` + `object-fit:cover` | 头像/圆图 |
+| `mix-blend-mode` | `overlay` | 能渲染，效果依赖图片明暗，偏弱 |
+| `overflow:hidden` + 固定高 | | 裁切容器 |
+| `white-space:nowrap` | | 展示字不折行 |
+| `opacity` / `aspect-ratio` / `text-transform:uppercase` / `letter-spacing:6px` | | 全部正常 |
+
+### HTML 活着、手机不渲染（第二类陷阱）
+
+| 手法 | 现象 |
+|---|---|
+| **`filter:grayscale()` / `filter:blur()`** | 属性原样在 HTML 里，图片仍是彩色/清晰。**灰度和模糊做不了**，要黑白图就传黑白图 |
+| **`float:left`** | 图在左，但文字不绕图、从图下方开始。**文字绕图做不了** |
+
+### 满版 / 冲出边距（部分成立，见下一条探针）
+
+- 微信自己的正文左右边距 **≈ 20px**（iPhone 实测：文字左缘距屏 20px）
+- `margin:0 -16px` 能把元素往左拉到距屏 4px——**左侧冲边可行**
+- 但 `calc()` 被删，`width:calc(100% + 32px)` 没了，元素只是平移不变宽——右侧留白
+- `width:100vw` 保留但被微信注入的 `max-width:100%` 压回容器宽，**vw 满版无效**
+- `<section>` 两侧负 margin 只平移不拉伸（不是 `width:auto` 的行为，微信可能也给 section 套了 max-width）
+
+要真满版得绕开 calc，见后续探针（padding 撑宽法）。
+
+### 对四套模版意味着什么
+
+杂志风参照图里的手法，**除了「文字绕图」「灰度/模糊滤镜」「真满版」三样，其余全部可用**。
+文字压图、描边字、竖排、Didot、渐隐、斜切——这一整套此前一个都没用过。
 
 ## SVG 的坑
 
