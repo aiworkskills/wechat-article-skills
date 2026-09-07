@@ -1391,5 +1391,99 @@ class SummaryVsQuoteTest(unittest.TestCase):
         self.assertIn("<blockquote", html)
 
 
+class LeadFrameTest(unittest.TestCase):
+    """导语的装饰框。导语是首屏上**唯一**的结构元素——实测真稿首屏只有
+    导语 + 2~6 段正文，标题、配图、金句全在折叠线以下。所以它值得一个框。
+
+    但两条不能碰：
+    """
+
+    def _leads(self):
+        d = fmt.SKILL_DIR / "references" / "components"
+        return sorted(d.rglob("lead.yaml")) if d.is_dir() else []
+
+    def test_lead_never_uses_a_quote_mark(self):
+        """导语不是引文，不能给它加引号。
+
+        踩过两次同样的错：先是给摘要套大引号（摘要不是引文），后来做导语框时又想
+        用「引号起头」。引号是**归属**的记号——它宣告这段话是别人说的。导语是作者
+        自己写的，加引号等于把作者的话说成引用。金句卡才该有引号。
+        """
+        for f in self._leads():
+            body = f.read_text(encoding="utf-8")
+            # 引号 SVG 的特征路径起手（两个逗号形）
+            self.assertNotIn("M0 20 L0 9 C0 3.5", body, f"{f} 给导语加了引号")
+            self.assertNotIn("&#12300;", body, f"{f} 给导语加了「")
+
+    def test_lead_does_not_enlarge_the_type(self):
+        """靠放大字号做「眼前一亮」在中文里不好看（用户判断）。装饰框负责视觉重量，
+        字号只比正文大一档就够。上限 19px——正文是 16px。"""
+        for f in self._leads():
+            for m in re.finditer(r"font-size:\s*(\d+)px", f.read_text(encoding="utf-8")):
+                self.assertLessEqual(int(m.group(1)), 19,
+                                     f"{f}：导语字号 {m.group(1)}px，太大了")
+
+    def test_lead_avoids_absolute_positioning(self):
+        """`position:absolute` 在微信里没实测过。标签这类元素排成独立一行就够，
+        不值得为一点视觉效果押一个没验证的特性。"""
+        for f in self._leads():
+            self.assertNotIn("position:absolute", f.read_text(encoding="utf-8"), str(f))
+
+    SKELETONS = ("tu", "hua", "sheng", "zi")
+
+    @staticmethod
+    def _shape(tpl: str) -> tuple:
+        """导语框「画了什么形状」。
+
+        只看「有没有 SVG」太粗——四角框线和上下夹线都只归约成「有 SVG」，
+        而它们是两种完全不同的形状。所以要看路径本身：通栏的横线、只有一截的角、
+        竖向的端点短线，是三件不同的事。
+        """
+        feats = set()
+        # 浅底和实心块是两回事：一个是 92%/96% 兑白的浅色，一个是饱和的品牌色压白字。
+        # 只记「有底色」会把涂的导语（浅底）和金句卡（实心块）判成同一形态。
+        if re.search(r"background:\s*\{bg-accent|background:#(E|F)[0-9A-F]", tpl):
+            feats.add("浅底")
+        if re.search(r"background:\s*\{(primary-fill|primary-color)\}", tpl):
+            feats.add("实心块")
+        if "M0 20 L0 9 C0 3.5" in tpl or "&#12300;" in tpl:
+            feats.add("引号")
+        if re.search(r"letter-spacing:\s*[3-9]", tpl):
+            feats.add("疏排标签")
+        for d in re.findall(r'<path[^>]*\bd="([^"]+)"', tpl) + \
+                 ["RECT" for _ in re.findall(r"<rect", tpl)]:
+            if d == "RECT":
+                feats.add("实心条")
+                continue
+            if re.search(r"M0 \d+(\.\d+)? L343", d):      # 通栏横线
+                feats.add("通栏线")
+            if re.search(r"L\d+ 0 M|L0 0 L[123]\d ", d):    # 只画到 30 就停：角
+                feats.add("角")
+            if re.search(r"M[\d.]+ 0 L[\d.]+ \d", d):       # 端点竖线
+                feats.add("端竖线")
+        return tuple(sorted(feats))
+
+    def test_every_skeleton_has_its_own_lead_shape(self):
+        """四套的导语框形态必须互不相同，而且都要跟自己的金句卡分开。"""
+        import yaml
+        d = fmt.SKILL_DIR / "references" / "components"
+        sigs = {}
+        for f in self._leads():
+            sk = f.parent.name
+            if sk not in self.SKELETONS:      # 基础版不参与比较
+                continue
+            lead = yaml.safe_load(f.read_text(encoding="utf-8")).get("template", "")
+            sig = self._shape(lead)
+            self.assertTrue(sig, f"{sk} 的导语没有任何装饰形态")
+            self.assertNotIn(sig, sigs, f"{sk} 的导语框与 {sigs.get(sig)} 形态相同 {sig}")
+            sigs[sk] = sig
+            sigs[sig] = sk
+            card_f = d / sk / "quote-card.yaml"
+            if card_f.exists():
+                card = yaml.safe_load(card_f.read_text(encoding="utf-8")).get("template", "")
+                self.assertNotEqual(self._shape(lead), self._shape(card),
+                                    f"{sk}：导语框和金句卡形态相同")
+
+
 if __name__ == "__main__":
     unittest.main()

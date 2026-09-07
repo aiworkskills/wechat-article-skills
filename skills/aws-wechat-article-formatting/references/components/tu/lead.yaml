@@ -33,4 +33,4 @@ example: ':::lead
   :::
 
   '
-template: "<section style=\"background:{bg-accent-color}; padding:20px 18px; margin:0 0 32px;\">\n  <section style=\"font-size:17px; line-height:1.85; font-weight:600; color:{text-color};\">{content}</section>\n</section>\n"
+template: "<section style=\"margin:0 0 34px -16px; width:375px;\">\n  <section style=\"height:5px; background:{primary-fill};\"></section>\n  <section style=\"font-size:17px; line-height:1.85; color:{text-color}; background:{bg-accent-color}; padding:18px 16px;\">{content}</section>\n</section>\n"
