@@ -1,0 +1,3 @@
+name: quote-card
+template: <section style="margin:48px 0; display:flex; align-items:flex-start;"><svg width="64" height="64" viewBox="0 0 64 64" style="display:block; flex:0 0 auto; margin-right:18px;"><circle cx="32" cy="32" r="32" fill="{primary-fill}"/></svg><section style="flex:1;"><section style="font-size:20px; line-height:1.6; font-weight:900; color:{text-color};">{content}</section><section style="margin-top:12px; font-family:Futura, 'Avenir Next', sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:{text-muted};">— {arg}</section></section></section>
+body: single

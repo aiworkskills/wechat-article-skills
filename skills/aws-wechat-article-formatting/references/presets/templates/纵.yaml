@@ -1,0 +1,28 @@
+name: 纵
+displayName: 纵
+skeleton: zong
+description: 东方文人。小标题竖排挂在右侧，强调用着重号，朱砂色小记号。正文松字距。
+variables:
+  primary-color: '#8C3B2B'
+  text-color: '#2B2622'
+  text-muted: '#8A7F76'
+  secondary-color: '#C9BFB5'
+styles:
+  p: font-size:16px; line-height:2.05; letter-spacing:1px; color:#2B2622; margin:0 0 26px;
+  strong: color:#2B2622; font-weight:600; text-emphasis:dot {primary-ink}; -webkit-text-emphasis:dot {primary-ink}; text-emphasis-position:under right; -webkit-text-emphasis-position:under right;
+  em: font-style:normal; color:{primary-ink};
+  a: 'color:#2B2622; text-decoration:none; border-bottom:1px solid #C9BFB5;'
+  h1: font-size:24px; font-weight:600; letter-spacing:2px; color:#2B2622; line-height:1.5; margin:0 0 28px;
+  h2: 'writing-mode:vertical-rl; font-size:19px; font-weight:600; letter-spacing:5px; color:#2B2622; line-height:1.3; margin:0; padding:6px 0 6px 12px; border-left:1px solid #C9BFB5;'
+  h3: font-size:16px; font-weight:600; letter-spacing:3px; color:{primary-ink}; margin:36px 0 12px;
+  ul: margin:0 0 26px; padding-left:22px; list-style:circle;
+  ol: margin:0 0 26px; padding-left:22px; list-style:cjk-ideographic;
+  li: font-size:16px; line-height:1.95; letter-spacing:0.8px; color:#2B2622; margin:0 0 10px;
+  blockquote: 'color:#5A524B; font-size:16px; line-height:2.0; letter-spacing:1px; padding:0 0 0 18px; margin:0 0 28px; border-left:1px solid #C9BFB5;'
+  figcaption: font-size:13px; letter-spacing:2px; color:#8A7F76; margin:10px 0 32px; text-align:right;
+  img: display:block; width:100%; height:auto;
+  code: font-family:Menlo, Consolas, monospace; font-size:14px; background:#F2F3F5; color:{text-color}; padding:1px 6px;
+  table: width:100%; border-collapse:collapse; margin:0 0 28px; font-size:14.5px;
+  th: 'color:#2B2622; font-size:13px; letter-spacing:2px; font-weight:600; text-align:left; padding:10px 8px; border-bottom:1px solid #2B2622;'
+  td: 'color:#2B2622; padding:11px 8px; border-bottom:1px solid #E8E2DA;'
+  hr: border:none; height:6px; width:6px; background:{primary-ink}; display:block; margin:56px auto;

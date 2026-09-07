@@ -1,0 +1,28 @@
+name: 构
+displayName: 构
+skeleton: gou
+description: 包豪斯几何。Futura 大写标签，钴蓝方块与圆做记号，黑 4px 粗线，分隔是圆方三角。像设计 / 品牌号。
+variables:
+  primary-color: '#1F4FD6'
+  text-color: '#1F1F1F'
+  text-muted: '#8A8F98'
+  secondary-color: '#111111'
+styles:
+  p: font-size:16px; line-height:1.95; letter-spacing:0.4px; color:{text-color}; margin:0 0 26px;
+  strong: color:{text-color}; font-weight:900; border-bottom:3px solid {primary-ink};
+  em: font-style:normal; color:{primary-ink}; font-weight:700;
+  a: color:{primary-ink}; text-decoration:none; font-weight:700;
+  h1: font-size:26px; font-weight:900; color:{text-color}; line-height:1.35; margin:0 0 28px;
+  h2: font-size:22px; font-weight:900; color:{text-color}; line-height:1.4; letter-spacing:-0.3px; margin:8px 0 22px;
+  h3: font-size:17px; font-weight:800; color:{text-color}; margin:36px 0 12px; padding-left:14px; border-left:6px solid {primary-fill};
+  ul: margin:0 0 26px; padding-left:22px; list-style:square;
+  ol: margin:0 0 26px; padding-left:22px; list-style:decimal;
+  li: font-size:16px; line-height:1.85; letter-spacing:0.3px; color:{text-color}; margin:0 0 10px;
+  blockquote: 'color:{text-color}; font-size:16px; line-height:1.85; padding:14px 0 14px 18px; margin:0 0 28px; border-left:4px solid #111111;'
+  figcaption: font-family:Futura, 'Avenir Next', sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:{text-muted}; margin:8px 0 32px;
+  img: 'display:block; width:100%; height:auto; border:2px solid #111111;'
+  code: font-family:Menlo, Consolas, monospace; font-size:14px; background:#F2F3F5; color:{text-color}; padding:1px 6px;
+  table: width:100%; border-collapse:collapse; margin:0 0 28px; font-size:14.5px;
+  th: 'font-family:Futura, ''Avenir Next'', sans-serif; color:#111111; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; font-weight:700; text-align:left; padding:10px 8px; border-top:4px solid #111111; border-bottom:1px solid #111111;'
+  td: 'color:{text-color}; padding:11px 8px; border-bottom:1px solid #E3E6EA;'
+  hr: border:none; height:4px; width:100%; background:#111111; display:block; margin:52px 0;

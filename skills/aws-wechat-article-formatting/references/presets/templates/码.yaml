@@ -1,0 +1,29 @@
+name: 码
+displayName: 码
+skeleton: ma
+description: 终端感。Latin 与数字全部 Menlo 等宽，章节前缀 // 01，导语是 $ 提示符块，虚线分隔，EOF 收尾。像开发者号。
+variables:
+  primary-color: '#2F855A'
+  text-color: '#1F2328'
+  text-muted: '#57606A'
+  secondary-color: '#FFF8C5'
+styles:
+  p: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:15.5px; line-height:1.95; letter-spacing:0.2px; color:#1F2328; margin:0 0 26px; font-variant-numeric:tabular-nums;
+  strong: color:#1F2328; font-weight:700; background:linear-gradient(transparent 12%, {secondary-color} 12%);
+  em: font-style:normal; color:{primary-ink}; font-weight:700;
+  a: color:{primary-ink}; text-decoration:underline;
+  h1: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:23px; font-weight:800; color:#1F2328; line-height:1.4; margin:0 0 28px;
+  h2: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:19px; font-weight:800; color:#1F2328; line-height:1.5; margin:6px 0 20px;
+  h3: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:16px; font-weight:700; color:{primary-ink}; margin:34px 0 12px;
+  ul: margin:0 0 26px; padding-left:22px; list-style:square;
+  ol: margin:0 0 26px; padding-left:22px; list-style:decimal-leading-zero;
+  li: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:15.5px; line-height:1.85; color:#1F2328; margin:0 0 10px; font-variant-numeric:tabular-nums;
+  blockquote: 'font-family:Menlo, Consolas, ''SF Mono'', monospace; color:#57606A; font-size:15px; line-height:1.9; padding:0 0 0 16px; margin:0 0 28px; border-left:3px solid #D0D7DE;'
+  figcaption: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:12.5px; color:#57606A; margin:8px 0 32px;
+  img: 'display:block; width:100%; height:auto; border:1px solid #D0D7DE;'
+  code: 'font-family:Menlo, Consolas, ''SF Mono'', monospace; font-size:14px; background:#F6F8FA; color:#1F2328; padding:2px 6px; border:1px solid #D0D7DE; border-radius:4px;'
+  pre: font-family:Menlo, Consolas, 'SF Mono', monospace; background:#0D1117; color:#E6EDF3; font-size:13px; line-height:1.8; padding:18px 16px; margin:0 0 28px; border-radius:6px; overflow-x:auto;
+  table: font-family:Menlo, Consolas, 'SF Mono', monospace; width:100%; border-collapse:collapse; margin:0 0 28px; font-size:14px; font-variant-numeric:tabular-nums;
+  th: 'color:#1F2328; font-size:13px; font-weight:700; text-align:left; padding:9px 8px; background:#F6F8FA; border:1px solid #D0D7DE;'
+  td: 'color:#1F2328; padding:9px 8px; border:1px solid #D0D7DE;'
+  hr: 'border:none; border-top:1px dashed #D0D7DE; margin:48px 0;'

@@ -1,0 +1,2 @@
+name: h2-deco
+template: <section style="margin:60px 0 0; display:flex; align-items:center;"><section style="flex:0 0 auto; width:14px; height:14px; background:{primary-fill};"></section><section style="font-family:Futura, 'Avenir Next', sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:{text-muted}; margin-left:10px;">Section {n2}</section></section>{content}

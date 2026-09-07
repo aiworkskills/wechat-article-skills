@@ -1,0 +1,2 @@
+name: lead
+template: <section style="margin:4px 0 44px; display:flex;"><section style="flex:1; font-size:17px; line-height:2.0; letter-spacing:1px; color:#2B2622;">{content}</section><section style="flex:0 0 auto; width:6px; height:6px; background:{primary-ink}; margin:10px 0 0 16px;"></section></section>

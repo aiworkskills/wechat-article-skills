@@ -1,0 +1,2 @@
+name: img-deco
+template: <section style="margin:8px 0 0;">{content}<section style="height:3px; background:{primary-fill}; margin:-14px 0 0;"></section></section>

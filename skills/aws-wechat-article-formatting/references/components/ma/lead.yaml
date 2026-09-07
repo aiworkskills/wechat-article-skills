@@ -1,0 +1,2 @@
+name: lead
+template: '<section style="margin:0 0 40px; padding:16px 18px; background:#F6F8FA; border:1px solid #D0D7DE; border-radius:6px; font-family:Menlo, Consolas, ''SF Mono'', monospace; font-size:15.5px; line-height:1.9; color:#1F2328;"><span style="color:{primary-ink}; font-weight:700;">$</span>&nbsp; {content}</section>'

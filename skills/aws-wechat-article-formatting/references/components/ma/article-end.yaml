@@ -1,0 +1,2 @@
+name: article-end
+template: <section style="margin:56px 0 0; font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:13px; letter-spacing:2px; color:{primary-ink};">EOF</section>
