@@ -1336,6 +1336,53 @@ class SummaryVsQuoteTest(unittest.TestCase):
         self.assertEqual(html.count('data-lead="1"'), 1)
         self.assertIn("第一行 第二行", html)
 
+    CARD = {"lead": {"template": '<section data-lead="1">{content}</section>'},
+            "quote-mark": {"template": '<section data-qm="1"></section>'},
+            "quote-card": {"template":
+                '<section data-card="1"><b>{content}</b><i>{arg}</i></section>'}}
+
+    def _c(self, md):
+        return fmt._md_to_html(md, self.STYLES, skip_first_h1=False, components=self.CARD)
+
+    def test_body_quote_with_attribution_becomes_a_card(self):
+        """正文位的引用若以破折号带出处收尾，那是金句，升级成金句卡。
+
+        这不是推断语义——出处是作者写的、破折号是他敲的，排版层只是把这个明确信号
+        接住。所以不需要为金句卡扩展任何 markdown 标记。
+        """
+        for dash in ("——", "—", "--"):
+            with self.subTest(dash):
+                html = self._c(f"## 节\n\n> 排版抢了内容的戏。 {dash} 编辑手记")
+                self.assertIn('data-card="1"', html)
+                self.assertIn("<b>排版抢了内容的戏。</b>", html)
+                self.assertIn("<i>编辑手记</i>", html)
+                self.assertNotIn(dash, html)      # 破折号本身不该留在正文里
+
+    def test_body_quote_without_attribution_stays_a_quote(self):
+        """没写出处就是普通引用。不能因为「引用一般都是金句」就一律升级——
+        那才是替作者做决定。"""
+        html = self._c("## 节\n\n> 这是一段普通引用，没有出处。")
+        self.assertNotIn('data-card="1"', html)
+        self.assertIn("<blockquote", html)
+        self.assertIn('data-qm="1"', html)
+
+    def test_summary_with_a_dash_is_still_the_summary(self):
+        """摘要里出现破折号很常见。位置优先于形态——`##` 之前就是摘要，
+        不能因为带了个破折号就变成金句卡。"""
+        html = self._c("# 标题\n\n> 摘要文字 —— 不该变成金句卡\n\n## 节")
+        self.assertIn('data-lead="1"', html)
+        self.assertNotIn('data-card="1"', html)
+
+    def test_multiline_pull_quote_merges(self):
+        html = self._c("## 节\n\n> 第一行\n> 第二行 —— 出处")
+        self.assertEqual(html.count('data-card="1"'), 1)
+        self.assertIn("第一行 第二行", html)
+
+    def test_dash_without_quote_body_is_not_a_card(self):
+        """只有破折号和出处、没有正文的，升级了会是个空壳。"""
+        html = self._c("## 节\n\n> —— 只有出处")
+        self.assertNotIn('data-card="1"', html)
+
     def test_without_lead_component_the_summary_still_renders(self):
         """骨架没提供 lead 时必须退回普通引用块，不能把摘要吞掉。"""
         html = fmt._md_to_html("# 标题\n\n> 这是摘要。\n\n## 一节", self.STYLES,

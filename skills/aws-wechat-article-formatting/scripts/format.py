@@ -1249,6 +1249,27 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
                         .replace("{content}", body).replace("{arg}", ""))
                     skip_until = j
                     continue
+            # 正文位的引用若以破折号带出处收尾，那是**金句**，升级成金句卡。
+            # 这不是推断语义——出处是作者自己写的，破折号也是他自己敲的，
+            # 排版层只是把这个明确信号接住。所以不需要扩展 markdown 标记。
+            #
+            # 破折号收三种写法：中文正规的 `——`、单个 `—`、以及英文习惯的 `--`。
+            if not in_blockquote and (components or {}).get("quote-card", {}).get("template"):
+                buf, j = [], line_idx
+                while j < len(lines) and lines[j].strip().startswith(">"):
+                    buf.append(lines[j].strip()[1:].strip())
+                    j += 1
+                whole = " ".join(x for x in buf if x)
+                m = re.match(r"^(.*?)\s*(?:——|—|--)\s*([^\s—][^—]{0,24})$", whole)
+                if m and m.group(1).strip():
+                    card = components["quote-card"]
+                    html_parts.append(
+                        _sub_theme_vars(str(card["template"]), styles)
+                        .replace("{content}", _inline_format(m.group(1).strip(), styles))
+                        .replace("{arg}", _inline_format(m.group(2).strip(), styles)))
+                    skip_until = j
+                    continue
+
             if not in_blockquote:
                 # 大引号原先只给了 `:::quote-card`，而真稿里从来没人写那个语法——
                 # 每篇实际出现的是普通的 `>` 引用。骨架放 `quote-mark.yaml`
