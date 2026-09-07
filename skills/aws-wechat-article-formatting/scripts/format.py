@@ -1104,7 +1104,13 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             flush_paragraph()
             close_list()
             close_blockquote()
-            html_parts.append(f'<hr style="{styles.get("hr", "")}" />')
+            # 骨架目录里放 `hr-deco.yaml` 就用它替掉这条线。`---` 每篇出现两三次，
+            # 是最适合放装饰的位置：纯装饰、无内容、作者不用多写一个字。
+            hr_deco = (components or {}).get("hr-deco") or {}
+            if hr_deco.get("template"):
+                html_parts.append(_sub_theme_vars(str(hr_deco["template"]), styles))
+            else:
+                html_parts.append(f'<hr style="{styles.get("hr", "")}" />')
             continue
 
         # Markdown 表格
@@ -1166,11 +1172,19 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
 
             alt_escaped = html_mod.escape(alt)
             img_style = styles.get("img", "") or "max-width:100%; border-radius:4px;"
-            html_parts.append(
+            img_html = (
                 f'<p style="text-align:center; margin:1.5em 0;">'
                 f'<img src="{src}" alt="{alt_escaped}" style="{img_style}" />'
                 f'</p>'
             )
+            # `img-deco.yaml`（模板含 {content}）把图包起来。用来做四角标这类装饰：
+            # 整框太重，四个角提示「这是一张图」就够。图片是正文里视觉最重的元素，
+            # 又不需要作者多写任何东西，是装饰的好位置。
+            img_deco = (components or {}).get("img-deco") or {}
+            if img_deco.get("template"):
+                img_html = _sub_theme_vars(str(img_deco["template"]), styles).replace(
+                    "{content}", img_html)
+            html_parts.append(img_html)
             # 图注只用显式写的 title 参数。alt 里冒号后那段是**给生图模型的画面指令**
             # （「开发者站在巨型 99.9 分数牌前，视线越过分数望向……」），拿它当图注等于
             # 把读者眼睛已经看见的东西复述一遍，零信息；图没生成出来时更会同一句话出现

@@ -1092,5 +1092,48 @@ class SvgWechatSafeTest(unittest.TestCase):
                                      f"{f.name}：把 {ph} 塞进了 SVG，内容一长就溢出")
 
 
+class OrnamentHookTest(unittest.TestCase):
+    """三个「不用作者多写一个字」的装饰位：分隔线、配图四角标、金句出处。
+
+    它们挂在本来就有的元素上（`---`、`![]()`、quote-card），所以每篇都自动生效——
+    这是装饰最划算的位置：不需要内容配合，也不需要新语法。
+    """
+
+    def _comp_dir(self):
+        return fmt.SKILL_DIR / "references" / "components"
+
+    def test_img_deco_must_keep_the_image(self):
+        """img-deco 是包装器，模板里没有 {content} 就会把图整个吞掉——
+        而且是静默的：文章照常渲染，只是一张图都没有。必须挡在这里。"""
+        for f in self._comp_dir().rglob("img-deco.yaml"):
+            self.assertIn("{content}", f.read_text(encoding="utf-8"),
+                          f"{f} 少了 {{content}}，全文配图会被吞掉")
+
+    def test_hr_deco_is_a_replacement_not_a_wrapper(self):
+        """hr 没有内容，hr-deco 是整条替换掉。写了 {content} 说明作者搞混了两种钩子。"""
+        for f in self._comp_dir().rglob("hr-deco.yaml"):
+            self.assertNotIn("{content}", f.read_text(encoding="utf-8"),
+                             f"{f}：hr 没有内容，{{content}} 会原样漏到产出里")
+
+    def test_hooks_actually_fire(self):
+        styles = {"p": "", "img": "", "hr": "border:none;height:1px;", "figcaption": "",
+                  "text-muted": "#6B7078", "primary-ink": "#14508C"}
+        comps = {"hr-deco": {"template": '<section data-hr="1"></section>'},
+                 "img-deco": {"template": '<section data-img="1">{content}</section>'}}
+        html = fmt._md_to_html("---\n\n![图：说明](x.png)", styles, components=comps)
+        self.assertIn('data-hr="1"', html)
+        self.assertIn('data-img="1"', html)
+        self.assertNotIn("<hr", html)        # 被替换掉了，不是叠加
+        self.assertIn("<img", html)          # 图还在
+
+    def test_without_hooks_nothing_changes(self):
+        styles = {"p": "", "img": "", "hr": "border:none;height:1px;", "figcaption": ""}
+        a = fmt._md_to_html("---\n\n![图：说明](x.png)", styles)
+        b = fmt._md_to_html("---\n\n![图：说明](x.png)", styles,
+                            components={"lead": {"template": "<i>{content}</i>"}})
+        self.assertEqual(a, b)
+        self.assertIn("<hr", a)
+
+
 if __name__ == "__main__":
     unittest.main()

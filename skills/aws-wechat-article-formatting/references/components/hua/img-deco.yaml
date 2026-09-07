@@ -1,0 +1,2 @@
+name: img-deco
+template: <section style="margin:1.5em 0;"><svg width="343" height="12" viewBox="0 0 343 12" style="display:block;"><path d="M0 12 L0 0 L24 0 M343 12 L343 0 L319 0" fill="none" stroke="{primary-ink}" stroke-width="1.6" stroke-linecap="round"/></svg>{content}<svg width="343" height="12" viewBox="0 0 343 12" style="display:block;"><path d="M0 0 L0 12 L24 12 M343 0 L343 12 L319 12" fill="none" stroke="{primary-ink}" stroke-width="1.6" stroke-linecap="round"/></svg></section>
