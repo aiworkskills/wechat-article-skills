@@ -212,7 +212,11 @@ def _write_preview(theme_name: str, output: str | None) -> None:
     panes = []
     for label, theme, skeleton in cols:
         styles = _build_styles(theme)
-        body = _md_to_html(md, styles, components=_load_components(str(skeleton or "")))
+        body = _md_to_html(md, styles, components=_load_components(str(skeleton or "")),
+                           base_dir=SAMPLE_MD.parent)
+        # 样张的配图是相对路径，对照页可能写到任何目录——换成绝对 file:// 才不会断图
+        for img in sorted({p.name for p in SAMPLE_MD.parent.glob("_sample-image*")}):
+            body = body.replace(f'src="{img}"', f'src="{(SAMPLE_MD.parent / img).resolve().as_uri()}"')
         panes.append(
             '<div style="flex:0 0 auto; width:375px; margin-right:14px;">'
             f'<div style="font:600 13px/2 -apple-system,\'PingFang SC\',sans-serif; color:#111;">{label}</div>'
@@ -1074,9 +1078,24 @@ def _image_dims(src: str, base_dir) -> str:
     """
     if not base_dir or src.startswith(("http://", "https://", "data:")):
         return ""
+    path = pathlib.Path(base_dir) / src
+    # SVG 的尺寸就写在根元素上，用不着 Pillow——它本来也读不了 SVG。
+    if path.suffix.lower() == ".svg":
+        try:
+            head = path.read_text(encoding="utf-8", errors="ignore")[:600]
+            w = re.search(r'\bwidth="(\d+(?:\.\d+)?)', head)
+            h = re.search(r'\bheight="(\d+(?:\.\d+)?)', head)
+            if w and h:
+                return f' width="{int(float(w.group(1)))}" height="{int(float(h.group(1)))}"'
+            box = re.search(r'viewBox="[\d.\s-]*?([\d.]+)\s+([\d.]+)"', head)
+            if box:
+                return f' width="{int(float(box.group(1)))}" height="{int(float(box.group(2)))}"'
+        except OSError:
+            pass
+        return ""
     try:
         from PIL import Image
-        with Image.open(pathlib.Path(base_dir) / src) as im:
+        with Image.open(path) as im:
             w, h = im.size
         return f' width="{w}" height="{h}"'
     except Exception:

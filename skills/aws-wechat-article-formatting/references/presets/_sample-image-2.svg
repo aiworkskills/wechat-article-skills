@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="600" viewBox="0 0 1000 600">
+  <rect width="1000" height="600" fill="#F1F2F4"/>
+  <g stroke="#D6D9DD" stroke-width="2">
+    <line x1="120" y1="500" x2="920" y2="500"/>
+    <line x1="120" y1="140" x2="120" y2="500"/>
+  </g>
+  <g fill="#C4C9CF">
+    <rect x="180" y="392" width="86" height="108" rx="6"/>
+    <rect x="316" y="340" width="86" height="160" rx="6"/>
+    <rect x="452" y="286" width="86" height="214" rx="6"/>
+  </g>
+  <g fill="#9AA1A8">
+    <rect x="588" y="212" width="86" height="288" rx="6"/>
+    <rect x="724" y="168" width="86" height="332" rx="6"/>
+  </g>
+  <g font-family="-apple-system, 'PingFang SC', sans-serif" font-size="24" fill="#8A9099" text-anchor="middle">
+    <text x="223" y="540">周一</text><text x="359" y="540">周二</text><text x="495" y="540">周三</text>
+    <text x="631" y="540">周四</text><text x="767" y="540">周五</text>
+    <text x="500" y="104" font-size="30" fill="#6E757D">改版后一周的平均阅读时长</text>
+  </g>
+</svg>

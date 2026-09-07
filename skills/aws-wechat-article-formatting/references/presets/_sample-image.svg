@@ -1,11 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="560" viewBox="0 0 1000 560">
-  <rect width="1000" height="560" fill="#E9EAEC"/>
-  <rect x="60" y="70" width="420" height="26" rx="13" fill="#CFD2D6"/>
-  <rect x="60" y="126" width="880" height="14" rx="7" fill="#DCDEE1"/>
-  <rect x="60" y="162" width="820" height="14" rx="7" fill="#DCDEE1"/>
-  <rect x="60" y="198" width="640" height="14" rx="7" fill="#DCDEE1"/>
-  <rect x="60" y="280" width="260" height="200" rx="10" fill="#D3D6DA"/>
-  <rect x="356" y="280" width="260" height="200" rx="10" fill="#D3D6DA"/>
-  <rect x="652" y="280" width="288" height="200" rx="10" fill="#D3D6DA"/>
-  <text x="500" y="392" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="30" fill="#9AA0A6">样张占位图</text>
+  <rect width="1000" height="560" fill="#EDEEF0"/>
+  <g fill="#FFFFFF">
+    <rect x="56" y="48" width="420" height="464" rx="14"/>
+    <rect x="524" y="48" width="420" height="464" rx="14"/>
+  </g>
+  <g fill="#C9CDD2">
+    <rect x="88" y="86" width="200" height="16" rx="8"/>
+    <rect x="556" y="86" width="200" height="16" rx="8"/>
+  </g>
+  <g fill="#DEE1E5">
+    <rect x="88" y="130" width="356" height="9" rx="4.5"/><rect x="88" y="150" width="356" height="9" rx="4.5"/>
+    <rect x="88" y="170" width="356" height="9" rx="4.5"/><rect x="88" y="190" width="356" height="9" rx="4.5"/>
+    <rect x="88" y="210" width="356" height="9" rx="4.5"/><rect x="88" y="230" width="240" height="9" rx="4.5"/>
+    <rect x="88" y="258" width="356" height="9" rx="4.5"/><rect x="88" y="278" width="356" height="9" rx="4.5"/>
+    <rect x="88" y="298" width="356" height="9" rx="4.5"/><rect x="88" y="318" width="300" height="9" rx="4.5"/>
+    <rect x="556" y="134" width="356" height="9" rx="4.5"/><rect x="556" y="168" width="356" height="9" rx="4.5"/>
+    <rect x="556" y="202" width="270" height="9" rx="4.5"/>
+    <rect x="556" y="256" width="356" height="9" rx="4.5"/><rect x="556" y="290" width="356" height="9" rx="4.5"/>
+    <rect x="556" y="324" width="220" height="9" rx="4.5"/>
+  </g>
+  <g font-family="-apple-system, 'PingFang SC', sans-serif" font-size="26" fill="#9299A2" text-anchor="middle">
+    <text x="266" y="470">行高 1.4</text>
+    <text x="734" y="470">行高 1.95</text>
+  </g>
 </svg>
