@@ -37,4 +37,4 @@ example: ':::compare[改前 / 改后]
 template: '<section style="margin:48px 0;">{content}</section>
 
   '
-row_template: "<section style=\"padding:0 0 24px;\">\n    <section style=\"font-size:15px; line-height:1.8; color:{text-muted};\">{c0}</section>\n    <section style=\"margin:6px 0; font-size:13px; color:{text-muted};\">↓</section>\n    <section style=\"font-size:16px; line-height:1.8; font-weight:800; color:{text-color};\">{c1}</section>\n  </section>\n"
+row_template: "<section style=\"padding:0 0 24px;\">\n    <section style=\"font-size:15px; line-height:1.8; color:{text-muted};\">{c0}</section>\n    <section style=\"margin:8px 0 6px;\"><svg width=\"9\" height=\"16\" viewBox=\"0 0 9 16\" style=\"display:block;\"><path d=\"M4.5 0 L4.5 14 M1 10.5 L4.5 14 L8 10.5\" fill=\"none\" stroke=\"{text-muted}\" stroke-width=\"1\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></section>\n    <section style=\"font-size:16px; line-height:1.8; font-weight:800; color:{text-color};\">{c1}</section>\n  </section>\n"
