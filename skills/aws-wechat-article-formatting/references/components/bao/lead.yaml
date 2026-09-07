@@ -1,0 +1,2 @@
+name: lead
+template: <section style="margin:0 0 40px; font-size:19px; line-height:1.85; letter-spacing:0.5px; font-weight:700; color:{text-color};">{content}</section>

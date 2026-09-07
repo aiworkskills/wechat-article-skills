@@ -1,0 +1,27 @@
+name: 书
+displayName: 书
+skeleton: shu
+description: 纸书感。Georgia 衬线西文，标题居中带上方色条，正文段距收紧，加粗用 900 黑字，配图上下双线。像文化类账号。
+variables:
+  primary-color: '#9E3D30'
+  text-color: '#1F1F1F'
+  text-muted: '#8A8F98'
+styles:
+  p: font-family:Baskerville, Georgia, 'Times New Roman', serif; font-size:15.5px; line-height:1.95; letter-spacing:0.3px; color:#222222; margin:0 0 20px;
+  strong: color:#111111; font-weight:900;
+  em: font-style:normal; color:{primary-ink};
+  a: 'color:{text-color}; text-decoration:none; border-bottom:1px solid #B9BEC4;'
+  h1: font-family:Baskerville, Georgia, 'Times New Roman', serif; font-size:24px; font-weight:700; color:#111111; line-height:1.5; text-align:center; margin:0 0 28px;
+  h2: font-family:Baskerville, Georgia, 'Times New Roman', serif; font-size:20px; font-weight:700; color:#111111; line-height:1.55; letter-spacing:1px; text-align:center; margin:14px 0 22px;
+  h3: font-family:Baskerville, Georgia, 'Times New Roman', serif; font-size:16px; font-weight:700; color:{primary-ink}; letter-spacing:1.5px; text-align:center; margin:36px 0 12px;
+  ul: margin:0 0 22px; padding-left:22px; list-style:circle;
+  ol: margin:0 0 22px; padding-left:22px; list-style:decimal;
+  li: font-family:Baskerville, Georgia, 'Times New Roman', serif; font-size:15.5px; line-height:1.85; color:#222222; margin:0 0 8px;
+  blockquote: font-family:Baskerville, Georgia, 'Times New Roman', serif; color:#555555; font-size:15.5px; line-height:1.95; padding:0 22px; margin:8px 0 24px; text-align:center;
+  figcaption: font-family:Baskerville, Georgia, 'Times New Roman', serif; text-align:center; font-size:12.5px; letter-spacing:1px; color:{text-muted}; margin:10px 0 30px;
+  img: display:block; width:100%; height:auto;
+  code: font-family:Menlo, Consolas, monospace; font-size:13.5px; background:#F2F3F5; color:#222222; padding:1px 5px;
+  table: width:100%; border-collapse:collapse; margin:0 0 24px; font-size:14px; font-family:Baskerville, Georgia, 'Times New Roman', serif;
+  th: 'color:#111111; font-size:13px; font-weight:700; text-align:left; padding:8px; border-top:2px solid #111111; border-bottom:1px solid #111111;'
+  td: 'color:#222222; padding:9px 8px; border-bottom:1px solid #E6E8EB;'
+  hr: border:none; height:1px; width:100%; background:#D9DDE1; display:block; margin:44px 0;

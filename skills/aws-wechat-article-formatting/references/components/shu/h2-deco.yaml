@@ -1,0 +1,2 @@
+name: h2-deco
+template: <section style="margin:56px 0 0; text-align:center;"><section style="font-family:Baskerville, Georgia, 'Times New Roman', serif; font-size:15px; letter-spacing:4px; color:{primary-ink};">{nr}</section><section style="display:inline-block; width:28px; height:1px; background:{primary-ink}; margin-top:8px;"></section></section>{content}

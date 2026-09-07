@@ -1,0 +1,3 @@
+name: quote-card
+template: <section style="margin:48px 22px; text-align:center;"><section style="font-family:Baskerville, Georgia, 'Times New Roman', serif; font-size:64px; line-height:.5; color:{primary-ink}; opacity:.35;">&ldquo;</section><section style="font-family:Baskerville, Georgia, 'Times New Roman', serif; font-size:20px; line-height:1.7; color:#111111; margin-top:12px;">{content}</section><section style="margin-top:14px; font-family:Baskerville, Georgia, 'Times New Roman', serif; font-size:12.5px; letter-spacing:2px; color:{text-muted};">&mdash; {arg} &mdash;</section></section>
+body: single

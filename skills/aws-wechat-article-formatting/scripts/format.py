@@ -25,6 +25,7 @@ import argparse
 import html as html_mod
 import json
 import re
+import pathlib
 import sys
 from pathlib import Path
 from urllib.parse import quote
@@ -848,6 +849,15 @@ def _sub_theme_vars(html: str, styles: dict) -> str:
     return html
 
 
+def _roman(n: int) -> str:
+    """1 → I，4 → IV。给纸书感的章节编号用（{nr}）。只做 1~39，章节不会更多。"""
+    out, n = "", max(0, min(n, 39))
+    for v, r in ((10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")):
+        while n >= v:
+            out += r; n -= v
+    return out or "I"
+
+
 def _cjk_numeral(n: int) -> str:
     """1 → 一，11 → 十一。给 `{nz}` 用。
 
@@ -940,9 +950,28 @@ def _render_component(spec: dict, arg: str, body_lines: list[str], styles: dict)
     return html.strip()
 
 
+def _image_dims(src: str, base_dir) -> str:
+    """本地能读到原图时，给 <img> 补 width/height 属性。
+
+    iOS 微信的懒加载（src → data-src）在图片没有尺寸属性时会把它塌成 0 高——
+    设计评审稿实测：浅色底块在、图不见了。publish.py 从来没补过这两个属性，
+    format.py 也没有，所以这个洞一直在。Pillow 可选，读不到就不补。
+    """
+    if not base_dir or src.startswith(("http://", "https://", "data:")):
+        return ""
+    try:
+        from PIL import Image
+        with Image.open(pathlib.Path(base_dir) / src) as im:
+            w, h = im.size
+        return f' width="{w}" height="{h}"'
+    except Exception:
+        return ""
+
+
 def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
                 caption_style: str = CAPTION_ALWAYS,
-                components: dict | None = None) -> str:
+                components: dict | None = None,
+                base_dir=None) -> str:
     """Markdown → 带 inline style 的 HTML。
 
     skip_first_h1=True 时正文不包含文章标题（第一个 h1 跳过，由公众号后台单独填）；
@@ -1129,6 +1158,7 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             if deco.get("template"):
                 heading = (_sub_theme_vars(str(deco["template"]), styles)
                            .replace("{n2}", "%02d" % section_no)
+                           .replace("{nr}", _roman(section_no))
                            .replace("{n}", str(section_no))
                            .replace("{content}", heading))
             html_parts.append(heading)
@@ -1210,7 +1240,7 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             img_style = styles.get("img", "") or "max-width:100%; border-radius:4px;"
             img_html = (
                 f'<p style="text-align:center; margin:1.5em 0;">'
-                f'<img src="{src}" alt="{alt_escaped}" style="{img_style}" />'
+                f'<img src="{src}"{_image_dims(src, base_dir)} alt="{alt_escaped}" style="{img_style}" />'
                 f'</p>'
             )
             # `img-deco.yaml`（模板含 {content}）把图包起来。用来做四角标这类装饰：
