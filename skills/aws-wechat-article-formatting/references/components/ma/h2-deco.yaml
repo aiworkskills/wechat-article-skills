@@ -1,2 +1,2 @@
 name: h2-deco
-template: <section style="margin:60px 0 0; font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:40px; font-weight:800; line-height:1; letter-spacing:-1px; color:{primary-ink};">// {n2}</section>{content}
+template: '<section style="margin:56px 0 0; display:flex; align-items:flex-start;"><section style="flex:0 0 auto; width:36px; padding-top:8px; font-family:Menlo, Consolas, ''SF Mono'', monospace; font-size:13px; color:#8B949E; text-align:right; padding-right:12px; border-right:1px solid #D0D7DE; margin-right:14px; align-self:stretch;">{n2}</section><section style="flex:1;">{content}</section></section>'
