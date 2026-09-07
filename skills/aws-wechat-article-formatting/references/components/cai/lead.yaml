@@ -1,0 +1,2 @@
+name: lead
+template: <section style="margin:0 0 40px;"><section style="height:6px; border-radius:3px; background:linear-gradient(90deg, {primary-ink}, {secondary-color});"></section><section style="padding:18px 0 0; font-size:17px; line-height:1.9; font-weight:600; color:{text-color};">{content}</section></section>

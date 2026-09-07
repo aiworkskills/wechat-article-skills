@@ -1,2 +1,0 @@
-name: h2-deco
-template: <section style="margin:64px 0 32px; display:flex; align-items:flex-start;">{content}<section style="flex:1; margin-left:22px;"><section style="height:1px; background:#C9BFB5; margin-top:16px;"></section><section style="margin-top:22px;"><svg width="34" height="34" viewBox="0 0 34 34" style="display:block;"><rect x="1" y="1" width="32" height="32" rx="3" fill="{primary-fill}"/><text x="17" y="23" text-anchor="middle" font-size="17" font-weight="700" fill="#FFFFFF">{nz}</text></svg></section></section></section>

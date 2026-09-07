@@ -1,0 +1,2 @@
+name: lead
+template: <section style="margin:0 0 40px;"><section style="font-family:'Snell Roundhand', 'Bradley Hand', cursive; font-size:26px; color:{primary-ink}; line-height:1.2; margin-bottom:10px;">Notes</section><section style="font-size:17px; line-height:1.95; color:#2A2622;">{content}</section></section>

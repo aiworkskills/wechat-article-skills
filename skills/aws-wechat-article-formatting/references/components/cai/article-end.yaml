@@ -1,0 +1,2 @@
+name: article-end
+template: <section style="margin:56px 0 0;"><section style="height:6px; border-radius:3px; background:linear-gradient(90deg, {primary-ink}, {secondary-color});"></section></section>

@@ -13,7 +13,7 @@ styles:
   em: font-style:normal; color:{primary-ink}; font-weight:700;
   a: color:{primary-ink}; text-decoration:underline;
   h1: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:23px; font-weight:800; color:#1F2328; line-height:1.4; margin:0 0 28px;
-  h2: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:19px; font-weight:800; color:#1F2328; line-height:1.5; margin:4px 0 20px;
+  h2: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:20px; font-weight:800; color:#1F2328; line-height:1.5; margin:10px 0 20px;
   h3: font-family:Menlo, Consolas, 'SF Mono', monospace; font-size:16px; font-weight:700; color:{primary-ink}; margin:34px 0 12px;
   ul: margin:0 0 26px; padding-left:22px; list-style:square;
   ol: margin:0 0 26px; padding-left:22px; list-style:decimal-leading-zero;

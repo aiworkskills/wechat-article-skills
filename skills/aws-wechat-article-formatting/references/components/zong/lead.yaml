@@ -1,2 +1,0 @@
-name: lead
-template: <section style="margin:8px 0 52px; display:flex; justify-content:center; align-items:flex-start;"><section style="writing-mode:vertical-rl; height:230px; font-size:16px; line-height:1.9; letter-spacing:4px; color:#2B2622;">{content}</section><section style="margin-left:18px; padding-top:4px;"><svg width="30" height="30" viewBox="0 0 34 34" style="display:block;"><rect x="1" y="1" width="32" height="32" rx="3" fill="{primary-fill}"/><text x="17" y="23" text-anchor="middle" font-size="17" font-weight="700" fill="#FFFFFF">读</text></svg></section></section>

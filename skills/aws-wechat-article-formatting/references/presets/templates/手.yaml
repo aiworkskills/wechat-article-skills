@@ -1,0 +1,28 @@
+name: 手
+displayName: 手
+skeleton: shou
+description: 手作。小标题下一笔真笔锋，荧光笔黄底强调，手绘抖动分隔线，手写体小标，配图顶一条斜贴胶带。像个人手记 / 生活号。
+variables:
+  primary-color: '#C8553D'
+  text-color: '#2A2622'
+  text-muted: '#8A7F76'
+  secondary-color: '#FFE066'
+styles:
+  p: font-size:16px; line-height:2.0; letter-spacing:0.4px; color:#2A2622; margin:0 0 26px;
+  strong: color:#2A2622; font-weight:700; background:linear-gradient(transparent 55%, {secondary-color} 55%);
+  em: font-style:normal; color:{primary-ink}; font-weight:700;
+  a: color:{primary-ink}; text-decoration:none; border-bottom:2px dotted {primary-ink};
+  h1: font-size:25px; font-weight:800; color:#2A2622; line-height:1.4; margin:0 0 28px;
+  h2: font-size:22px; font-weight:800; color:#2A2622; line-height:1.4; margin:0;
+  h3: font-size:17px; font-weight:800; color:{primary-ink}; margin:36px 0 12px;
+  ul: margin:0 0 26px; padding-left:22px; list-style:circle;
+  ol: margin:0 0 26px; padding-left:22px; list-style:decimal;
+  li: font-size:16px; line-height:1.9; color:#2A2622; margin:0 0 10px;
+  blockquote: color:#5A524B; font-size:16px; line-height:1.9; padding:0 0 0 18px; margin:0 0 28px; border-left:3px dotted {primary-ink};
+  figcaption: font-size:13px; color:#8A7F76; margin:8px 0 32px; text-align:center;
+  img: display:block; width:100%; height:auto; border-radius:4px;
+  code: font-family:Menlo, Consolas, monospace; font-size:14px; background:#F2F3F5; color:{text-color}; padding:1px 6px;
+  table: width:100%; border-collapse:collapse; margin:0 0 28px; font-size:14.5px;
+  th: color:#2A2622; font-size:13px; font-weight:800; text-align:left; padding:10px 8px; border-bottom:2px dotted {primary-ink};
+  td: 'color:#2A2622; padding:11px 8px; border-bottom:1px dotted #D9D2C8;'
+  hr: border:none; height:1px; background:#D9D2C8; margin:48px 0;

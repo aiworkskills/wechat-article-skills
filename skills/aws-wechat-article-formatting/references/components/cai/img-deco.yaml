@@ -1,0 +1,2 @@
+name: img-deco
+template: <section style="margin:8px 0 0;">{content}<section style="height:4px; border-radius:2px; background:linear-gradient(90deg, {primary-ink}, {secondary-color}); margin:-12px 0 0;"></section></section>

@@ -1,0 +1,2 @@
+name: h2-deco
+template: <section style="margin:56px 0 0; font-size:12px; letter-spacing:3px; color:{secondary-color}; font-weight:700;">{n2}</section>{content}

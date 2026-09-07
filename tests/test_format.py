@@ -1426,9 +1426,13 @@ class LeadFrameTest(unittest.TestCase):
         """靠放大字号做「眼前一亮」在中文里不好看（用户判断）。装饰框负责视觉重量，
         字号只比正文大一档就够。上限 19px——正文是 16px。"""
         for f in self._leads():
-            for m in re.finditer(r"font-size:\s*(\d+)px", f.read_text(encoding="utf-8")):
-                self.assertLessEqual(int(m.group(1)), 19,
-                                     f"{f}：导语字号 {m.group(1)}px，太大了")
+            tpl = f.read_text(encoding="utf-8")
+            # 只看包着 {content} 的那一层——手写体 kicker、序号这类装饰性小标不是导语正文
+            m = re.search(r'style="([^"]*)"[^>]*>\{content\}', tpl)
+            css = m.group(1) if m else tpl
+            for fs in re.finditer(r"font-size:\s*(\d+)px", css):
+                self.assertLessEqual(int(fs.group(1)), 19,
+                                     f"{f}：导语字号 {fs.group(1)}px，太大了")
 
     def test_lead_avoids_absolute_positioning(self):
         """`position:absolute` 在微信里没实测过。标签这类元素排成独立一行就够，

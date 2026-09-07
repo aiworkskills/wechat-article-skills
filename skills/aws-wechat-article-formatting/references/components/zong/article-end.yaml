@@ -1,2 +1,0 @@
-name: article-end
-template: <section style="margin:64px 0 0; display:flex; justify-content:flex-end;"><svg width="40" height="40" viewBox="0 0 34 34" style="display:block;"><rect x="1" y="1" width="32" height="32" rx="3" fill="{primary-fill}"/><text x="17" y="23" text-anchor="middle" font-size="17" font-weight="700" fill="#FFFFFF">完</text></svg></section>

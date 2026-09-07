@@ -1,0 +1,2 @@
+name: img-deco
+template: <section style="margin:20px 0 0;"><section style="display:flex; justify-content:center; margin-bottom:-10px;"><section style="width:88px; height:22px; background:rgba(255,224,102,.78); transform:rotate(-3deg);"></section></section>{content}</section>
