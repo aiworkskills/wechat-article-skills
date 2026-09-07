@@ -11,8 +11,8 @@ styles:
   # 加粗用着重号（中文书刊里比加粗更正统），链接用疏排，列表用中文数字。
   # 三样都是 2026-09-07 探针稿实测微信保留的写法，其余三套一样都没用。
   # 着重号放在字下（position:under）——放字上会撞到上一行的降部。
-  strong: 'color:{text-color}; font-weight:500; text-emphasis:dot {primary-ink};
-    -webkit-text-emphasis:dot {primary-ink}; text-emphasis-position:under right;
+  strong: 'color:{text-color}; font-weight:500; text-emphasis:dot #9AA1A9;
+    -webkit-text-emphasis:dot #9AA1A9; text-emphasis-position:under right;
     -webkit-text-emphasis-position:under right;'
   # 疏排单看 3px 才明显，但行内链接用 3px 会把词拆成一个个孤立的字，读起来比不加还费劲。
   # 这里取 2px：靠彩字认出「能点」，疏排只负责带上这一套的口音。
@@ -44,8 +44,7 @@ styles:
   # 分隔：hr 装不了字，给它这一套里最不像装饰的形态——一截短细线。
   hr: 'border:none; height:1px; width:40px; background:{text-muted}; display:block;
     margin:72px auto;'
-  code: 'font-family:Menlo, Consolas, monospace; font-size:14px; letter-spacing:0;
-    color:{primary-ink};'
+  code: 'font-family:Menlo, Consolas, monospace; font-size:14px; background:#F2F3F5; color:{text-color}; padding:1px 5px;'
   table: 'width:100%; border-collapse:collapse; margin:0 0 32px; font-size:15px;'
   th: 'padding:10px 8px; text-align:left; font-weight:600; letter-spacing:2px;
     color:{text-muted}; font-size:13px; border-bottom:1px solid #E8EAED;'

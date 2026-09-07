@@ -8,6 +8,7 @@ styles:
   li: font-size:16px; line-height:1.85; color:{text-color}; margin:0 0 10px;
   em: font-style:normal; color:{primary-ink}; font-weight:600;
   img: display:block; width:100%; height:auto; margin:8px auto 0;
+  code: 'font-family:Menlo, Consolas, monospace; font-size:14px; background:#F2F3F5; color:{text-color}; padding:1px 5px;'
   strong: color:{text-color}; font-weight:900;
   a: 'color:{text-color}; text-decoration:none; font-weight:700; border-bottom:2px solid {text-color};'
   ul: margin:0 0 28px; padding-left:20px; list-style:disc;
