@@ -1,7 +1,11 @@
-name: 块
-displayName: 块
+name: 亲和
+displayName: 亲和
 skeleton: kuai
 description: 圆润友好。实心胶囊标题白字居中，圆角 20，灰底圆角引用，高亮笔加粗。像架构师那类账号。
+when_to_use: 教程、职场、面向新手的解释性长文。圆角和胶囊标题让技术话题显得好接近，读者不会一眼觉得难。
+when_not_to_use: '严肃议题、讣闻、财报解读——圆角友好的语气会削弱内容的分量。
+
+  品牌调性偏冷硬或极简的账号：这套是所有模版里最「软」的一档。'
 variables:
   primary-color: '#6B5B95'
   text-color: '#1F1F1F'
@@ -10,12 +14,15 @@ schemes:
 - name: 黛紫
   variables:
     primary-color: '#6B5B95'
+  description: 沉静偏商务，紫里带灰，不显轻浮。默认色。
 - name: 松绿
   variables:
     primary-color: '#4E7D6B'
+  description: 克制的植物绿，适合健康、成长、可持续一类的话题。
 - name: 靛蓝
   variables:
     primary-color: '#3F5F9E'
+  description: 偏正统的蓝，最保险的一档，企业号和 B 端内容用它不会错。
 styles:
   p: font-size:16px; line-height:1.95; letter-spacing:0.5px; color:{text-color}; margin:0 0 26px;
   strong: color:{text-color}; font-weight:700; background:linear-gradient(transparent 74%, {highlight-soft} 74%);

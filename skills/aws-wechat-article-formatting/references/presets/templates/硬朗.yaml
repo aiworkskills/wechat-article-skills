@@ -1,7 +1,11 @@
-name: 构
-displayName: 构
+name: 硬朗
+displayName: 硬朗
 skeleton: gou
 description: 包豪斯。钴蓝方块压白色 Futura 数字做章节，黑 / 钴蓝 / 黄三色叠条做导语，圆方三角分隔，大圆金句。像设计 / 品牌号。
+when_to_use: 观点、宣言、立场鲜明的内容。三色条、方块编号、圆形引号，包豪斯语法，主张强的稿子压得住。
+when_not_to_use: '温和的科普和教程：几何块面的语气过于强势。
+
+  需要亲和力的品牌内容：这套不打算讨好读者。'
 variables:
   primary-color: '#1F4FD6'
   text-color: '#111111'
@@ -12,14 +16,17 @@ schemes:
   variables:
     primary-color: '#1F4FD6'
     secondary-color: '#F2C230'
+  description: 钴蓝配柠檬黄，最正的包豪斯配色。默认色。
 - name: 赤黑
   variables:
     primary-color: '#C0392B'
     secondary-color: '#1A1A1A'
+  description: 正红配纯黑，冲突感最强，适合批评和辩论。
 - name: 绿橙
   variables:
     primary-color: '#2A9D8F'
     secondary-color: '#E76F51'
+  description: 青绿配砖橙，稍微收一点火气，仍然醒目。
 styles:
   p: font-size:16px; line-height:1.95; letter-spacing:0.4px; color:#111111; margin:0 0 26px;
   strong: color:#111111; font-weight:900; border-bottom:3px solid {primary-fill};

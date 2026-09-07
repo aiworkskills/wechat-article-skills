@@ -36,8 +36,13 @@ import yaml
 SCRIPT_DIR = Path(__file__).parent
 SKILL_DIR = SCRIPT_DIR.parent
 BUILTIN_THEMES_DIR = SKILL_DIR / "references" / "presets" / "themes"
-# 内置只留四套默认模版（块 / 报 / 书 / 艺）；其余模版由网站以 .aws 预设包下发到用户目录。
-DEFAULT_THEME = "块"
+# 内置只留四套默认模版（亲和 / 资讯 / 书卷 / 杂志）；其余四套由网站以 .aws 预设包下发到用户目录。
+DEFAULT_THEME = "亲和"
+# 样张：--preview 用它渲对照页。一篇里把常用元素凑齐（导语、加粗、链接、列表、
+# 配图、金句、清单、分隔），一屏之内就能看出两套配色的差别。
+SAMPLE_MD = SKILL_DIR / "references" / "presets" / "_sample.md"
+# 网站上同一批模版的在线预览（由 website 仓库的 build_formatting_presets.py 生成后发布）
+PREVIEW_BASE = "https://aiworkskills.cn/format-previews"
 
 USER_THEMES_DIRS = [
     Path(".aws-article/presets/formatting"),
@@ -169,6 +174,64 @@ def _load_theme(name: str) -> dict:
     return _load_theme_file(path)
 
 
+def _indent_lines(text: str, pad: str = "          ") -> str:
+    """多行判据在终端里对齐到第二行起缩进，读起来才是一段而不是散行。"""
+    lines = [ln.strip() for ln in str(text).splitlines() if ln.strip()]
+    return ("\n" + pad).join(lines)
+
+
+def _write_preview(theme_name: str, output: str | None) -> None:
+    """把样张渲成对照页写盘。
+
+    给了模版名：并列它的每套配色——「松绿长什么样」这个问题只能靠看，说不清楚。
+    没给：并列所有模版的默认色，用来挑模版。
+
+    每栏固定 375px（iPhone 逻辑宽），和真机同宽，看到的间距就是读者看到的间距。
+    """
+    themes = _list_themes()
+    if theme_name:
+        match = next((t for t in themes if t["name"] == theme_name), None)
+        if not match:
+            _err(f"模版 '{theme_name}' 不存在。可用：{', '.join(t['name'] for t in themes)}")
+        theme = _load_theme(theme_name)
+        cols = [(sc["name"], _apply_scheme(theme, sc["name"]), theme.get("skeleton"))
+                for sc in (theme.get("schemes") or [])] or [(theme_name, theme, theme.get("skeleton"))]
+        title = f"{theme_name} · {len(cols)} 套配色"
+    else:
+        cols = []
+        for t in themes:
+            th = _load_theme(t["name"])
+            first = (th.get("schemes") or [{}])[0].get("name")
+            cols.append((f"{t['name']}｜{first or '默认'}", th, th.get("skeleton")))
+        title = f"全部模版 · {len(cols)} 套"
+
+    if not SAMPLE_MD.exists():
+        _err(f"缺样张：{SAMPLE_MD}")
+    md = SAMPLE_MD.read_text(encoding="utf-8")
+
+    panes = []
+    for label, theme, skeleton in cols:
+        styles = _build_styles(theme)
+        body = _md_to_html(md, styles, components=_load_components(str(skeleton or "")))
+        panes.append(
+            '<div style="flex:0 0 auto; width:375px; margin-right:14px;">'
+            f'<div style="font:600 13px/2 -apple-system,\'PingFang SC\',sans-serif; color:#111;">{label}</div>'
+            f'<div style="border:1px solid #DDD; background:#fff;">{_wrap_document(body, styles)}</div>'
+            "</div>"
+        )
+    html = (
+        '<!doctype html><html><head><meta charset="utf-8">'
+        f"<title>{title}</title>"
+        '<style>body{margin:0;padding:16px;background:#D8D8DA;} img{max-width:100%;}</style>'
+        f'</head><body><div style="font:700 15px/2 -apple-system,sans-serif;color:#111;">{title}</div>'
+        f'<div style="display:flex; align-items:flex-start;">{"".join(panes)}</div></body></html>\n'
+    )
+    out = Path(output) if output else Path(f"format-preview-{theme_name or 'all'}.html")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(html, encoding="utf-8")
+    _ok(f"对照页已写入: {out.resolve()}（用浏览器打开）")
+
+
 def _apply_scheme(theme: dict, name: str | None) -> dict:
     """选一套配色：把 schemes[name].variables 合并进主题的 variables，派生色随后自动重算。
 
@@ -209,7 +272,17 @@ def _list_themes() -> list[dict]:
                 "label": data.get("name", ""),
                 "description": data.get("description", ""),
                 "source": source,
-                "schemes": [str(x.get("name")) for x in (data.get("schemes") or []) if x.get("name")],
+                "skeleton": str(data.get("skeleton") or ""),
+                "when_to_use": str(data.get("when_to_use") or "").strip(),
+                "when_not_to_use": str(data.get("when_not_to_use") or "").strip(),
+                "schemes": [
+                    {
+                        "name": str(x.get("name")),
+                        "color": str((x.get("variables") or {}).get("primary-color") or ""),
+                        "description": str(x.get("description") or "").strip(),
+                    }
+                    for x in (data.get("schemes") or []) if x.get("name")
+                ],
             })
     return themes
 
@@ -227,7 +300,7 @@ def _export_theme(name: str) -> None:
         "variables": {**DEFAULT_VARIABLES, **(theme.get("variables") or {})},
         "styles": {**DEFAULT_STYLES, **(theme.get("styles") or {})},
     }
-    for key in ("skeleton", "constants", "schemes"):
+    for key in ("skeleton", "when_to_use", "when_not_to_use", "constants", "schemes"):
         if theme.get(key):
             data[key] = theme[key]
     sys.stdout.write(yaml.safe_dump(data, allow_unicode=True, sort_keys=False, width=1000))
@@ -1718,7 +1791,14 @@ def main():
     parser.add_argument("--font-size", help="覆盖字号（如 16px）")
     parser.add_argument("-o", "--output", help="输出路径（默认同名 .html）")
     parser.add_argument("--no-preformat", action="store_true", help="跳过 Markdown 预格式化")
-    parser.add_argument("--list-themes", action="store_true", help="列出可用主题")
+    parser.add_argument("--list-themes", action="store_true", help="列出可用模版：长相、适合什么、每套配色的色值与口径")
+    parser.add_argument(
+        "--preview",
+        nargs="?",
+        const="",
+        metavar="模版名",
+        help="把样张渲成对照页并写文件：给模版名则并列它的每套配色，不给则并列所有模版的默认色",
+    )
     parser.add_argument(
         "--export-theme",
         metavar="主题名",
@@ -1728,13 +1808,28 @@ def main():
     args = parser.parse_args()
 
     if args.list_themes:
-        print("可用主题：")
+        print("可用模版（选模版看「适合」，选配色看色值后面那句）：\n")
         for t in _list_themes():
-            label = f" ({t['label']})" if t["label"] else ""
-            desc = f" - {t['description']}" if t["description"] else ""
-            print(f"  {t['name']}{label} [{t['source']}]{desc}")
+            label = f" ({t['label']})" if t["label"] and t["label"] != t["name"] else ""
+            print(f"■ {t['name']}{label} [{t['source']}]")
+            if t["description"]:
+                print(f"    长相：{t['description']}")
+            if t.get("when_to_use"):
+                print(f"    适合：{_indent_lines(t['when_to_use'])}")
+            if t.get("when_not_to_use"):
+                print(f"    不适合：{_indent_lines(t['when_not_to_use'])}")
+            for i, sc in enumerate(t.get("schemes") or []):
+                mark = "默认" if i == 0 else "    "
+                color = f" {sc['color']}" if sc["color"] else ""
+                print(f"    配色 [{mark}] {sc['name']}{color}  {sc['description']}")
             if t.get("schemes"):
-                print(f"      配色: {' / '.join(t['schemes'])}")
+                print(f"    预览：format.py --preview {t['name']}"
+                      + (f"  或 {PREVIEW_BASE}/{t['skeleton']}/0.html" if t["skeleton"] else ""))
+            print()
+        return
+
+    if args.preview is not None:
+        _write_preview(args.preview, args.output)
         return
 
     if args.export_theme:

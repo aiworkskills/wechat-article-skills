@@ -1,7 +1,11 @@
-name: 彩
-displayName: 彩
+name: 活力
+displayName: 活力
 skeleton: cai
 description: 渐变。小标题是渐变填充字，导语顶部渐变粗条，金句渐变淡底，分隔是渐隐的渐变线。像新锐科技 / 产品号。
+when_to_use: 产品发布、增长复盘、面向年轻读者的内容。渐变色条和渐变标题字，是八套里最外向的一档。
+when_not_to_use: '严肃议题和坏消息：渐变的欢快语气会跑偏。
+
+  正文很长的深度稿：高饱和的强调会看得累。'
 variables:
   primary-color: '#5B4BFF'
   text-color: '#1F1F1F'
@@ -12,14 +16,17 @@ schemes:
   variables:
     primary-color: '#5B4BFF'
     secondary-color: '#17A398'
+  description: 蓝到青的渐变，科技感最正的一档。默认色。
 - name: 玫紫
   variables:
     primary-color: '#B83280'
     secondary-color: '#6B46C1'
+  description: 玫红到紫，适合消费、时尚、社群类内容。
 - name: 暮橙
   variables:
     primary-color: '#D9480F'
     secondary-color: '#A61E4D'
+  description: 橙到洋红，最暖也最响，短平快的稿子用它。
 styles:
   p: font-size:16px; line-height:1.95; letter-spacing:0.4px; color:{text-color}; margin:0 0 26px;
   strong: font-weight:800; background:linear-gradient(90deg, {primary-ink}, {secondary-color}); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;

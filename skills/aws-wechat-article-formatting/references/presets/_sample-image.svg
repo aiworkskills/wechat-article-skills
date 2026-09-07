@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="560" viewBox="0 0 1000 560">
+  <rect width="1000" height="560" fill="#E9EAEC"/>
+  <rect x="60" y="70" width="420" height="26" rx="13" fill="#CFD2D6"/>
+  <rect x="60" y="126" width="880" height="14" rx="7" fill="#DCDEE1"/>
+  <rect x="60" y="162" width="820" height="14" rx="7" fill="#DCDEE1"/>
+  <rect x="60" y="198" width="640" height="14" rx="7" fill="#DCDEE1"/>
+  <rect x="60" y="280" width="260" height="200" rx="10" fill="#D3D6DA"/>
+  <rect x="356" y="280" width="260" height="200" rx="10" fill="#D3D6DA"/>
+  <rect x="652" y="280" width="288" height="200" rx="10" fill="#D3D6DA"/>
+  <text x="500" y="392" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="30" fill="#9AA0A6">样张占位图</text>
+</svg>

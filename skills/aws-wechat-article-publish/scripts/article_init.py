@@ -113,6 +113,7 @@ PRESET_FIELDS = [
     "default_closing_block",
     "default_title_style",
     "default_format_preset",
+    "default_format_scheme",
     "default_cover_image_style",
     "default_article_image_style",
     "default_sticker_style",

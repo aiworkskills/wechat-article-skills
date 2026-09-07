@@ -12,7 +12,7 @@ from tests._load import load
 fmt = load("skills/aws-wechat-article-formatting/scripts/format.py", "aws_format")
 
 
-def _styles(theme_name="块", overrides=None):
+def _styles(theme_name="亲和", overrides=None):
     return fmt._build_styles(fmt._load_theme_file(fmt._find_theme_file(theme_name)), overrides or {})
 
 
@@ -95,7 +95,7 @@ class MdToHtmlTest(unittest.TestCase):
 
 class BuildStylesTest(unittest.TestCase):
     def test_font_size_override_hits_paragraph_and_li(self):
-        for theme in ("块", "报", "书", "艺"):
+        for theme in ("亲和", "资讯", "书卷", "杂志"):
             st = _styles(theme, {"font-size": "15px"})
             self.assertIn("font-size:15px", st["p"], theme)
             self.assertNotIn("font-size:16px", st["p"], theme)
@@ -129,7 +129,7 @@ class CaptionStyleTest(unittest.TestCase):
         )
 
     def _captions(self, style):
-        styles = fmt._build_styles(fmt._load_theme("块"))
+        styles = fmt._build_styles(fmt._load_theme("亲和"))
         html = fmt._md_to_html(self._md(), styles, caption_style=style)
         return re.findall(r'<p style="text-align:center; font-size:\d+px[^>]*>([^<]*)</p>', html)
 
@@ -169,7 +169,7 @@ class ComponentTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.styles = fmt._build_styles(fmt._load_theme("块"))
+        self.styles = fmt._build_styles(fmt._load_theme("亲和"))
         self.comps = fmt._load_components()
 
     def test_builtin_components_load(self):
@@ -352,25 +352,25 @@ class ComponentTest(unittest.TestCase):
         实例：![氛围：开发者站在巨型99.9分数牌前，视线越过分数望向复杂而开放的城市]
         —— 拿它当图注是把读者眼睛已经看见的东西复述一遍，零信息。
         """
-        styles = fmt._build_styles(fmt._load_theme("块"))
+        styles = fmt._build_styles(fmt._load_theme("亲和"))
         html = fmt._md_to_html('![氛围：开发者站在巨型99.9分数牌前](a.png)', styles)
         self.assertIn("<img", html)
         self.assertNotIn("开发者站在巨型99.9分数牌前</p>", html)
 
     def test_caption_rendered_when_title_given(self):
-        styles = fmt._build_styles(fmt._load_theme("块"))
+        styles = fmt._build_styles(fmt._load_theme("亲和"))
         html = fmt._md_to_html('![信息图：画面指令](a.png "同一模型两个分数，差 37 个百分点")', styles)
         self.assertIn("同一模型两个分数", html)
         self.assertNotIn("画面指令</p>", html)
 
     def test_title_does_not_leak_into_src(self):
         """title 必须从 src 里摘干净，否则图片路径带上引号会直接 404。"""
-        styles = fmt._build_styles(fmt._load_theme("块"))
+        styles = fmt._build_styles(fmt._load_theme("亲和"))
         html = fmt._md_to_html('![x：y](imgs/a.png "图注")', styles)
         self.assertIn('src="imgs/a.png"', html)
 
     def test_single_quoted_and_curly_quoted_title(self):
-        styles = fmt._build_styles(fmt._load_theme("块"))
+        styles = fmt._build_styles(fmt._load_theme("亲和"))
         for mark in ('"图注A"', "'图注B'", '“图注C”'):
             html = fmt._md_to_html(f'![x：y](a.png {mark})', styles)
             self.assertIn(mark.strip('"\'“”'), html)
@@ -797,7 +797,7 @@ _SKIP_NO_TEMPLATE = unittest.skipUnless(_HAS_TEMPLATES, "模版尚未落地")
 
 @_SKIP_NO_TEMPLATE
 class ThreeTemplateTest(unittest.TestCase):
-    """八套模版（块 / 报 / 书 / 艺 / 彩 / 手 / 构 / 码）的守卫。
+    """八套模版（亲和 / 资讯 / 书卷 / 杂志 / 活力 / 手账 / 硬朗 / 技术）的守卫。
 
     上一轮做四个骨架失败，根因之一是没有尺——定了规则却一路手写把规则忘了。
     这些用例把「实验里撞出来的硬规则」钉死，改坏了会直接红。
@@ -1224,7 +1224,7 @@ class MarkdownCoverageTest(unittest.TestCase):
         # 用真主题构建，而不是手写一个键不全的桩——渲染器在样式为空时会回退到
         # 变量拼接，桩少一个键就是 KeyError，测的就不是 markdown 覆盖度了。
         import yaml
-        t = fmt.SKILL_DIR / "references" / "presets" / "themes" / "块.yaml"
+        t = fmt.SKILL_DIR / "references" / "presets" / "themes" / "亲和.yaml"
         cls.STYLES = fmt._build_styles(yaml.safe_load(t.read_text(encoding="utf-8")))
 
     def _r(self, md, **kw):
@@ -1321,7 +1321,7 @@ class SummaryVsQuoteTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import yaml
-        t = fmt.SKILL_DIR / "references" / "presets" / "themes" / "块.yaml"
+        t = fmt.SKILL_DIR / "references" / "presets" / "themes" / "亲和.yaml"
         cls.STYLES = fmt._build_styles(yaml.safe_load(t.read_text(encoding="utf-8")))
 
     COMPS = {"lead": {"template": '<section data-lead="1">{content}</section>'},

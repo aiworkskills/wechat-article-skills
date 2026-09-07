@@ -57,18 +57,33 @@ metadata:
 
 ## 内置模版
 
-排版 = **模版**（骨架：标题装饰、导语、金句卡、图片处理、分隔、文末）× **配色**（一组主色/次色，派生色自动重算）。skill 内置四套模版，每套三种配色：
+排版 = **模版**（骨架：标题装饰、导语、金句卡、图片处理、分隔、文末）× **配色**（一组主色/次色，派生色自动重算）。名字即用途，选之前先看「适合」：
 
-| 模版 | 长相 | 配色（第一个是默认） |
-|------|------|---------|
-| `块` | 圆润友好：实心胶囊标题、圆角卡片、记号笔加粗 | 黛紫 / 松绿 / 靛蓝 |
-| `报` | 媒体号：17px 松字距大字、整句彩色粗体、灰底圆角块 | 墨绿 / 绛红 / 藏青 |
-| `书` | 书刊：衬线、罗马数字章节、居中标题、大引号金句 | 朱砂 / 黛蓝 / 苍绿 |
-| `艺` | 杂志：竖排 kicker、Didot 大数字章节、正文内缩 | 石青 / 驼褐 / 铁锈 |
+| 模版 | 适合 | 不适合 | 配色（第一个是默认） |
+|------|------|--------|---------|
+| `亲和` | 教程、职场、面向新手的解释性长文 | 严肃议题、极简冷硬的品牌 | 黛紫 / 松绿 / 靛蓝 |
+| `资讯` | 快讯、评测、行业观察 | 抒情散文、碎片化短段 | 墨绿 / 绛红 / 藏青 |
+| `书卷` | 人文、读书、历史、深度长文 | 工程文档、数据密集的评测 | 朱砂 / 黛蓝 / 苍绿 |
+| `杂志` | 品牌故事、人物访谈、生活方式 | 没有配图的稿子、信息型短文 | 石青 / 驼褐 / 铁锈 |
 
-另外四套（`彩` 渐变 / `手` 手作 / `构` 包豪斯 / `码` 工程）不随 skill 内置，在 aiworkskills.cn 选好模版和配色后随 `.aws` 预设包下发到 `.aws-article/presets/formatting/`（见 assets skill）。网站上选的配色会烘进 YAML 顶层 `variables`，落地后不需要额外配置。
+另外四套不随 skill 内置，在 aiworkskills.cn 选好模版和配色后随 `.aws` 预设包下发到 `.aws-article/presets/formatting/`（见 assets skill）：`活力`（产品发布、增长复盘）、`手账`（个人笔记、复盘）、`硬朗`（观点、宣言）、`技术`（工程实践、代码讲解）。网站上选的配色会烘进 YAML 顶层 `variables`，落地后不需要额外配置。
 
-换配色：`--scheme <配色名>`，或本篇 `article.yaml` 写 `default_format_scheme: [配色名]`。`--list-themes` 会列出每套模版的配色。
+**选之前先跑一次**，判据、色值、每套配色的口径都在输出里，别只按名字猜：
+
+```bash
+{python} {baseDir}/scripts/format.py --list-themes
+```
+
+**说不清就看**：`--preview` 把样张渲成并列对照页（每栏 375px，与真机同宽），写成 HTML 用浏览器打开。
+
+```bash
+{python} {baseDir}/scripts/format.py --preview 亲和 -o preview.html   # 该模版的每套配色并列
+{python} {baseDir}/scripts/format.py --preview -o preview.html        # 所有模版的默认色并列
+```
+
+线上同一批预览：`https://aiworkskills.cn/format-previews/<骨架>/<配色序号>.html`，骨架名见 `--list-themes`。
+
+**换配色**：`--scheme <配色名>`，或本篇 `article.yaml` 写 `default_format_scheme: [松绿]`（单元素列表，由 main 的本篇预设落盘步骤写入）。
 
 ## 图注只认显式写的 title ⛔
 
@@ -188,10 +203,10 @@ metadata:
 {python} {baseDir}/scripts/format.py drafts/YYYYMMDD-slug/article.md -o drafts/YYYYMMDD-slug/article.html
 
 # 显式指定模版 / 配色（覆盖配置）
-{python} {baseDir}/scripts/format.py drafts/YYYYMMDD-slug/article.md --theme 报 --scheme 绛红 -o drafts/YYYYMMDD-slug/article.html
+{python} {baseDir}/scripts/format.py drafts/YYYYMMDD-slug/article.md --theme 资讯 --scheme 绛红 -o drafts/YYYYMMDD-slug/article.html
 
 # 自定义主色 / 字号
-{python} {baseDir}/scripts/format.py article.md --theme 报 --scheme 绛红
+{python} {baseDir}/scripts/format.py article.md --theme 资讯 --scheme 绛红
 {python} {baseDir}/scripts/format.py article.md --font-size 15px
 
 # 列出可用主题
@@ -223,7 +238,8 @@ metadata:
 | `--color <hex>` | 自定义主色 | 主题默认 |
 | `--font-size <px>` | 正文字号（同时覆盖主题 p / li 里的字号） | 16px |
 | `-o <路径>` | 输出路径 | 同名 .html |
-| `--list-themes` | 列出可用主题 | |
+| `--list-themes` | 列出模版：长相、适合/不适合、每套配色的色值与口径 | |
+| `--preview [模版名]` | 把样张渲成并列对照页（给模版名则并列它的每套配色，不给则并列所有模版） | |
 | `--export-theme <名称>` | 以 YAML 导出主题（合并默认变量与样式），重定向到文件即可作为自定义主题起点 | |
 | `--no-preformat` | 跳过 Markdown 预格式化 | |
 
@@ -232,7 +248,7 @@ metadata:
 在 `.aws-article/presets/formatting/` 下新建主题文件即可。快速起步：
 
 ```bash
-{python} {baseDir}/scripts/format.py --export-theme 块 > .aws-article/presets/formatting/my-brand.yaml
+{python} {baseDir}/scripts/format.py --export-theme 亲和 > .aws-article/presets/formatting/my-brand.yaml
 ```
 
 主题文件格式和扩展方式详见：[references/presets/README.md](references/presets/README.md)

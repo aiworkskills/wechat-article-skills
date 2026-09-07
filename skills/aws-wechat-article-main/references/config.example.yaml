@@ -37,8 +37,9 @@ default_structure:                # e.g. single or multiple candidates
 default_closing_block: []         # e.g. - brand
 default_title_style:
   - 技术实操指南型
-default_format_preset:
-  - 金融蓝
+default_format_preset:                # Template names → presets/themes|formatting/ (亲和 / 资讯 / 书卷 / 杂志 …)
+  - 资讯
+default_format_scheme: []             # Color scheme of the chosen template; see `format.py --list-themes`
 default_cover_image_style: []   # Cover preset names → cover-styles/ (built-in + .aws-article/presets/cover-styles/)
 default_article_image_style: [] # Body image preset names → presets/image-styles/
 default_sticker_style: []         # e.g. - storyboard; sticker workflow — agent picks one from the list
@@ -50,6 +51,7 @@ custom_structure: []
 custom_closing_block: []
 custom_title_style: []
 custom_format_preset: []
+custom_format_scheme: []          # Overrides default_format_scheme
 custom_cover_image_style: []      # Overrides default_cover_image_style; same paths as default_cover_image_style
 custom_article_image_style: []    # Overrides default_article_image_style; loads from presets/image-styles/
 custom_sticker_style: []

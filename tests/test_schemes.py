@@ -48,8 +48,8 @@ SAMPLE = """# 样张
 结尾一段。
 """
 
-EIGHT = [("块", "kuai"), ("报", "bao"), ("书", "shu"), ("艺", "yi"),
-         ("彩", "cai"), ("手", "shou"), ("构", "gou"), ("码", "ma")]
+EIGHT = [("亲和", "kuai"), ("资讯", "bao"), ("书卷", "shu"), ("杂志", "yi"),
+         ("活力", "cai"), ("手账", "shou"), ("硬朗", "gou"), ("技术", "ma")]
 
 
 def _theme(name: str) -> dict:
@@ -106,13 +106,55 @@ class SchemesTest(unittest.TestCase):
                 self.assertTrue(hits, f"{name}/{s['name']} 主色 {pc} 没进页面")
                 self.assertNotEqual(base, html, f"{name}/{s['name']} 换配色后页面没变")
 
+
+    def test_every_template_carries_selection_criteria(self):
+        """模版要能被大模型选中，光有名字和「长相」不够——必须写清适合/不适合什么内容。
+
+        决定用哪套模版的时刻在 main 的「本篇预设单选落盘」：那时手上只有候选池里的
+        名字。名字带不动语义，判据得跟着模版走，并且要能被 --list-themes 打出来。
+        """
+        for name, _ in EIGHT:
+            t = _theme(name)
+            for key in ("when_to_use", "when_not_to_use"):
+                text = str(t.get(key) or "").strip()
+                self.assertTrue(text, f"{name} 缺 {key}")
+                self.assertGreaterEqual(len(text), 20, f"{name} 的 {key} 太短，说不清场合：{text!r}")
+            for sc in t["schemes"]:
+                desc = str(sc.get("description") or "").strip()
+                self.assertTrue(desc, f"{name}/{sc['name']} 的配色没有说明，模型只能靠名字猜色相")
+
+    def test_list_themes_exposes_criteria_and_colors(self):
+        """--list-themes 是 agent 唯一一次能同时看到判据和色值的地方。"""
+        rows = {t["name"]: t for t in fmt._list_themes()}
+        for name, skeleton in EIGHT[:4]:      # 内置四套一定在搜索路径里
+            self.assertIn(name, rows, "内置模版没被列出来")
+            row = rows[name]
+            self.assertTrue(row["when_to_use"], f"{name} 的适用场景没被列出来")
+            self.assertEqual(row["skeleton"], skeleton)
+            for sc in row["schemes"]:
+                self.assertRegex(sc["color"], r"^#[0-9A-Fa-f]{6}$", f"{name}/{sc['name']} 没带色值")
+                self.assertTrue(sc["description"], f"{name}/{sc['name']} 没带说明")
+
+    def test_preview_page_renders_every_scheme_side_by_side(self):
+        """--preview 是「松绿长什么样」的答案：说不清楚的东西只能看。"""
+        import tempfile
+        theme = _theme("亲和")
+        with tempfile.TemporaryDirectory() as d:
+            out = pathlib.Path(d) / "p.html"
+            fmt._write_preview("亲和", str(out))
+            html = out.read_text(encoding="utf-8")
+        for sc in theme["schemes"]:
+            self.assertIn(sc["name"], html, f"对照页里没有 {sc['name']} 这一栏")
+            self.assertIn(sc["variables"]["primary-color"], html, f"{sc['name']} 那一栏没用它自己的色")
+        self.assertEqual(html.count('width:375px'), len(theme["schemes"]), "每套配色应各占一栏真机宽")
+
     def test_unknown_scheme_errors(self):
-        t = _theme("块")
+        t = _theme("亲和")
         with self.assertRaises(SystemExit):
             fmt._apply_scheme(t, "不存在的配色")
 
     def test_no_scheme_is_identity(self):
-        t = _theme("块")
+        t = _theme("亲和")
         self.assertIs(fmt._apply_scheme(t, None), t)
         self.assertIs(fmt._apply_scheme(t, ""), t)
 

@@ -1,7 +1,11 @@
-name: 艺
-displayName: 艺
+name: 杂志
+displayName: 杂志
 skeleton: yi
 description: 杂志风。Didot 英文小字与章节大数字做纹理，配图垫浅色块偏移挂左，正文窄栏松行距，S 曲线分隔，END 圆章收尾。
+when_to_use: 品牌故事、人物访谈、生活方式。竖排小字和大号章节数字做出版面感，图片多的稿子最出彩。
+when_not_to_use: '纯文字、没有配图的稿子——这套的版面感有一半靠图撑。
+
+  信息型短文：窄栏加大留白会让读者觉得话说得太少。'
 variables:
   primary-color: '#4A5D6E'
   text-color: '#1F1F1F'
@@ -10,12 +14,15 @@ schemes:
 - name: 石青
   variables:
     primary-color: '#4A5D6E'
+  description: 灰调蓝，克制的编辑气质。默认色。
 - name: 驼褐
   variables:
     primary-color: '#8A6A4B'
+  description: 暖棕，适合食物、旅行、手作一类有温度的题材。
 - name: 铁锈
   variables:
     primary-color: '#9C4F3B'
+  description: 偏橙的红棕，人物和故事类稿子用它更有情绪。
 styles:
   p: font-size:15px; line-height:2.0; letter-spacing:0.4px; color:#2A2A2A; margin:0 14px 24px;
   strong: color:{primary-ink}; font-weight:600;
