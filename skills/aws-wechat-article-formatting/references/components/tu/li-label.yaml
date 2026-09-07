@@ -1,2 +1,2 @@
 name: li-label
-template: <li style="margin:0 0 16px; list-style:circle;"><span style="display:inline-block; background:{bg-accent-color}; color:{primary-ink}; font-size:14px; font-weight:800; line-height:1.5; margin-bottom:5px;">{c0}</span><section style="font-size:16px; line-height:1.8; color:{text-color};">{c1}</section></li>
+template: <li style="margin:0 0 16px; list-style:none;"><section style="display:flex; align-items:baseline;"><section style="flex:0 0 auto; width:6px; height:6px; background:{highlight-pen}; margin:0 10px 0 0;"></section><section style="flex:1;"><span style="font-size:16px; font-weight:800; color:{text-color};">{c0}</span><section style="margin-top:4px; font-size:16px; line-height:1.8; color:{text-color};">{c1}</section></section></section></li>

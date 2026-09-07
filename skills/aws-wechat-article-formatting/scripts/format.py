@@ -57,6 +57,7 @@ DEFAULT_VARIABLES = {
     "bg-accent-soft": "#F7F9FB",
     "bg-accent-color": "#F0F4F8",
     "highlight-pen": "#C6D6E6",
+    "highlight-soft": "#DCE6F0",
     "text-color": "#333333",
     "text-light": "#666666",
     "text-muted": "#999999",
@@ -682,7 +683,7 @@ _COMPONENT_VARS = (
     # "primary-color" 不是 "primary-ink" 的前缀所以其实不冲突，但把它放前面能
     # 少一次「以后新增 primary-color-xxx 时被前缀吃掉」的隐患。
     "primary-ink", "primary-fill", "primary-color", "bg-accent-soft",
-    "bg-accent-color", "highlight-pen",
+    "bg-accent-color", "highlight-soft", "highlight-pen",
     "text-color", "text-light",
     "text-muted", "border-color", "link-color", "font-size", "line-height",
 )
@@ -726,7 +727,7 @@ def _darken_to_readable(hexcolor: str, target: float = 4.5) -> str:
 
 # 由强调色派生、不需要用户填的颜色。用户换强调色时它们必须一起重算。
 _DERIVED_COLORS = ("primary-fill", "primary-ink", "bg-accent-soft",
-                   "bg-accent-color", "highlight-pen")
+                   "bg-accent-color", "highlight-pen", "highlight-soft")
 
 
 def _normalize_hex(value: str) -> str | None:
@@ -783,7 +784,12 @@ def _derive_palette(accent: str) -> dict:
         # 否则一块 400px 高的浅色域会跟正文抢注意力。只有一档时两者只能共用一个值。
         "bg-accent-soft": _mix_to_white(accent, 0.96),    # 大面积底
         "bg-accent-color": _mix_to_white(accent, 0.92),   # 卡片底
-        "highlight-pen": _mix_to_white(accent, 0.74),     # strong 的高亮笔
+        "highlight-pen": _mix_to_white(accent, 0.74),
+        # 高频档：给每篇出现几十次的元素用（涂 的加粗高亮笔）。
+        # 同一个颜色，用在每篇 35 次的元素上和用在每篇 1 次的元素上，
+        # 需要的分量不一样。实测涂 的加粗覆盖了正文 18.3% 的字、最重的一段
+        # 被涂满 100%——74% 那一档在这个频次下不是强调，是第二种正文底色。
+        "highlight-soft": _mix_to_white(accent, 0.84),     # strong 的高亮笔
     }
 
 
@@ -1404,6 +1410,12 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
     flush_paragraph()
     close_list()
     close_blockquote()
+
+    # 文末记号。文章现在是戛然而止——最后一段完了就没了。骨架放 `article-end.yaml`
+    # （纯装饰、无占位符）就在正文末尾补一个收束。每篇一次，最不会过量的位置。
+    end = (components or {}).get("article-end") or {}
+    if end.get("template"):
+        html_parts.append(_sub_theme_vars(str(end["template"]), styles))
 
     if footnotes:
         # 微信删 id，锚点跳不动，所以不做跳转链接，只列注解表——纸质书的做法。

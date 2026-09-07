@@ -1,0 +1,2 @@
+name: h3-deco
+template: <section style="width:16px; height:4px; background:{highlight-pen}; margin:44px 0 10px;"></section>{content}

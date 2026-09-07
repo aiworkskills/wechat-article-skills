@@ -8,11 +8,12 @@ styles:
   li: font-size:16px; line-height:1.85; color:{text-color}; margin:0 0 10px;
   em: font-style:normal; color:{primary-ink}; font-weight:600;
   img: display:block; width:100%; height:auto; margin:8px auto 0;
-  strong: 'color:{text-color}; font-weight:700; background:linear-gradient(transparent 58%, {highlight-pen} 58%);'
+  code: 'font-family:Menlo, Consolas, monospace; font-size:14px; background:#F2F3F5; color:{text-color}; padding:1px 5px;'
+  strong: 'color:{text-color}; font-weight:700; background:linear-gradient(transparent 70%, {highlight-soft} 70%);'
   a: 'color:{primary-ink}; text-decoration:none; font-weight:700; border-bottom:1px solid {primary-ink};'
   ul: margin:0 0 28px; padding-left:20px; list-style:circle;
-  h2: font-size:20px; font-weight:800; color:{text-color}; line-height:1.5; margin:0; padding:0;
-  h3: font-size:17px; font-weight:800; color:{primary-ink}; line-height:1.6; margin:36px 0 12px -10px; padding:2px 10px; background:{bg-accent-color}; display:inline-block;
+  h2: 'font-size:21px; font-weight:800; color:{text-color}; line-height:1.5; margin:0 0 22px;'
+  h3: 'font-size:17px; font-weight:800; color:{text-color}; line-height:1.6; margin:0 0 12px;'
   blockquote: background:{bg-accent-soft}; color:{text-color}; font-size:16px; line-height:1.8; padding:16px; margin:0 -16px 28px;
   figcaption: color:{text-muted}; font-size:13px; line-height:1.6; margin:10px 0 30px; text-align:left;
   hr: border:none; height:8px; width:64px; background:{highlight-pen}; display:block; margin:48px auto;
