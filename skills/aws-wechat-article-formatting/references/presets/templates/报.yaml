@@ -1,27 +1,27 @@
 name: 报
 displayName: 报
 skeleton: bao
-description: 报纸语法。粗黑细灰双线贯穿标题、导语、配图、文末；大字宽字距；强调用近黑深蓝粗体；■ 结束符。像量子位、新智元那类媒体号。
+description: 媒体号语法。辨识度在字不在线：17px 大字、0.8px 松字距、整句彩色粗体、灰底圆角块；全篇只有发丝线。像量子位、新智元。
 variables:
-  primary-color: '#1B3A6B'
+  primary-color: '#1F6F5F'
   text-color: '#111111'
   text-muted: '#8A8F98'
 styles:
-  p: font-size:16.5px; line-height:1.95; letter-spacing:0.5px; color:{text-color}; margin:0 0 28px; font-variant-numeric:tabular-nums;
+  p: font-size:17px; line-height:2.0; letter-spacing:0.8px; color:{text-color}; margin:0 0 30px; font-variant-numeric:tabular-nums;
   strong: color:{primary-ink}; font-weight:700;
-  em: font-style:normal; font-weight:700; color:{text-color}; border-bottom:2px solid {text-color};
+  em: font-style:normal; font-weight:700; color:{text-color};
   a: color:{primary-ink}; text-decoration:none; border-bottom:1px solid {primary-ink};
-  h1: font-size:26px; font-weight:800; color:{text-color}; line-height:1.4; margin:0 0 28px;
-  h2: font-size:21px; font-weight:800; color:{text-color}; line-height:1.45; letter-spacing:0.5px; margin:14px 0 22px;
-  h3: font-size:17px; font-weight:800; color:{text-color}; line-height:1.6; margin:40px 0 14px; padding-left:10px; border-left:3px solid {text-color};
-  ul: margin:0 0 28px; padding-left:22px; list-style:square;
-  ol: margin:0 0 28px; padding-left:22px; list-style:decimal;
-  li: font-size:16.5px; line-height:1.9; letter-spacing:0.3px; color:{text-color}; margin:0 0 12px; font-variant-numeric:tabular-nums;
-  blockquote: 'color:#3A3F47; font-size:16px; line-height:1.9; letter-spacing:0.3px; padding:16px 18px; margin:0 0 28px; background:#F3F4F6; border-left:4px solid #111111;'
-  figcaption: font-size:12.5px; letter-spacing:0.5px; color:{text-muted}; margin:8px 0 34px;
+  h1: font-size:26px; font-weight:800; color:{text-color}; line-height:1.4; letter-spacing:0.5px; margin:0 0 28px;
+  h2: 'font-size:21px; font-weight:800; color:{text-color}; line-height:1.5; letter-spacing:0.8px; margin:60px 0 24px; padding-bottom:14px; border-bottom:1px solid #E3E6EA;'
+  h3: font-size:18px; font-weight:800; color:{text-color}; line-height:1.6; letter-spacing:0.5px; margin:40px 0 14px;
+  ul: margin:0 0 30px; padding-left:22px; list-style:disc;
+  ol: margin:0 0 30px; padding-left:22px; list-style:decimal;
+  li: font-size:17px; line-height:1.9; letter-spacing:0.6px; color:{text-color}; margin:0 0 12px; font-variant-numeric:tabular-nums;
+  blockquote: color:#555555; font-size:16.5px; line-height:1.95; letter-spacing:0.6px; padding:20px 22px; margin:0 0 30px; background:#F4F5F7; border-radius:12px;
+  figcaption: font-size:13px; letter-spacing:0.5px; color:{text-muted}; margin:10px 0 34px;
   img: display:block; width:100%; height:auto;
-  code: font-family:Menlo, Consolas, monospace; font-size:14px; background:#F3F4F6; color:{text-color}; padding:1px 6px;
-  table: width:100%; border-collapse:collapse; margin:0 0 28px; font-size:14.5px; font-variant-numeric:tabular-nums;
-  th: 'color:{text-color}; font-size:13px; font-weight:800; text-align:left; padding:10px 8px; border-top:3px solid #111111; border-bottom:1px solid #111111;'
-  td: 'color:{text-color}; padding:11px 8px; border-bottom:1px solid #E3E6EA; font-variant-numeric:tabular-nums;'
-  hr: border:none; height:1px; background:#C9CED3; margin:48px 0;
+  code: font-family:Menlo, Consolas, monospace; font-size:14.5px; background:#F4F5F7; color:{text-color}; padding:1px 6px; border-radius:4px;
+  table: width:100%; border-collapse:collapse; margin:0 0 30px; font-size:15px; font-variant-numeric:tabular-nums;
+  th: 'color:{text-muted}; font-size:13px; font-weight:700; letter-spacing:1px; text-align:left; padding:10px 8px; border-bottom:1px solid #C9CED3;'
+  td: 'color:{text-color}; padding:12px 8px; border-bottom:1px solid #E3E6EA; font-variant-numeric:tabular-nums;'
+  hr: border:none; height:1px; background:#E3E6EA; margin:48px 0;
