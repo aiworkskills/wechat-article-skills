@@ -1190,5 +1190,103 @@ class PlainMarkdownDetectionTest(unittest.TestCase):
         self.assertIn("<li", a)
 
 
+class MarkdownCoverageTest(unittest.TestCase):
+    """CommonMark + GFM 的构件逐个过一遍，判据是「标记符号有没有原样漏进正文」。
+
+    链路是「markdown 语法 → LLM 按语法输出 → 渲染器排版」。LLM 写的是标准 markdown，
+    渲染器认不认标准写法就是渲染器的责任，不能反过来要求 LLM 只用我们实现了的子集。
+
+    这类缺口不报错、渲染照常完成，**只有读者会看见**——正文里冒出 `__加粗__`、
+    `[^1]`、`###### 六级`。审计一次发现 15 处，所以钉成测试。
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        # 用真主题构建，而不是手写一个键不全的桩——渲染器在样式为空时会回退到
+        # 变量拼接，桩少一个键就是 KeyError，测的就不是 markdown 覆盖度了。
+        import yaml
+        t = fmt.SKILL_DIR / "references" / "presets" / "templates" / "画.yaml"
+        cls.STYLES = fmt._build_styles(yaml.safe_load(t.read_text(encoding="utf-8")))
+
+    def _r(self, md, **kw):
+        # skip_first_h1 关掉：正文默认丢弃首个 h1（标题由公众号后台单独填），
+        # 而这里要检验的是「# 标题」这个构件本身认不认。
+        return fmt._md_to_html(md, self.STYLES, skip_first_h1=False, **kw)
+
+    # (构件, markdown, 不该出现在产出里的标记)
+    LEAK_CASES = [
+        ("加粗 **",      "**加粗**",                 "**"),
+        ("加粗 __",      "__加粗__",                 "__"),
+        ("斜体 *",       "*斜体*",                   "*斜体*"),
+        ("斜体 _",       "_斜体_",                   "_斜体_"),
+        ("删除线",       "~~删掉~~",                 "~~"),
+        ("自动链接",     "<https://a.com>",          "&lt;https"),
+        ("无序 +",       "+ 甲\n+ 乙",               "+ 甲"),
+        ("有序 1)",      "1) 甲\n2) 乙",             "1) 甲"),
+        ("分隔 ***",     "甲\n\n***\n\n乙",         "***"),
+        ("分隔 ___",     "甲\n\n___\n\n乙",         "___"),
+        ("标题 #####",   "##### 五级",               "#####"),
+        ("标题 ######",  "###### 六级",              "######"),
+        ("转义反斜杠",   "\\*不是斜体\\*",           "\\"),
+        ("脚注",         "文字[^1]\n\n[^1]: 注解",   "[^1]"),
+        ("引用式链接",   "[文字][r]\n\n[r]: https://a.com", "[r]"),
+        ("Setext 标题",  "小标题\n======",           "======"),
+        ("任务列表",     "- [ ] 待办\n- [x] 完成",    "[ ]"),
+        ("硬换行反斜杠", "一行\\\n二行",             "\\"),
+    ]
+
+    def test_no_markup_leaks_into_the_article(self):
+        for name, md, leak in self.LEAK_CASES:
+            with self.subTest(name):
+                html = self._r(md)
+                self.assertNotIn(leak, html, f"{name}：读者会在正文里看见 {leak}")
+
+    def test_constructs_actually_render(self):
+        """不漏标记还不够——也可能是被整段吞掉了。"""
+        for md, expect in [("**加粗**", "<strong"), ("__加粗__", "<strong"),
+                           ("*斜体*", "<em"), ("_斜体_", "<em"),
+                           ("<https://a.com>", "href"), ("见 https://a.com 这里", "href"),
+                           ("+ 甲\n+ 乙", "<li"), ("1) 甲\n2) 乙", "<li"),
+                           ("甲\n\n***\n\n乙", "<hr"), ("甲\n\n___\n\n乙", "<hr"),
+                           ("##### 五级", "<h4"), ("小标题\n======", "<h1"),
+                           ("一行  \n二行", "<br"), ("一行\\\n二行", "<br"),
+                           ("[文字][r]\n\n[r]: https://a.com", "href"),
+                           ("文字[^1]\n\n[^1]: 注解", "<sup>")]:
+            with self.subTest(md[:18]):
+                self.assertIn(expect, self._r(md))
+
+    def test_underscores_in_identifiers_are_not_emphasis(self):
+        """`file_name_here` 和 `my__var` 是标识符不是强调。下划线写法最大的风险
+        就在这里——技术类文章里蛇形命名到处都是，误判会把半句话变成斜体。"""
+        html = self._r("变量 file_name_here 与 my__var 都是标识符。")
+        self.assertNotIn("<em", html)
+        self.assertNotIn("<strong", html)
+
+    def test_inline_code_is_not_reformatted(self):
+        """行内代码里的下划线、星号都必须原样保留。"""
+        html = self._r("用 `a_b_c` 和 `x**2` 做例子。")
+        self.assertIn("a_b_c", html)
+        self.assertIn("x**2", html)
+        self.assertNotIn("<em", html)
+
+    def test_footnotes_have_no_dead_anchors(self):
+        """微信删 id，锚点跳不动。所以脚注只做「上标编号 + 文末注解表」，
+        不生成任何跳转链接——死链比没有链接更糟。"""
+        html = self._r("文字[^a]\n\n[^a]: 注解内容")
+        self.assertIn("<sup>[1]</sup>", html)
+        self.assertIn("注解内容", html)
+        self.assertNotIn('href="#', html)
+        self.assertNotIn(" id=", html)
+
+    def test_task_list_uses_the_skeleton_icons(self):
+        """GFM 任务列表和 checklist 组件是同一个语义，图标取同一份来源，
+        四套骨架各自的方言自动跟上。"""
+        comps = {"checklist": {"row_map": {"c0": {"done": "<b>D</b>", "todo": "<b>T</b>"}}}}
+        html = self._r("- [x] 完成\n- [ ] 待办", components=comps)
+        self.assertIn("<b>D</b>", html)
+        self.assertIn("<b>T</b>", html)
+        self.assertNotIn("[x]", html)
+
+
 if __name__ == "__main__":
     unittest.main()

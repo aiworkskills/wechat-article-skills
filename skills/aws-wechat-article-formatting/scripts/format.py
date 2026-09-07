@@ -942,6 +942,9 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
     skip_first_h1=True 时正文不包含文章标题（第一个 h1 跳过，由公众号后台单独填）；
     closing.md 等附加片段应传 False，否则其首个 h1 会被误当作文章标题丢弃。
     """
+    md_text, footnotes = _extract_footnotes(md_text)
+    md_text = _resolve_ref_links(md_text)
+    md_text = _setext_to_atx(md_text)
     lines = md_text.strip().split("\n")
     html_parts = []
     in_list = None
@@ -967,8 +970,19 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
 
     def flush_paragraph():
         if paragraph_lines:
-            text = " ".join(paragraph_lines)
+            # 硬换行：CommonMark 有两种写法，行尾两个空格或行尾一个反斜杠。
+            # 段落是按空格把多行拼成一行的，所以要在拼接前就把标记转成 <br/>，
+            # 否则行尾的空格会被 join 吃掉、反斜杠会原样留在正文里。
+            parts = []
+            for i, ln in enumerate(paragraph_lines):
+                last = i == len(paragraph_lines) - 1
+                if not last and (ln.endswith("  ") or ln.endswith("\\")):
+                    parts.append(ln.rstrip("\\ ") + "\x00BR\x00")
+                else:
+                    parts.append(ln.rstrip() if last else ln.rstrip())
+            text = " ".join(parts)
             text = _inline_format(text, styles)
+            text = text.replace("\x00BR\x00", "<br/>")
             html_parts.append(f'<p style="{_p_style()}">{text}</p>')
             paragraph_lines.clear()
 
@@ -1028,7 +1042,7 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             html_parts.append(f'<p style="{_p_style()}">{stripped}</p>')
             continue
 
-        heading_match = re.match(r'^(#{1,4})\s+(.+)$', stripped)
+        heading_match = re.match(r'^(#{1,6})\s+(.+)$', stripped)
         # 版式组件：:::name[参数] … :::
         directive = re.match(r'^:::([A-Za-z0-9_-]+)(?:\[(.*)\])?\s*$', stripped)
         if directive and components:
@@ -1079,7 +1093,9 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             flush_paragraph()
             close_list()
             close_blockquote()
-            level = len(heading_match.group(1))
+            # 样式只到 h4。五六级并进 h4——读者分不出 h5 和 h6，
+            # 但一定分得出 `###### 六级` 这六个井号原样漏在正文里。
+            level = min(len(heading_match.group(1)), 4)
             # 跳过第一个 h1（文章标题），公众号后台单独填写标题，正文不再重复
             if level == 1 and not first_h1_skipped:
                 first_h1_skipped = True
@@ -1100,7 +1116,9 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             html_parts.append(heading)
             continue
 
-        if re.match(r'^---+$', stripped):
+        # CommonMark 的分隔线是 `-` `*` `_` 三种符号各三个以上，中间允许空格。
+        # 此前只认 `---`，`***` 和 `___` 会原样漏进正文。
+        if re.match(r'^ {0,3}((-[ \t]*){3,}|(\*[ \t]*){3,}|(_[ \t]*){3,})$', stripped):
             flush_paragraph()
             close_list()
             close_blockquote()
@@ -1227,8 +1245,10 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             close_blockquote()
 
         # 列表项检测（支持嵌套：通过缩进层级判断）
-        ul_match = re.match(r'^( *)[-*]\s+', line)
-        ol_match = re.match(r'^( *)\d+\.\s+', line)
+        # CommonMark 的无序标记有 - * + 三种，有序有 `1.` 和 `1)` 两种。
+        # 此前只认 - * 和 `1.`，写 + 或 `1)` 的会整行当成普通段落漏出去。
+        ul_match = re.match(r'^( *)[-*+]\s+', line)
+        ol_match = re.match(r'^( *)\d+[.)]\s+', line)
         if ul_match or ol_match:
             flush_paragraph()
             close_blockquote()
@@ -1281,9 +1301,9 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
                 list_depth = 0
 
             if ul_match:
-                raw_text = re.sub(r'^[-*]\s+', '', stripped).strip()
+                raw_text = re.sub(r'^[-*+]\s+', '', stripped).strip()
             else:
-                raw_text = re.sub(r'^\d+\.\s+', '', stripped).strip()
+                raw_text = re.sub(r'^\d+[.)]\s+', '', stripped).strip()
             if not raw_text:
                 continue
             # 「**标签**：说明」是真稿里最常见的列表形态——五篇稿 34 个列表项里 21 个
@@ -1294,6 +1314,24 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             # 所以不能因为看见 1. 2. 3. 就渲染成「第一步 第二步」——那是替作者断言了一个
             # 他没说的顺序。真稿实测：三组多项有序列表里，只有一组真有先后，另外两组
             # （配置台的五个板块、三个要问自己的问题）都是并列的。
+            # GFM 任务列表 `- [ ]` / `- [x]`。不处理的话方括号原样漏进正文。
+            # 图标直接取 checklist 组件 row_map 里的三态图标——那是同一个语义，
+            # 一份来源，四套骨架各自的方言（面 / 线 / 发丝线 / 中文单字）自动跟上。
+            task = re.match(r'^\[([ xX])\]\s+(.*)$', raw_text)
+            if task:
+                icons = (((components or {}).get("checklist") or {}).get("row_map")
+                         or {}).get("c0") or {}
+                mark = icons.get("done" if task.group(1).lower() == "x" else "todo", "")
+                html_parts.append(
+                    f'<li style="{li_style}; list-style:none; display:flex; '
+                    f'align-items:flex-start;">'
+                    f'<section style="flex:0 0 auto; width:24px;">'
+                    f'{_sub_theme_vars(str(mark), styles)}</section>'
+                    f'<section style="flex:1;">'
+                    f'{_inline_format(task.group(2), styles)}</section></li>')
+                in_list = list_type
+                continue
+
             label = _load_components and (components or {}).get("li-label") or {}
             m = re.match(r"^\*\*([^*]+)\*\*[：:]?\s*(.*)$", raw_text, re.S)
             if label.get("template") and m and m.group(2).strip():
@@ -1309,19 +1347,42 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
 
         close_list()
         close_blockquote()
-        paragraph_lines.append(stripped)
+        # 收集原始行而不是 stripped：CommonMark 的硬换行信号就是「行尾两个空格」，
+        # strip 过就没了。左侧空白仍然去掉，缩进不影响段落。
+        paragraph_lines.append(line.rstrip("\n").lstrip()
+                               if line.rstrip("\n").rstrip().endswith("\\")
+                               or line.rstrip("\n").endswith("  ") else stripped)
 
     flush_paragraph()
     close_list()
     close_blockquote()
 
+    if footnotes:
+        # 微信删 id，锚点跳不动，所以不做跳转链接，只列注解表——纸质书的做法。
+        muted = styles.get("text-muted", "#6B7078")
+        items = "".join(
+            f'<section style="margin:0 0 8px; font-size:13px; line-height:1.75; '
+            f'color:{muted};"><sup>[{i + 1}]</sup> {_inline_format(txt, styles)}</section>'
+            for i, (_, txt) in enumerate(footnotes))
+        html_parts.append(
+            f'<section style="margin:44px 0 0; padding-top:14px; '
+            f'border-top:1px solid #E8EAED;">{items}</section>')
     return "".join(html_parts)
 
 
 def _inline_format(text: str, styles: dict) -> str:
-    """行内格式：加粗、斜体、删除线、行内代码、链接。
+    r"""行内格式：加粗、斜体、删除线、行内代码、链接、自动链接、转义。
 
-    行内代码内容做 HTML 转义，且不参与加粗/斜体/链接等替换。
+    链路是「markdown 语法 → LLM 按语法输出 → 渲染器排版」。LLM 写的是**标准**
+    markdown，所以渲染器认不认标准写法就是渲染器的责任，不能反过来要求 LLM 只用
+    我们实现了的那个子集。
+
+    此前只认 `**b**` `*i*` 一种写法，而 `__b__` `_i_` 同样是 CommonMark 的合法写法、
+    也是 LLM 最常输出的形式——结果是下划线原样漏进正文，读者直接看见 `__加粗__`。
+    裸 URL 和 `<url>` 同理。这类问题不报错、渲染照常完成，只有读者会看见。
+
+    行内代码先抽出来占位，内容做 HTML 转义，且不参与后续任何替换——否则
+    `` `a_b_c` `` 里的下划线会被当成斜体。转义符 `\*` 也走同一套占位机制。
     """
     code_style = styles.get("code", "")
     if not code_style:
@@ -1339,6 +1400,16 @@ def _inline_format(text: str, styles: dict) -> str:
 
     text = re.sub(r'`([^`\n]+)`', _stash_code, text)
 
+    # 反斜杠转义。`\*不是斜体\*` 里的星号必须原样留下，且不能参与后面的斜体匹配，
+    # 所以和行内代码一样先抽成占位符，最后再还原。
+    escapes: list[str] = []
+
+    def _stash_escape(m: re.Match) -> str:
+        escapes.append(html_mod.escape(m.group(1)))
+        return f"\x00E{len(escapes) - 1}\x00"
+
+    text = re.sub(r'\\([\\`*_{}\[\]()#+\-.!~>|])', _stash_escape, text)
+
     # strong
     strong_style = styles.get("strong", "")
     if not strong_style:
@@ -1349,12 +1420,19 @@ def _inline_format(text: str, styles: dict) -> str:
         rf'<strong style="{strong_style}">\1</strong>',
         text,
     )
+    # __加粗__ 同样是 CommonMark 合法写法。要求两侧不是单词字符，避免把
+    # snake_case 的标识符（`my__var`）误判成加粗。
+    text = re.sub(
+        r'(?<![\w*])__(?!\s)(.+?)(?<!\s)__(?![\w*])',
+        rf'<strong style="{strong_style}">\1</strong>',
+        text,
+    )
     # em
     em_style = styles.get("em", "")
-    if em_style:
-        text = re.sub(r'\*(.+?)\*', rf'<em style="{em_style}">\1</em>', text)
-    else:
-        text = re.sub(r'\*(.+?)\*', r'<em>\1</em>', text)
+    em_open = f'<em style="{em_style}">' if em_style else "<em>"
+    text = re.sub(r'\*(?!\s)(.+?)(?<!\s)\*', rf'{em_open}\1</em>', text)
+    # _斜体_ 同样合法。同样要求两侧不是单词字符——`file_name_here` 不能变斜体。
+    text = re.sub(r'(?<![\w_])_(?!\s)([^_\n]+?)(?<!\s)_(?![\w_])', rf'{em_open}\1</em>', text)
     # strikethrough ~~text~~
     del_style = styles.get("del", "") or "text-decoration:line-through; color:#999;"
     text = re.sub(r'~~(.+?)~~', rf'<del style="{del_style}">\1</del>', text)
@@ -1367,9 +1445,102 @@ def _inline_format(text: str, styles: dict) -> str:
         rf'<a style="{a_style}" href="\2">\1</a>',
         text,
     )
-    # 还原行内代码
+    # <https://…> 自动链接
+    text = re.sub(r'&lt;(https?://[^\s<>]+)&gt;|<(https?://[^\s<>]+)>',
+                  lambda m: f'<a style="{a_style}" href="{m.group(1) or m.group(2)}">'
+                            f'{m.group(1) or m.group(2)}</a>', text)
+    # 裸 URL。必须排在 <a href="…"> 已经生成之后，所以先把已有的 a 标签抽走占位，
+    # 否则会把 href 里的地址再包一层 a。行尾的中文标点不算 URL 的一部分。
+    links: list[str] = []
+
+    def _stash_link(m: re.Match) -> str:
+        links.append(m.group(0))
+        return f"\x00L{len(links) - 1}\x00"
+
+    text = re.sub(r'<a\s[^>]*>.*?</a>', _stash_link, text, flags=re.S)
+    text = re.sub(r'(?<![\w"\'=/])(https?://[^\s<>"\'，。、）】」]+)',
+                  lambda m: f'<a style="{a_style}" href="{m.group(1)}">{m.group(1)}</a>', text)
+    text = re.sub(r"\x00L(\d+)\x00", lambda m: links[int(m.group(1))], text)
+
+    # 还原行内代码与转义字符
     text = re.sub(r"\x00C(\d+)\x00", lambda m: code_spans[int(m.group(1))], text)
+    text = re.sub(r"\x00E(\d+)\x00", lambda m: escapes[int(m.group(1))], text)
     return text
+
+
+def _setext_to_atx(md: str) -> str:
+    """`标题\n====` → `# 标题`。CommonMark 的 Setext 写法，LLM 偶尔会用。
+
+    只处理 `=`（一级）。`-` 那种不碰——`---` 同时也是分隔线的写法，按 CommonMark
+    要看上一行是不是段落才能区分，规则微妙而收益很小，不值得为它引入歧义。
+    """
+    out, lines = [], md.split("\n")
+    i = 0
+    while i < len(lines):
+        nxt = lines[i + 1] if i + 1 < len(lines) else ""
+        if lines[i].strip() and re.match(r"^ {0,3}=+\s*$", nxt):
+            out.append("# " + lines[i].strip())
+            i += 2
+            continue
+        out.append(lines[i])
+        i += 1
+    return "\n".join(out)
+
+
+def _resolve_ref_links(md: str) -> str:
+    """把 `[文字][ref]` + `[ref]: https://…` 折成行内链接 `[文字](https://…)`。
+
+    不解析的话，`[文字][ref]` 会原样漏进正文，而底部那行 `[ref]: …` 会变成一个
+    莫名其妙的段落。`[文字][]` 与 `[文字]`（简写引用）也一并支持。
+    """
+    defs = {}
+
+    def _take(m: re.Match) -> str:
+        defs[m.group(1).lower()] = m.group(2).strip()
+        return ""
+
+    md = re.sub(r'^ {0,3}\[([^\]]+)\]:\s*(\S+).*$', _take, md, flags=re.M)
+    if not defs:
+        return md
+
+    def _sub(m: re.Match) -> str:
+        label = (m.group(2) or m.group(1)).strip().lower()
+        url = defs.get(label)
+        return f"[{m.group(1)}]({url})" if url else m.group(0)
+
+    md = re.sub(r'(?<!!)\[([^\]]+)\]\[([^\]]*)\]', _sub, md)
+    return re.sub(r'(?<!!)(?<!\])\[([^\]^][^\]]*)\](?![\(\[:])', _sub, md)
+
+
+def _extract_footnotes(md: str) -> tuple[str, list[tuple[str, str]]]:
+    """抽出 `[^1]: 注解`，正文里的 `[^1]` 换成上标序号。
+
+    微信会删掉 `id` 属性，所以脚注**跳不动**——锚点链接在公众号里是死的。
+    因此不做跳转，只做「上标编号 + 文末注解表」这种纸质书的做法。
+    不处理的话，`[^1]` 会原样漏进正文，定义行还会变成一个孤立段落。
+    """
+    notes: dict[str, str] = {}
+
+    def _take(m: re.Match) -> str:
+        notes[m.group(1)] = m.group(2).strip()
+        return ""
+
+    md = re.sub(r'^ {0,3}\[\^([^\]]+)\]:\s*(.+)$', _take, md, flags=re.M)
+    if not notes:
+        return md, []
+    order: list[tuple[str, str]] = []
+
+    def _mark(m: re.Match) -> str:
+        key = m.group(1)
+        if key not in notes:
+            return m.group(0)
+        if key not in [k for k, _ in order]:
+            order.append((key, notes[key]))
+        return f'<sup>[{[k for k, _ in order].index(key) + 1}]</sup>'
+
+    md = re.sub(r'\[\^([^\]]+)\]', _mark, md)
+    return md, order
+
 
 
 def _wrap_document(body_html: str, styles: dict) -> str:
