@@ -1183,9 +1183,15 @@ class PlainMarkdownDetectionTest(unittest.TestCase):
         self.assertLess(html.index('data-qm="1"'), html.index("<blockquote"))
 
     def test_no_hooks_no_change(self):
+        """没放钩子时产出必须一字不变。
+
+        对照组不能用 `lead`——`>` 在第一个 `##` 之前会被判成摘要并走 lead，
+        它已经不是「无关组件」了（见 SummaryVsQuoteTest）。改用 steps。
+        """
         md = "- **标签**：说明\n\n> 引用\n"
         a = fmt._md_to_html(md, self.STYLES)
-        b = fmt._md_to_html(md, self.STYLES, components={"lead": {"template": "{content}"}})
+        b = fmt._md_to_html(md, self.STYLES,
+                            components={"steps": {"template": "{content}"}})
         self.assertEqual(a, b)
         self.assertIn("<li", a)
 
@@ -1286,6 +1292,56 @@ class MarkdownCoverageTest(unittest.TestCase):
         self.assertIn("<b>D</b>", html)
         self.assertIn("<b>T</b>", html)
         self.assertNotIn("[x]", html)
+
+
+class SummaryVsQuoteTest(unittest.TestCase):
+    """`>` 的语义由**位置**决定：第一个 `##` 之前是摘要，之后才是正文引用。
+
+    写作提示词要求「摘要（> 引用块，80-128字）」，所以每篇的第一个 `>` 都是摘要。
+    真稿五篇实测：每一个 `>` 都落在第一个 `##` 之前、长度 102~123 字，全是摘要，
+    一条正文引用都没有。给摘要套大引号是套错了——摘要不是引文。
+
+    这条分流同时让 `lead` 组件从标准 markdown 可达：此前它只能靠手写 `:::lead`，
+    而那套语法已经不再教了。
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        import yaml
+        t = fmt.SKILL_DIR / "references" / "presets" / "templates" / "涂.yaml"
+        cls.STYLES = fmt._build_styles(yaml.safe_load(t.read_text(encoding="utf-8")))
+
+    COMPS = {"lead": {"template": '<section data-lead="1">{content}</section>'},
+             "quote-mark": {"template": '<section data-qm="1"></section>'}}
+
+    def _r(self, md):
+        return fmt._md_to_html(md, self.STYLES, skip_first_h1=False, components=self.COMPS)
+
+    def test_quote_before_first_h2_is_the_summary(self):
+        html = self._r("# 标题\n\n> 这是摘要。\n\n## 一节\n\n正文。")
+        self.assertIn('data-lead="1"', html)
+        self.assertIn("这是摘要。", html)
+        self.assertNotIn('data-qm="1"', html)     # 摘要不该有大引号
+        self.assertNotIn("<blockquote", html)
+
+    def test_quote_after_first_h2_is_a_real_quote(self):
+        html = self._r("# 标题\n\n## 一节\n\n> 这是正文引用。")
+        self.assertIn('data-qm="1"', html)
+        self.assertIn("<blockquote", html)
+        self.assertNotIn('data-lead="1"', html)
+
+    def test_multiline_summary_is_merged_into_one_block(self):
+        """摘要常写成多行 `>`。合并成一块，不能变成几个并排的导语块。"""
+        html = self._r("# 标题\n\n> 第一行\n> 第二行\n\n## 一节")
+        self.assertEqual(html.count('data-lead="1"'), 1)
+        self.assertIn("第一行 第二行", html)
+
+    def test_without_lead_component_the_summary_still_renders(self):
+        """骨架没提供 lead 时必须退回普通引用块，不能把摘要吞掉。"""
+        html = fmt._md_to_html("# 标题\n\n> 这是摘要。\n\n## 一节", self.STYLES,
+                               skip_first_h1=False)
+        self.assertIn("这是摘要。", html)
+        self.assertIn("<blockquote", html)
 
 
 if __name__ == "__main__":

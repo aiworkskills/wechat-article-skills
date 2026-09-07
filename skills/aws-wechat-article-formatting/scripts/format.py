@@ -955,6 +955,7 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
     code_block_lines = []
     paragraph_lines = []
     first_h1_skipped = not skip_first_h1
+    seen_section = False   # 是否已经出现过 `##`——用来区分「摘要」和「正文引用」
 
     def _p_style():
         """段落样式：主题提供则直接用，否则用变量拼接。"""
@@ -999,7 +1000,10 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             html_parts.append("</blockquote>")
             in_blockquote = False
 
+    skip_until = -1     # 摘要是多行合并成一个块的，处理完要跳过它剩下的行
     for line_idx, line in enumerate(lines):
+        if line_idx < skip_until:
+            continue
         stripped = line.strip()
 
         # 围栏代码块（``` ... ```）
@@ -1096,6 +1100,8 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             # 样式只到 h4。五六级并进 h4——读者分不出 h5 和 h6，
             # 但一定分得出 `###### 六级` 这六个井号原样漏在正文里。
             level = min(len(heading_match.group(1)), 4)
+            if level >= 2:
+                seen_section = True
             # 跳过第一个 h1（文章标题），公众号后台单独填写标题，正文不再重复
             if level == 1 and not first_h1_skipped:
                 first_h1_skipped = True
@@ -1222,6 +1228,27 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
         if stripped.startswith(">"):
             flush_paragraph()
             close_list()
+            # **位置决定语义**：第一个 `##` 之前的 `>` 是摘要（写作提示词就是这么要求的：
+            # 「摘要（> 引用块，80-128字）」），之后的才是正文引用。真稿五篇实测，
+            # 每一个 `>` 都落在第一个 `##` 之前、长度 102~123 字——全是摘要，一条正文
+            # 引用都没有。给摘要套大引号是套错了：摘要不是引文。
+            #
+            # 摘要改走 `lead` 组件（导语）。这也让 lead 从标准 markdown 可达——
+            # 此前它只能靠手写 `:::lead`，而那套语法已经不再教了。
+            if not in_blockquote and not seen_section:
+                lead = (components or {}).get("lead") or {}
+                if lead.get("template"):
+                    buf = []
+                    j = line_idx
+                    while j < len(lines) and lines[j].strip().startswith(">"):
+                        buf.append(lines[j].strip()[1:].strip())
+                        j += 1
+                    body = _inline_format(" ".join(x for x in buf if x), styles)
+                    html_parts.append(
+                        _sub_theme_vars(str(lead["template"]), styles)
+                        .replace("{content}", body).replace("{arg}", ""))
+                    skip_until = j
+                    continue
             if not in_blockquote:
                 # 大引号原先只给了 `:::quote-card`，而真稿里从来没人写那个语法——
                 # 每篇实际出现的是普通的 `>` 引用。骨架放 `quote-mark.yaml`
