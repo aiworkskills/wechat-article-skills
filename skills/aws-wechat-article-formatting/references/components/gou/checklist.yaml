@@ -5,7 +5,7 @@ row_delimiter: '|'
 row_columns: 2
 row_map:
   c0:
-    done: <svg width="16" height="16" viewBox="0 0 16 16" style="display:block;"><path d="M2.5 8.5 L6.2 12.2 L13.5 3.8" fill="none" stroke="#111111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    todo: <svg width="16" height="16" viewBox="0 0 16 16" style="display:block;"><circle cx="8" cy="8" r="6.2" fill="none" stroke="#C9CED3" stroke-width="2.2"/></svg>
-    warn: <svg width="16" height="16" viewBox="0 0 16 16" style="display:block;"><path d="M8 3 L8 9.4" stroke="#111111" stroke-width="2.2" stroke-linecap="round"/><circle cx="8" cy="12.6" r="1.1" fill="#111111"/></svg>
+    done: <svg width="16" height="16" viewBox="0 0 16 16" style="display:block;"><path d="M2.5 8.5 L6.2 12.2 L13.5 3.8" fill="none" stroke="#111111" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    todo: <svg width="16" height="16" viewBox="0 0 16 16" style="display:block;"><circle cx="8" cy="8" r="6.2" fill="none" stroke="#C9CED3" stroke-width="2.4"/></svg>
+    warn: <svg width="16" height="16" viewBox="0 0 16 16" style="display:block;"><path d="M8 3 L8 9.4" stroke="#111111" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="12.6" r="1.1" fill="#111111"/></svg>
 row_template: <section style="display:flex; align-items:flex-start; padding:0 0 12px;"><section style="flex:0 0 auto; width:26px; padding-top:5px;">{c0}</section><section style="flex:1; font-size:16px; line-height:1.8; color:{text-color};">{c1}</section></section>

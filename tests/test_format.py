@@ -811,11 +811,13 @@ class ThreeTemplateTest(unittest.TestCase):
     def _render_with(self, theme, accent):
         comps = fmt._load_components(str(theme.get("skeleton") or ""))
         styles = fmt._build_styles(theme, {"primary-color": accent})
-        return fmt._md_to_html(self.SAMPLE, styles, components=comps)
+        # 经过容器包装：整篇深色模版的浅字必须对着容器底色比，不是白底
+        return fmt._wrap_document(fmt._md_to_html(self.SAMPLE, styles, components=comps), styles)
 
     def _render(self, theme):
         comps = fmt._load_components(str(theme.get("skeleton") or ""))
-        return fmt._md_to_html(self.SAMPLE, fmt._build_styles(theme), components=comps)
+        styles = fmt._build_styles(theme)
+        return fmt._wrap_document(fmt._md_to_html(self.SAMPLE, styles, components=comps), styles)
 
     @staticmethod
     def _techniques(css):
@@ -894,11 +896,16 @@ class ThreeTemplateTest(unittest.TestCase):
             sk = str(self._theme(f).get("skeleton") or "")
             if sk and (d / sk).is_dir():
                 paths += sorted((d / sk).glob("*.yaml"))
+            # 模版可在 constants: 里声明语义常量（终端窗口的红黄绿圆点这类），
+            # 它们不随配色方案变，护栏放行。
+            allowed = {str(c).upper() for c in (self._theme(f).get("constants") or [])}
             for path in paths:
                 text = path.read_text(encoding="utf-8")
                 if path == f:  # variables 块里的字面值是唯一真源，跳过
                     text = text.split("styles:", 1)[-1]
                 for lit in set(re.findall(r"#[0-9A-Fa-f]{6}", text)):
+                    if lit.upper() in allowed:
+                        continue
                     self.assertFalse(
                         fmt._is_accent(lit),
                         f"{path.name} 写死了强调色 {lit}，换色时这里不会变")

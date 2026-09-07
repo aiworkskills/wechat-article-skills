@@ -1,2 +1,2 @@
 name: article-end
-template: <section style="margin:60px 0 0; display:flex; align-items:center;"><section style="flex:0 0 auto; width:28px; height:4px; background:{primary-fill};"></section><section style="margin-left:12px; font-size:11px; letter-spacing:4px; color:{primary-ink};">END</section></section>
+template: '<section style="margin:64px 0 0; text-align:center;"><section style="display:inline-block; padding:8px 26px; border:1px solid {secondary-color}; font-size:11px; letter-spacing:5px; color:{secondary-on-fill};">END</section></section>'

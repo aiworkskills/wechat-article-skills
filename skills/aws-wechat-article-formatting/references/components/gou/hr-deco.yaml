@@ -1,2 +1,2 @@
 name: hr-deco
-template: <section style="margin:52px 0; text-align:center;"><svg width="112" height="24" viewBox="0 0 112 24" style="display:block; margin:0 auto;"><circle cx="12" cy="12" r="11" fill="{primary-fill}"/><rect x="44" y="1" width="22" height="22" fill="#111111"/><path d="M89 23 L100 1 L111 23 Z" fill="{primary-fill}"/></svg></section>
+template: <section style="margin:56px 0; text-align:center;"><svg width="150" height="34" viewBox="0 0 150 34" style="display:block; margin:0 auto;"><circle cx="17" cy="17" r="16" fill="{primary-fill}"/><rect x="59" y="1" width="32" height="32" fill="#111111"/><path d="M117 33 L133 1 L149 33 Z" fill="{secondary-color}"/></svg></section>

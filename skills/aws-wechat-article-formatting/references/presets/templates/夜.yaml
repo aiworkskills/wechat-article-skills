@@ -1,28 +1,30 @@
 name: 夜
 displayName: 夜
 skeleton: ye
-description: 深色面板。导语、章节、金句、文末都是满幅深藏青面板压金字，正文白底。像用深色 banner 的科技号。
+description: 整篇深色。藏青纸面、浅字、金色标题与强调，导语和金句是更浅一层的藏青面板。像做暗色长文的科技号。
 variables:
-  primary-color: '#16243A'
-  text-color: '#1F1F1F'
-  text-muted: '#8A8F98'
-  secondary-color: '#C9A45C'
+  primary-color: '#1C2B45'
+  text-color: '#E8ECF2'
+  text-muted: '#9AA6B8'
+  secondary-color: '#D4B36A'
+  page-background: '#141F33'
 styles:
-  p: font-size:16px; line-height:1.95; letter-spacing:0.4px; color:{text-color}; margin:0 0 26px;
-  strong: color:{primary-ink}; font-weight:700;
-  em: font-style:normal; color:{secondary-on-fill}; font-weight:700;
-  a: color:{primary-ink}; text-decoration:none; border-bottom:1px solid {primary-ink};
-  h1: font-size:24px; font-weight:800; color:{text-color}; line-height:1.4; margin:0 0 28px;
-  h2: font-size:20px; font-weight:700; color:{text-color}; line-height:1.5; letter-spacing:0.5px; margin:0 0 22px; padding:2px 0 2px 16px; border-left:4px solid {primary-fill};
-  h3: font-size:17px; font-weight:700; color:{primary-fill}; line-height:1.6; margin:36px 0 12px; padding-left:12px; border-left:3px solid {secondary-color};
+  p: font-size:16px; line-height:1.95; letter-spacing:0.5px; color:#E8ECF2; margin:0 0 26px;
+  strong: color:{secondary-color}; font-weight:700;
+  em: font-style:normal; color:{secondary-color};
+  a: color:{secondary-color}; text-decoration:none; border-bottom:1px solid {secondary-color};
+  h1: font-size:24px; font-weight:800; color:#FFFFFF; line-height:1.4; margin:0 0 28px;
+  h2: font-size:21px; font-weight:700; color:{secondary-color}; line-height:1.5; letter-spacing:1px; margin:0 0 22px;
+  h3: font-size:17px; font-weight:700; color:#E8ECF2; line-height:1.6; margin:36px 0 12px; padding-left:12px; border-left:3px solid {secondary-color};
   ul: margin:0 0 26px; padding-left:22px; list-style:square;
   ol: margin:0 0 26px; padding-left:22px; list-style:decimal;
-  li: font-size:16px; line-height:1.85; letter-spacing:0.3px; color:{text-color}; margin:0 0 10px;
-  blockquote: color:#3A3F47; font-size:16px; line-height:1.85; padding:14px 18px; margin:0 0 28px; background:#F1F3F6; border-left:3px solid {secondary-color};
-  figcaption: font-size:13px; color:{text-muted}; margin:8px 0 32px;
-  img: display:block; width:100%; height:auto;
-  code: font-family:Menlo, Consolas, monospace; font-size:14px; background:#F2F3F5; color:{text-color}; padding:1px 6px;
+  li: font-size:16px; line-height:1.85; letter-spacing:0.3px; color:#E8ECF2; margin:0 0 10px;
+  blockquote: color:#FFFFFF; font-size:16px; line-height:1.9; padding:14px 18px; margin:0 0 28px; background:{primary-fill}; border-left:2px solid {secondary-color};
+  figcaption: font-size:12.5px; letter-spacing:1px; color:#9CA3AF; margin:10px 0 34px;
+  img: display:block; width:100%; height:auto; border:1px solid rgba(255,255,255,.28);
+  code: font-family:Menlo, Consolas, monospace; font-size:14px; background:rgba(0,0,0,.35); color:{secondary-color}; padding:1px 6px;
+  pre: font-family:Menlo, Consolas, monospace; background:rgba(0,0,0,.35); color:#E8ECF2; font-size:13px; line-height:1.8; padding:18px 16px; margin:0 0 28px;
   table: width:100%; border-collapse:collapse; margin:0 0 28px; font-size:14.5px;
-  th: color:#FFFFFF; font-size:13px; font-weight:700; padding:10px 8px; background:{primary-fill};
-  td: 'color:{text-color}; padding:11px 8px; border-bottom:1px solid #E3E6EA;'
-  hr: border:none; height:3px; width:40px; background:{secondary-color}; display:block; margin:52px 0;
+  th: color:{secondary-color}; font-size:12.5px; letter-spacing:1px; font-weight:700; text-align:left; padding:10px 8px; border-bottom:1px solid {secondary-color};
+  td: color:#E8ECF2; padding:11px 8px; border-bottom:1px solid rgba(255,255,255,.14);
+  hr: border:none; height:2px; width:36px; background:{secondary-color}; display:block; margin:52px 0;

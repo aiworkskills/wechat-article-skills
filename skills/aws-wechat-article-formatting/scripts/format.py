@@ -1656,17 +1656,19 @@ def _extract_footnotes(md: str) -> tuple[str, list[tuple[str, str]]]:
 
 def _wrap_document(body_html: str, styles: dict) -> str:
     """包装为 HTML section。"""
-    return (
-        f'<section style="'
+    # 行长（左右留白）必须由容器统一控制。此前是在 p 上打 padding:0 12px，
+    # 标题、引用、表格都不跟随，于是标题比正文宽出 12px——一条一直没被发现的对齐 bug。
+    style = (
         f'font-family:{styles.get("font-family", "sans-serif")}; '
         f'font-size:{styles["font-size"]}; '
         f'line-height:{styles["line-height"]}; '
         f'color:{styles["text-color"]}; '
-        # 行长（左右留白）必须由容器统一控制。此前是在 p 上打 padding:0 12px，
-        # 标题、引用、表格都不跟随，于是标题比正文宽出 12px——一条一直没被发现的对齐 bug。
         f'padding:16px {styles.get("page-padding", "16px")}; text-align:left;'
-        f'">\n{body_html}\n</section>'
     )
+    # 整篇深色模版靠这一条：容器本身给底色，正文所有颜色都相对它设定
+    if styles.get("page-background"):
+        style += f' background:{styles["page-background"]};'
+    return f'<section style="{style}">\n{body_html}\n</section>'
 
 
 # ── CLI ──────────────────────────────────────────────────────

@@ -1,2 +1,2 @@
 name: li-label
-template: <li style="margin:0 0 12px;"><span style="font-weight:700; color:{primary-fill};">{c0}</span><br><span style="font-size:15.5px; line-height:1.8; color:#3A3F47;">{c1}</span></li>
+template: <li style="margin:0 0 12px;"><span style="font-weight:700; color:{secondary-on-fill};">{c0}</span><br><span style="font-size:15.5px; line-height:1.8; color:#FFFFFF;">{c1}</span></li>
