@@ -1,2 +1,0 @@
-name: h2-deco
-template: '{content}<svg width="343" height="12" viewBox="0 0 343 12" style="display:block;margin:0 0 20px;"><path d="M0.0 5.8 L9.3 5.4 L18.6 4.9 L27.9 4.5 L37.2 4.2 L46.6 4.0 L55.9 3.8 L65.2 3.8 L74.5 3.8 L83.8 4.0 L93.1 4.2 L102.4 4.5 L111.7 4.9 L121.0 5.4 L130.3 5.8 L130.3 6.2 L121.0 6.6 L111.7 7.1 L102.4 7.5 L93.1 7.8 L83.8 8.0 L74.5 8.2 L65.2 8.2 L55.9 8.2 L46.6 8.0 L37.2 7.8 L27.9 7.5 L18.6 7.1 L9.3 6.6 L0.0 6.2 Z" fill="{primary-ink}"/></svg>'

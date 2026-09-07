@@ -55,16 +55,20 @@ metadata:
 
 任何操作执行前，**必须**按 **[首次引导](../aws-wechat-article-main/references/first-time-setup.md)** 执行其中的 **「检测顺序」**。**单独启用本 skill** 时同上。检测通过后才能进行以下操作（或用户明确书面确认「本次不检查」）。
 
-## 内置主题
+## 内置模版
 
-| 主题 | 风格 | 适用场景 |
+排版 = **模版**（骨架：标题装饰、导语、金句卡、图片处理、分隔、文末）× **配色**（一组主色/次色，派生色自动重算）。skill 内置四套模版，每套三种配色：
+
+| 模版 | 长相 | 配色（第一个是默认） |
 |------|------|---------|
-| `default` | 经典蓝 — 沉稳大气，色块小标题 | 科技、商业、通用 |
-| `grace` | 优雅紫 — 柔和圆润，左边框小标题 | 文化、美学 |
-| `modern` | 暖橙 — 活力大胆，色块小标题 | 自媒体、创业 |
-| `simple` | 极简黑 — 极度克制，大量留白 | 思想深度、学术 |
+| `块` | 圆润友好：实心胶囊标题、圆角卡片、记号笔加粗 | 黛紫 / 松绿 / 靛蓝 |
+| `报` | 媒体号：17px 松字距大字、整句彩色粗体、灰底圆角块 | 墨绿 / 绛红 / 藏青 |
+| `书` | 书刊：衬线、罗马数字章节、居中标题、大引号金句 | 朱砂 / 黛蓝 / 苍绿 |
+| `艺` | 杂志：竖排 kicker、Didot 大数字章节、正文内缩 | 石青 / 驼褐 / 铁锈 |
 
-每个主题包含：标题样式（h1-h4）、段落、引用块、列表、分割线、图片、代码块、链接、强调色等完整规则。
+另外四套（`彩` 渐变 / `手` 手作 / `构` 包豪斯 / `码` 工程）不随 skill 内置，在 aiworkskills.cn 选好模版和配色后随 `.aws` 预设包下发到 `.aws-article/presets/formatting/`（见 assets skill）。网站上选的配色会烘进 YAML 顶层 `variables`，落地后不需要额外配置。
+
+换配色：`--scheme <配色名>`，或本篇 `article.yaml` 写 `default_format_scheme: [配色名]`。`--list-themes` 会列出每套模版的配色。
 
 ## 图注只认显式写的 title ⛔
 
@@ -183,11 +187,11 @@ metadata:
 # 不传 --theme：使用合并配置中的 default_format_preset，否则 default
 {python} {baseDir}/scripts/format.py drafts/YYYYMMDD-slug/article.md -o drafts/YYYYMMDD-slug/article.html
 
-# 显式指定主题（覆盖配置）
-{python} {baseDir}/scripts/format.py drafts/YYYYMMDD-slug/article.md --theme grace -o drafts/YYYYMMDD-slug/article.html
+# 显式指定模版 / 配色（覆盖配置）
+{python} {baseDir}/scripts/format.py drafts/YYYYMMDD-slug/article.md --theme 报 --scheme 绛红 -o drafts/YYYYMMDD-slug/article.html
 
 # 自定义主色 / 字号
-{python} {baseDir}/scripts/format.py article.md --theme modern --color "#A93226"
+{python} {baseDir}/scripts/format.py article.md --theme 报 --scheme 绛红
 {python} {baseDir}/scripts/format.py article.md --font-size 15px
 
 # 列出可用主题
@@ -214,7 +218,8 @@ metadata:
 
 | 选项 | 说明 | 默认值 |
 |------|------|--------|
-| `--theme <名称>` | 主题；**省略则按合并配置 → default** | 见上文 |
+| `--theme <名称>` | 模版/主题；**省略则按合并配置 → 内置默认 `块`** | 见上文 |
+| `--scheme <配色名>` | 模版的配色方案（见 `--list-themes`）；省略则读本篇 `default_format_scheme`，再无则模版默认色 | 模版默认 |
 | `--color <hex>` | 自定义主色 | 主题默认 |
 | `--font-size <px>` | 正文字号（同时覆盖主题 p / li 里的字号） | 16px |
 | `-o <路径>` | 输出路径 | 同名 .html |
@@ -227,7 +232,7 @@ metadata:
 在 `.aws-article/presets/formatting/` 下新建主题文件即可。快速起步：
 
 ```bash
-{python} {baseDir}/scripts/format.py --export-theme default > .aws-article/presets/formatting/my-brand.yaml
+{python} {baseDir}/scripts/format.py --export-theme 块 > .aws-article/presets/formatting/my-brand.yaml
 ```
 
 主题文件格式和扩展方式详见：[references/presets/README.md](references/presets/README.md)

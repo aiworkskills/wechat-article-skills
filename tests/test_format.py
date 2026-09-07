@@ -12,7 +12,7 @@ from tests._load import load
 fmt = load("skills/aws-wechat-article-formatting/scripts/format.py", "aws_format")
 
 
-def _styles(theme_name="default", overrides=None):
+def _styles(theme_name="块", overrides=None):
     return fmt._build_styles(fmt._load_theme_file(fmt._find_theme_file(theme_name)), overrides or {})
 
 
@@ -95,7 +95,7 @@ class MdToHtmlTest(unittest.TestCase):
 
 class BuildStylesTest(unittest.TestCase):
     def test_font_size_override_hits_paragraph_and_li(self):
-        for theme in ("default", "grace", "modern", "simple"):
+        for theme in ("块", "报", "书", "艺"):
             st = _styles(theme, {"font-size": "15px"})
             self.assertIn("font-size:15px", st["p"], theme)
             self.assertNotIn("font-size:16px", st["p"], theme)
@@ -129,7 +129,7 @@ class CaptionStyleTest(unittest.TestCase):
         )
 
     def _captions(self, style):
-        styles = fmt._build_styles(fmt._load_theme("default"))
+        styles = fmt._build_styles(fmt._load_theme("块"))
         html = fmt._md_to_html(self._md(), styles, caption_style=style)
         return re.findall(r'<p style="text-align:center; font-size:\d+px[^>]*>([^<]*)</p>', html)
 
@@ -169,7 +169,7 @@ class ComponentTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.styles = fmt._build_styles(fmt._load_theme("default"))
+        self.styles = fmt._build_styles(fmt._load_theme("块"))
         self.comps = fmt._load_components()
 
     def test_builtin_components_load(self):
@@ -352,25 +352,25 @@ class ComponentTest(unittest.TestCase):
         实例：![氛围：开发者站在巨型99.9分数牌前，视线越过分数望向复杂而开放的城市]
         —— 拿它当图注是把读者眼睛已经看见的东西复述一遍，零信息。
         """
-        styles = fmt._build_styles(fmt._load_theme("default"))
+        styles = fmt._build_styles(fmt._load_theme("块"))
         html = fmt._md_to_html('![氛围：开发者站在巨型99.9分数牌前](a.png)', styles)
         self.assertIn("<img", html)
         self.assertNotIn("开发者站在巨型99.9分数牌前</p>", html)
 
     def test_caption_rendered_when_title_given(self):
-        styles = fmt._build_styles(fmt._load_theme("default"))
+        styles = fmt._build_styles(fmt._load_theme("块"))
         html = fmt._md_to_html('![信息图：画面指令](a.png "同一模型两个分数，差 37 个百分点")', styles)
         self.assertIn("同一模型两个分数", html)
         self.assertNotIn("画面指令</p>", html)
 
     def test_title_does_not_leak_into_src(self):
         """title 必须从 src 里摘干净，否则图片路径带上引号会直接 404。"""
-        styles = fmt._build_styles(fmt._load_theme("default"))
+        styles = fmt._build_styles(fmt._load_theme("块"))
         html = fmt._md_to_html('![x：y](imgs/a.png "图注")', styles)
         self.assertIn('src="imgs/a.png"', html)
 
     def test_single_quoted_and_curly_quoted_title(self):
-        styles = fmt._build_styles(fmt._load_theme("default"))
+        styles = fmt._build_styles(fmt._load_theme("块"))
         for mark in ('"图注A"', "'图注B'", '“图注C”'):
             html = fmt._md_to_html(f'![x：y](a.png {mark})', styles)
             self.assertIn(mark.strip('"\'“”'), html)
@@ -637,7 +637,7 @@ class PresetPaletteTest(unittest.TestCase):
 
 
 class NoLeftoverBracesTest(unittest.TestCase):
-    """渲染产物里不该剩下任何花括号。
+    r"""渲染产物里不该剩下任何花括号。
 
     起因是一处双大括号：模板里写成 `{{primary-color}}`，替换后变成 `{#3B4CC0}`——
     无效 CSS，背景直接不生效，那条色带在页面上是隐形的。而按 `\{[a-z-]+\}` 去找残留
@@ -781,18 +781,23 @@ class BuiltinThemeContrastTest(unittest.TestCase):
 
 
 def _template_files():
-    """三套模版（涂 / 画 / 省）。README 不是模版。"""
-    d = fmt.SKILL_DIR / "references" / "presets" / "templates"
-    return [f for f in sorted(d.glob("*.yaml"))] if d.is_dir() else []
+    """八套模版：内置四套在 presets/themes/（块 / 报 / 书 / 艺），
+    另外四套在 presets/templates/（彩 / 手 / 构 / 码，经网站 .aws 包下发）。README 不是模版。"""
+    base = fmt.SKILL_DIR / "references" / "presets"
+    files = []
+    for d in (base / "themes", base / "templates"):
+        if d.is_dir():
+            files += sorted(d.glob("*.yaml"))
+    return files
 
 
 _HAS_TEMPLATES = bool(_template_files())
-_SKIP_NO_TEMPLATE = unittest.skipUnless(_HAS_TEMPLATES, "三套模版尚未落地")
+_SKIP_NO_TEMPLATE = unittest.skipUnless(_HAS_TEMPLATES, "模版尚未落地")
 
 
 @_SKIP_NO_TEMPLATE
 class ThreeTemplateTest(unittest.TestCase):
-    """涂 / 画 / 省 三套模版的守卫。
+    """八套模版（块 / 报 / 书 / 艺 / 彩 / 手 / 构 / 码）的守卫。
 
     上一轮做四个骨架失败，根因之一是没有尺——定了规则却一路手写把规则忘了。
     这些用例把「实验里撞出来的硬规则」钉死，改坏了会直接红。
@@ -885,9 +890,10 @@ class ThreeTemplateTest(unittest.TestCase):
     def test_accent_colors_are_variables_not_literals(self):
         """模版和组件不许写死强调色，否则 --color 完全失效。
 
-        这不是假想的洁癖：涂 最初七个组件加模版一共写死了 11 处 #14508C / #EAF0F6 /
-        #BBD0E4，换色时整篇纹丝不动。字面色只允许出现在中性灰和纯白上——那两类不随
-        强调色变。
+        这不是假想的洁癖：早先一套模版的七个组件加模版本身一共写死了 11 处
+        #14508C / #EAF0F6 / #BBD0E4，换色时整篇纹丝不动。字面色只允许出现在中性灰和
+        纯白上——那两类不随强调色变。配色方案（schemes）让这条更要紧：写死一处，
+        三套配色里就有两套是错的。
         """
         import yaml
         d = fmt.SKILL_DIR / "references" / "components"
@@ -1218,7 +1224,7 @@ class MarkdownCoverageTest(unittest.TestCase):
         # 用真主题构建，而不是手写一个键不全的桩——渲染器在样式为空时会回退到
         # 变量拼接，桩少一个键就是 KeyError，测的就不是 markdown 覆盖度了。
         import yaml
-        t = fmt.SKILL_DIR / "references" / "presets" / "templates" / "画.yaml"
+        t = fmt.SKILL_DIR / "references" / "presets" / "themes" / "块.yaml"
         cls.STYLES = fmt._build_styles(yaml.safe_load(t.read_text(encoding="utf-8")))
 
     def _r(self, md, **kw):
@@ -1315,7 +1321,7 @@ class SummaryVsQuoteTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import yaml
-        t = fmt.SKILL_DIR / "references" / "presets" / "templates" / "涂.yaml"
+        t = fmt.SKILL_DIR / "references" / "presets" / "themes" / "块.yaml"
         cls.STYLES = fmt._build_styles(yaml.safe_load(t.read_text(encoding="utf-8")))
 
     COMPS = {"lead": {"template": '<section data-lead="1">{content}</section>'},
@@ -1440,44 +1446,68 @@ class LeadFrameTest(unittest.TestCase):
         for f in self._leads():
             self.assertNotIn("position:absolute", f.read_text(encoding="utf-8"), str(f))
 
-    SKELETONS = ("tu", "hua", "sheng", "zi")
+    SKELETONS = ("kuai", "bao", "shu", "yi", "cai", "shou", "gou", "ma")
 
     @staticmethod
     def _shape(tpl: str) -> tuple:
         """导语的形态签名。
 
-        第一版是照着「框」写的（只认 SVG 路径和底色块）。后来整个方向改了——
-        导语不是一个盒子，是读者从标题跨进正文的门槛，门槛靠**栏宽、行距、留白**做。
-        四套共用同一个结构动作（窄栏 + 松行距），差异只在收尾那一个小记号上。
-        所以签名要认的是：有没有收窄、行距多松、收尾记号是什么。
+        第一版是照着「框」写的（只认 SVG 路径和底色块）。后来整个方向改了——导语不是
+        一个盒子，是读者从标题跨进正文的门槛。八套各用一套不同的手法做这个门槛：出血
+        底块、上下双线、竖排小字、顶部色条、手写体小标、等宽体小标。签名认的就是这些
+        手法，外加「底色是跟强调色走还是中性灰」——两套都用出血底块时，就靠这一条分开，
+        谁把中性底改成强调色底谁就撞车。
+
+        按 style 块逐个看，而不是在整段字符串上找关键字：一根 8px 的色条和一块有内边距
+        的底板都写 background，混在一起看就分不出「条」和「块」。
         """
+        blocks = re.findall(r'style="([^"]*)"', tpl)
         feats = set()
-        # 窄栏：左右 margin 大于 0（正文是贴着容器内边距的）
-        if re.search(r"margin:[^;\"]*\s\d{2,}px\s", tpl):
-            feats.add("窄栏")
-        lh = re.search(r"line-height:\s*([\d.]+)", tpl)
-        if lh and float(lh.group(1)) >= 2.1:
-            feats.add("松行距")
-        # 收尾记号
-        if re.search(r"height:\s*[4-9]px;\s*background", tpl):
-            feats.add("记号:色块")
-        if re.search(r"height:\s*[12](\.\d)?px;\s*background", tpl):
-            feats.add("记号:细线")
-        if re.search(r"letter-spacing:\s*[4-9]", tpl):
-            feats.add("记号:疏排小字")
-        # 旧词汇仍然要能认出来——万一有人改回框，签名不能装看不见
-        if re.search(r"background:\s*\{bg-accent", tpl):
-            feats.add("浅底")
-        if re.search(r"background:\s*\{(primary-fill|primary-color)\}", tpl):
-            feats.add("实心块")
+        bars = 0
+        for b in blocks:
+            has_bg = "background:" in b
+            height = re.search(r"height:\s*([\d.]+)px", b)
+            thin = height and float(height.group(1)) <= 10
+            if has_bg and thin:
+                bars += 1
+                if float(height.group(1)) <= 1.5:
+                    feats.add("发丝线")
+            elif has_bg and "padding:" in b:
+                if "{bg-accent" in b:
+                    feats.add("底块:强调色淡底")
+                elif re.search(r"background:\s*\{(primary-fill|primary-color)\}", b):
+                    feats.add("底块:实心强调色")
+                else:
+                    feats.add("底块:中性灰")
+                if re.search(r"margin:[^;]*-\d+px", b):
+                    feats.add("出血")
+            if "border-top" in b and "border-bottom" in b:
+                feats.add("上下双线")
+            if "writing-mode:vertical" in b:
+                feats.add("kicker:竖排")
+            for pat, name in (
+                (r"(cursive|Snell)", "kicker:手写体"),
+                (r"(Menlo|monospace)", "kicker:等宽体"),
+                (r"(Futura|Avenir)", "kicker:无衬线大写"),
+                (r"(Georgia|Didot|Baskerville|Bodoni|serif)", "衬线"),
+            ):
+                if re.search(r"font-family:[^;]*" + pat, b):
+                    feats.add(name)
+        if bars == 1:
+            feats.add("色条:一根")
+        elif bars >= 2:
+            feats.add("色条:多根")
+        if "linear-gradient" in tpl:
+            feats.add("渐变")
+        # 旧词汇仍然要能认出来——万一有人改回「一段字加个框」，签名不能装看不见
         if "<svg" in tpl:
             feats.add("SVG 图形")
-        if "M0 20 L0 9 C0 3.5" in tpl or "&#12300;" in tpl:
+        if "&ldquo;" in tpl or "&#12300;" in tpl:
             feats.add("引号")
         return tuple(sorted(feats))
 
     def test_every_skeleton_has_its_own_lead_shape(self):
-        """四套的导语框形态必须互不相同，而且都要跟自己的金句卡分开。"""
+        """八套的导语形态必须互不相同，而且都要跟自己的金句卡分开。"""
         import yaml
         d = fmt.SKILL_DIR / "references" / "components"
         sigs = {}

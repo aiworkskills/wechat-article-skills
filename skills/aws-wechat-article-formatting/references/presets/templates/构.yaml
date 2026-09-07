@@ -7,6 +7,19 @@ variables:
   text-color: '#111111'
   text-muted: '#6B7078'
   secondary-color: '#F2C230'
+schemes:
+- name: 蓝黄
+  variables:
+    primary-color: '#1F4FD6'
+    secondary-color: '#F2C230'
+- name: 赤黑
+  variables:
+    primary-color: '#C0392B'
+    secondary-color: '#1A1A1A'
+- name: 绿橙
+  variables:
+    primary-color: '#2A9D8F'
+    secondary-color: '#E76F51'
 styles:
   p: font-size:16px; line-height:1.95; letter-spacing:0.4px; color:#111111; margin:0 0 26px;
   strong: color:#111111; font-weight:900; border-bottom:3px solid {primary-fill};

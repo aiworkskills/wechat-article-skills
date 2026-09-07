@@ -2,7 +2,7 @@
 
 ## 使用主题
 
-不传 `--theme` 时，**`format.py`** 只读取与 `article.md` 同目录 **`article.yaml`** 的 **`default_format_preset`**（不直接读 `.aws-article/config.yaml`；全局 `custom_format_preset` / `default_format_preset` 候选池由 main 在本篇准备阶段收敛后写回 `article.yaml`）。该键**须为 YAML 字符串列表**：`[]` 或单元素 `[主题名]`；为空则用内置 `default`；多候选会报错，须先改为单元素列表。
+不传 `--theme` 时，**`format.py`** 只读取与 `article.md` 同目录 **`article.yaml`** 的 **`default_format_preset`**（不直接读 `.aws-article/config.yaml`；全局 `custom_format_preset` / `default_format_preset` 候选池由 main 在本篇准备阶段收敛后写回 `article.yaml`）。该键**须为 YAML 字符串列表**：`[]` 或单元素 `[主题名]`；为空则用内置默认模版 `块`；多候选会报错，须先改为单元素列表。
 
 ```bash
 {python} format.py article.md --theme <主题名>
@@ -11,12 +11,22 @@
 
 ## 内置主题
 
-| 主题名 | 风格 | 适用场景 |
-|--------|------|---------|
-| `default` | 经典蓝 — 沉稳大气的编辑风格 | 科技、商业、通用 |
-| `grace` | 优雅紫 — 柔和圆润的风格 | 文化、美学 |
-| `modern` | 暖橙 — 活力大胆的风格 | 自媒体、创业 |
-| `simple` | 极简黑 — 极度克制的留白风格 | 思想深度、学术 |
+`themes/` 下四套模版随 skill 内置，每套带三种配色（YAML 里的 `schemes:`，第一项即默认色）：
+
+| 模版 | 骨架 | 配色 |
+|------|------|------|
+| `块` | kuai | 黛紫 / 松绿 / 靛蓝 |
+| `报` | bao | 墨绿 / 绛红 / 藏青 |
+| `书` | shu | 朱砂 / 黛蓝 / 苍绿 |
+| `艺` | yi | 石青 / 驼褐 / 铁锈 |
+
+`templates/` 下另外四套（彩 / 手 / 构 / 码）不进内置搜索路径，经网站 `.aws` 预设包下发到
+`.aws-article/presets/formatting/`。两处 YAML 是网站系统预设的**唯一真源**——网站仓库
+`backend/scripts/build_formatting_presets.py` 从这里生成 fixture 与预览页。
+
+模版 YAML 的形状：`skeleton`（对应 `references/components/<skeleton>/` 的装饰组件）、
+`variables`（默认色）、`schemes`（配色列表，每项只是一组 variables 覆盖）、`styles`。
+换配色：`--scheme <名>`；派生色（fill / ink / 淡底 / 高亮笔）由主色自动算，不用手填。
 
 ## 自定义主题
 

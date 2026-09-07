@@ -10,12 +10,13 @@
 
 用法：
     python format.py <article.md>                      主题：仅读取本篇 article.yaml 的 default_format_preset（须为 YAML 列表），否则 default
-    python format.py <article.md> --theme grace         显式指定主题（覆盖配置）
+    python format.py <article.md> --theme 报            显式指定主题（覆盖配置）
+    python format.py <article.md> --theme 块 --scheme 松绿   指定模版的配色方案（见 --list-themes）
     python format.py <article.md> --theme my-brand      使用自定义主题
     python format.py <article.md> --color "#0F4C81"     覆盖主色
     python format.py <article.md> --font-size 16px
     python format.py --list-themes                       列出可用主题
-    python format.py --export-theme default > my.yaml     导出主题 YAML（含默认变量/样式）作为自定义起点
+    python format.py --export-theme 块 > my.yaml     导出主题 YAML（含默认变量/样式）作为自定义起点
     python format.py <article.md> --no-preformat         跳过中英文加空格 / 引号替换等预格式化
 """
 
@@ -35,6 +36,8 @@ import yaml
 SCRIPT_DIR = Path(__file__).parent
 SKILL_DIR = SCRIPT_DIR.parent
 BUILTIN_THEMES_DIR = SKILL_DIR / "references" / "presets" / "themes"
+# 内置只留四套默认模版（块 / 报 / 书 / 艺）；其余模版由网站以 .aws 预设包下发到用户目录。
+DEFAULT_THEME = "块"
 
 USER_THEMES_DIRS = [
     Path(".aws-article/presets/formatting"),
@@ -59,6 +62,7 @@ DEFAULT_VARIABLES = {
     "bg-accent-color": "#F0F4F8",
     "highlight-pen": "#C6D6E6",
     "highlight-soft": "#DCE6F0",
+    "secondary-soft": "#EEF2F6",
     # 第二强调色：双色方案用（藏青面板上的金、黑白里的一点钴蓝）。单一强调色派生不出来，
     # 由模版的 variables 声明；换配色时和 primary-color 一起换。
     "secondary-color": "#C9A45C",
@@ -165,6 +169,23 @@ def _load_theme(name: str) -> dict:
     return _load_theme_file(path)
 
 
+def _apply_scheme(theme: dict, name: str | None) -> dict:
+    """选一套配色：把 schemes[name].variables 合并进主题的 variables，派生色随后自动重算。
+
+    一套配色只是一组 variables 覆盖（主色、次色，偶尔连正文色一起换），
+    不动 styles——版式和配色是两个维度，模版选骨架，配色选颜色。
+    """
+    if not name:
+        return theme
+    for scheme in theme.get("schemes") or []:
+        if str(scheme.get("name", "")).strip() == str(name).strip():
+            merged = dict(theme)
+            merged["variables"] = {**(theme.get("variables") or {}), **(scheme.get("variables") or {})}
+            return merged
+    names = ", ".join(str(x.get("name")) for x in theme.get("schemes") or []) or "（该主题没有配色方案）"
+    _err(f"主题 '{theme.get('name')}' 没有配色方案 '{name}'。可用：{names}")
+
+
 def _list_themes() -> list[dict]:
     """列出所有可用主题（用户自定义优先，同名去重）。"""
     themes = []
@@ -188,6 +209,7 @@ def _list_themes() -> list[dict]:
                 "label": data.get("name", ""),
                 "description": data.get("description", ""),
                 "source": source,
+                "schemes": [str(x.get("name")) for x in (data.get("schemes") or []) if x.get("name")],
             })
     return themes
 
@@ -205,6 +227,9 @@ def _export_theme(name: str) -> None:
         "variables": {**DEFAULT_VARIABLES, **(theme.get("variables") or {})},
         "styles": {**DEFAULT_STYLES, **(theme.get("styles") or {})},
     }
+    for key in ("skeleton", "constants", "schemes"):
+        if theme.get(key):
+            data[key] = theme[key]
     sys.stdout.write(yaml.safe_dump(data, allow_unicode=True, sort_keys=False, width=1000))
 
 
@@ -689,7 +714,7 @@ _COMPONENT_VARS = (
     # "primary-color" 不是 "primary-ink" 的前缀所以其实不冲突，但把它放前面能
     # 少一次「以后新增 primary-color-xxx 时被前缀吃掉」的隐患。
     "primary-ink", "primary-fill", "primary-color", "bg-accent-soft",
-    "bg-accent-color", "highlight-soft", "highlight-pen", "secondary-on-fill", "secondary-color",
+    "bg-accent-color", "highlight-soft", "highlight-pen", "secondary-on-fill", "secondary-soft", "secondary-color",
     "text-color", "text-light",
     "text-muted", "border-color", "link-color", "font-size", "line-height",
 )
@@ -733,7 +758,8 @@ def _darken_to_readable(hexcolor: str, target: float = 4.5) -> str:
 
 # 由强调色派生、不需要用户填的颜色。用户换强调色时它们必须一起重算。
 _DERIVED_COLORS = ("primary-fill", "primary-ink", "bg-accent-soft",
-                   "bg-accent-color", "highlight-pen", "highlight-soft", "secondary-on-fill")
+                   "bg-accent-color", "highlight-pen", "highlight-soft", "secondary-on-fill",
+                   "secondary-soft")
 
 
 def _normalize_hex(value: str) -> str | None:
@@ -797,14 +823,16 @@ def _derive_palette(accent: str, secondary: str | None = None) -> dict:
         "bg-accent-soft": _mix_to_white(accent, 0.96),    # 大面积底
         "bg-accent-color": _mix_to_white(accent, 0.92),   # 卡片底
         "highlight-pen": _mix_to_white(accent, 0.74),
-        # 高频档：给每篇出现几十次的元素用（涂 的加粗高亮笔）。
+        # 高频档：给每篇出现几十次的元素用（块 的加粗记号笔底）。
         # 同一个颜色，用在每篇 35 次的元素上和用在每篇 1 次的元素上，
-        # 需要的分量不一样。实测涂 的加粗覆盖了正文 18.3% 的字、最重的一段
+        # 需要的分量不一样。实测加粗覆盖了正文 18.3% 的字、最重的一段
         # 被涂满 100%——74% 那一档在这个频次下不是强调，是第二种正文底色。
         "highlight-soft": _mix_to_white(accent, 0.84),
-        # 次色压在主色面板上：够读就用次色，不够就退回白字。夜 的金字压藏青是 6.5，
-        # 但用户换成柠檬黄时面板会被派生成深黄，金压深黄只有 1.8——护栏在这里接住。
+        # 次色压在主色面板上：够读就用次色，不够就退回白字。构 的柠檬黄压钴蓝是 6.4，
+        # 但换成「绿橙」那套配色时面板变成青绿，橙压青绿只有 1.9——护栏在这里接住。
         "secondary-on-fill": (secondary if secondary and _contrast(secondary, fill) >= 3.0 else "#FFFFFF"),     # strong 的高亮笔
+        # 次色的淡底（彩 的金句卡从主色淡底渐变到次色淡底）；没有次色时退到主色卡片底。
+        "secondary-soft": (_mix_to_white(_normalize_hex(secondary) or accent, 0.90) if secondary else _mix_to_white(accent, 0.92)),
     }
 
 
@@ -1683,8 +1711,9 @@ def main():
     parser.add_argument(
         "--theme",
         default=None,
-        help="主题名；省略则仅读取本篇 article.yaml 的 default_format_preset，再无则 default",
+        help="主题名；省略则仅读取本篇 article.yaml 的 default_format_preset，再无则内置默认模版 块",
     )
+    parser.add_argument("--scheme", help="配色方案名（主题 schemes 里的 name）；省略则读本篇 article.yaml 的 default_format_scheme，再无则用主题默认色")
     parser.add_argument("--color", help="覆盖主色（如 #0F4C81）")
     parser.add_argument("--font-size", help="覆盖字号（如 16px）")
     parser.add_argument("-o", "--output", help="输出路径（默认同名 .html）")
@@ -1704,6 +1733,8 @@ def main():
             label = f" ({t['label']})" if t["label"] else ""
             desc = f" - {t['description']}" if t["description"] else ""
             print(f"  {t['name']}{label} [{t['source']}]{desc}")
+            if t.get("schemes"):
+                print(f"      配色: {' / '.join(t['schemes'])}")
         return
 
     if args.export_theme:
@@ -1723,7 +1754,7 @@ def main():
 
     if args.theme is None:
         preset = _coerce_single_preset("default_format_preset", article_ctx.get("default_format_preset"))
-        theme_name = preset if preset else "default"
+        theme_name = preset if preset else DEFAULT_THEME
         if preset:
             _info(f"主题来自本篇 article.yaml 的 default_format_preset: {theme_name}")
     else:
@@ -1736,6 +1767,16 @@ def main():
         _info("Markdown 预格式化完成（中英文间距、引号、空行）")
 
     theme = _load_theme(theme_name)
+
+    scheme_name = args.scheme
+    if scheme_name is None:
+        raw = article_ctx.get("default_format_scheme")
+        scheme_name = _coerce_single_preset("default_format_scheme", raw) if isinstance(raw, (list, tuple)) else (str(raw).strip() if raw else "")
+        if scheme_name:
+            _info(f"配色来自本篇 article.yaml 的 default_format_scheme: {scheme_name}")
+    if scheme_name:
+        theme = _apply_scheme(theme, scheme_name)
+        _info(f"配色: {scheme_name}")
 
     overrides = {}
     if args.color:

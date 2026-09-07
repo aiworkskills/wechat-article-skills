@@ -1,4 +1,4 @@
 name: img-deco
 # 胶带压在照片上缘：图外面的 <p> 有 1.5em(24px) 顶边距，负边距要一并吃掉，再让胶带一半（11px）压进图里。
 # 胶带在 DOM 里排在图前面，靠 transform 建立层叠上下文画到图上面。
-template: <section style="margin:28px 0 0;"><section style="display:flex; justify-content:center; margin-bottom:-35px;"><section style="width:92px; height:22px; background:rgba(255,224,102,.82); transform:rotate(-3deg);"></section></section>{content}</section>
+template: <section style="margin:28px 0 0;"><section style="display:flex; justify-content:center; margin-bottom:-35px;"><section style="width:92px; height:22px; background:{secondary-color}; transform:rotate(-3deg);"></section></section>{content}</section>

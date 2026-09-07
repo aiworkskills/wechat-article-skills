@@ -7,6 +7,19 @@ variables:
   text-color: '#2A2622'
   text-muted: '#8A7F76'
   secondary-color: '#FFE066'
+schemes:
+- name: 朱红·黄笔
+  variables:
+    primary-color: '#C8553D'
+    secondary-color: '#FFE066'
+- name: 墨蓝·粉笔
+  variables:
+    primary-color: '#2C4A7A'
+    secondary-color: '#FFC2D9'
+- name: 深绿·薄荷笔
+  variables:
+    primary-color: '#2F6B4F'
+    secondary-color: '#C6F0C2'
 styles:
   p: font-size:16px; line-height:2.0; letter-spacing:0.4px; color:#2A2622; margin:0 0 26px;
   strong: color:#2A2622; font-weight:700; background:linear-gradient(transparent 70%, {secondary-color} 70%);

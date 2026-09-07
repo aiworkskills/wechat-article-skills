@@ -1,2 +1,0 @@
-name: hr-deco
-template: <section style="margin:64px 0;"><svg width="343" height="14" viewBox="0 0 343 14" style="display:block;"><rect x="0" y="5" width="140" height="4" fill="{bg-accent-color}"/><rect x="203" y="5" width="140" height="4" fill="{bg-accent-color}"/><path d="M171.5 1 L180 7 L171.5 13 L163 7 Z" fill="{primary-fill}"/></svg></section>

@@ -6,6 +6,16 @@ variables:
   primary-color: '#6B5B95'
   text-color: '#1F1F1F'
   text-muted: '#8A8F98'
+schemes:
+- name: 黛紫
+  variables:
+    primary-color: '#6B5B95'
+- name: 松绿
+  variables:
+    primary-color: '#4E7D6B'
+- name: 靛蓝
+  variables:
+    primary-color: '#3F5F9E'
 styles:
   p: font-size:16px; line-height:1.95; letter-spacing:0.5px; color:{text-color}; margin:0 0 26px;
   strong: color:{text-color}; font-weight:700; background:linear-gradient(transparent 74%, {highlight-soft} 74%);

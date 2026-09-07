@@ -1,2 +1,0 @@
-name: h2-deco
-template: <section style="width:28px; height:6px; background:{primary-fill}; margin:64px 0 14px;"></section>{content}

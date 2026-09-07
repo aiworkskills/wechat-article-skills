@@ -6,6 +6,16 @@ variables:
   primary-color: '#9E3D30'
   text-color: '#1F1F1F'
   text-muted: '#8A8F98'
+schemes:
+- name: 朱砂
+  variables:
+    primary-color: '#9E3D30'
+- name: 黛蓝
+  variables:
+    primary-color: '#2F4A6D'
+- name: 苍绿
+  variables:
+    primary-color: '#3F5E4A'
 styles:
   p: font-family:Baskerville, Georgia, 'Times New Roman', serif; font-size:15.5px; line-height:1.95; letter-spacing:0.3px; color:#222222; margin:0 0 20px;
   strong: color:#111111; font-weight:900;

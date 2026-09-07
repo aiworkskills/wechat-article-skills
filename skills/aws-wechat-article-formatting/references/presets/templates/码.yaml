@@ -7,6 +7,19 @@ variables:
   text-color: '#111827'
   text-muted: '#6B7280'
   secondary-color: '#E5E7EB'
+schemes:
+- name: 蓝
+  variables:
+    primary-color: '#2563EB'
+    secondary-color: '#E5E7EB'
+- name: 紫
+  variables:
+    primary-color: '#7C3AED'
+    secondary-color: '#E5E7EB'
+- name: 绿
+  variables:
+    primary-color: '#047857'
+    secondary-color: '#E5E7EB'
 styles:
   p: font-size:16px; line-height:1.95; letter-spacing:0.2px; color:#111827; margin:0 0 26px; font-variant-numeric:tabular-nums;
   strong: 'font-weight:600; color:#111827; background:#F6F8FA; box-shadow:0 0 0 3px #F6F8FA; border-bottom:1px solid #E5E7EB;'

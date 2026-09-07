@@ -6,6 +6,16 @@ variables:
   primary-color: '#1F6F5F'
   text-color: '#111111'
   text-muted: '#8A8F98'
+schemes:
+- name: 墨绿
+  variables:
+    primary-color: '#1F6F5F'
+- name: 绛红
+  variables:
+    primary-color: '#9B2D30'
+- name: 藏青
+  variables:
+    primary-color: '#24406B'
 styles:
   p: font-size:17px; line-height:2.0; letter-spacing:0.8px; color:{text-color}; margin:0 0 30px; font-variant-numeric:tabular-nums;
   strong: color:{primary-ink}; font-weight:700;

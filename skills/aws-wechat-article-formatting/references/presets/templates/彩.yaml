@@ -7,6 +7,19 @@ variables:
   text-color: '#1F1F1F'
   text-muted: '#8A8F98'
   secondary-color: '#17A398'
+schemes:
+- name: 靛青
+  variables:
+    primary-color: '#5B4BFF'
+    secondary-color: '#17A398'
+- name: 玫紫
+  variables:
+    primary-color: '#B83280'
+    secondary-color: '#6B46C1'
+- name: 暮橙
+  variables:
+    primary-color: '#D9480F'
+    secondary-color: '#A61E4D'
 styles:
   p: font-size:16px; line-height:1.95; letter-spacing:0.4px; color:{text-color}; margin:0 0 26px;
   strong: font-weight:800; background:linear-gradient(90deg, {primary-ink}, {secondary-color}); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
