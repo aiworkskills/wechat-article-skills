@@ -1,0 +1,2 @@
+name: h2-deco
+template: <section style="margin:56px -16px 20px;"><svg width="343" height="16" viewBox="0 0 343 16" style="display:block;"><path d="M0 0 L325 0 L343 16 L0 16 Z" fill="{bg-accent-color}"/></svg><section style="background:{bg-accent-color}; padding:0 16px 11px;">{content}</section></section>
