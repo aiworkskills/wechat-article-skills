@@ -190,7 +190,7 @@ cd wechat-article-skills
 
 > **业务资料库**：写涉及自家业务的文章前 AI 自动查 `.aws-article/products/{产品名}/`；聊出来的产品介绍也会引导你存进去，下次直接复用——AI 不用每次重新问"你是干什么的"。
 
-> **可选扩展 · cue-omni-reader（不属于本套件）**：如需把 PDF / 已授权的本地文档、音频、视频 / 其他网页解析成可写作的素材文本，可另行安装外部 skill **cue-omni-reader**（上游 [`sensedeal/cue-skills`](https://github.com/sensedeal/cue-skills) 的 [`cue-omni-reader`](https://github.com/sensedeal/cue-skills/tree/main/cue-omni-reader)，MIT）。它是纯指令层，驱动官方 Cue Omni Reader MCP 把 HTTP(S) 与已授权的本地文档/音频/视频解析为 Markdown。安装：`npx skills add sensedeal/cue-skills --skill cue-omni-reader`。本套件不内置它，安装与使用以上游说明为准。
+> **写稿素材不在资料库里时**：客户丢来的 PDF、竞品网页、访谈录音，本套件不会自己拆。先用 [cue-omni-reader](https://github.com/sensedeal/cue-skills/tree/main/cue-omni-reader) 收成 Markdown，再进你们的写作流程。`npx skills add sensedeal/cue-skills --skill cue-omni-reader`（MIT，非本套件）。
 
 <details>
 <summary><b>配图不再是套模板</b> — 封面七步推导 / 正文图位判据 / 手绘媒介轮换（点开展开）</summary>
