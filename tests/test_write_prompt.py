@@ -70,6 +70,57 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
         提示词要教，否则模型不会稳定输出它。"""
         self.assertIn("**标签**", self._prompt())
 
+    # ── 产出配额 ────────────────────────────────────────────────
+    # 只教语法不给配额，模型一处都不会写。真稿实测（10 篇）：金句卡 0 篇命中，
+    # 5 篇原始模型产出里正文段落内的加粗是 0——写出来的加粗全在列表标签里。
+    # 于是版式做的金句卡、重点色、荧光底在自动链路上全是死代码。
+
+    def test_emphasis_quota_is_stated(self):
+        """加粗是正文里唯一的扫读落点，且是「重点色 / 荧光底」这些主题样式的唯一入口。
+        没有密度要求，模型只在列表标签里加粗，整篇正文一片平。"""
+        sp = self._prompt()
+        self.assertIn("每 2-3 段至少有一处", sp, "加粗密度配额没了")
+        self.assertIn("最多两处", sp, "缺上限，会变成整篇乱加粗")
+
+    def test_quote_card_quota_is_exactly_one(self):
+        """金句卡的价值来自稀缺——一篇两张，两张都不会被转（见 quote-card.yaml
+        的 when_not_to_use）。所以配额必须是「恰好一处」，不是「可以写」。"""
+        sp = self._prompt()
+        self.assertIn("恰好写一处", sp)
+        self.assertIn("> 金句。 —— 出处", sp)
+
+    def test_density_word_is_defined_not_just_echoed(self):
+        """`每节一图` 这些词是本套件自造的，模型不认识。
+
+        此前提示词只把 `image_density` 的值原样拼进去，定义表躺在 images skill 的
+        image-method.md 里——那份文档写稿阶段根本读不到。实测五篇真稿，正文标记数
+        每篇都少于 `##` 小节数。
+        """
+        sp = self._prompt(screening={"image_density": "每节一图"})
+        self.assertIn("每节一图", sp)
+        self.assertIn("每个 `##` 小节各配一张", sp, "只回显了密度词，没给出定义")
+        self.assertIn("硬配额", sp, "「尽量满足」这种软措辞会被模型当成参考值")
+
+    def test_every_density_word_has_a_definition(self):
+        for word, rule in self.w._DENSITY_RULES.items():
+            sp = self._prompt(screening={"image_density": word})
+            self.assertIn(rule, sp, f"{word} 没被展开成具体规则")
+
+    def test_unknown_density_word_falls_back_without_crashing(self):
+        """用户可以在 config 里写任意字符串，不能因为不在表里就崩或丢掉这行。"""
+        sp = self._prompt(screening={"image_density": "每两节一图"})
+        self.assertIn("每两节一图", sp)
+
+    def test_horizontal_rule_is_taught(self):
+        """`---` 是 hr-deco 的唯一触发口（书卷 / 杂志 / 硬朗 / 手账四个骨架都做了
+        分隔装饰）。此前提示词根本没提过分隔线，真稿 0/10 篇出现过。"""
+        self.assertIn("`---`", self._prompt())
+
+    def test_task_list_is_not_pushed(self):
+        """待办清单是低频构件——只有真正的检查项才用。提示词不点名它，避免模型
+        把普通并列项写成勾选框。渲染器仍然认这个形态（手写、SKILL.md 里有说明）。"""
+        self.assertNotIn("- [ ]", self._prompt())
+
     def test_private_block_syntax_is_not_taught(self):
         """提示词不再教 `:::` 语法。
 
@@ -93,7 +144,7 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
     IMAGE_RULES = [
         "![类型名：画面内容](placeholder)",   # 占位格式
         "封面、信息图、氛围、流程图、对比、实证",  # 类型名白名单
-        "配图密度必须遵循",
+        "配图密度：",
         "不能写成 []()",                     # 少一个 ! 会被排版成链接
         "每个配图标记独占一行",
         "封面标记放在标题之前",
@@ -127,7 +178,7 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
         self.assertIn("placeholder)", gen)
         self.assertNotIn("## 用户供图模式", gen)
         self.assertIn("## 用户供图模式", usr)
-        self.assertNotIn("配图密度必须遵循", usr)
+        self.assertNotIn("配图密度：", usr)
 
 
 if __name__ == "__main__":

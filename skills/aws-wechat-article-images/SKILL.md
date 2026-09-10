@@ -76,7 +76,8 @@ metadata:
 ## 封面风格 + 正文配图
 
 - **封面**：按 [cover-method.md](references/cover-method.md) 七步推导——找张力、定关系、找隐喻、套视觉语言、2.35:1 布局、写成散文、回看。封面模板（[references/cover-styles/](references/cover-styles/)）提供第四步的内容形态与**文案规格**（字号/颜色/位置），共 12 个，默认全选为候选池，Agent 按文章内容挑一个。范例见 [cover-examples/](references/cover-examples/)。
-- **先分工再选形态** ⛔：排版侧的[版式组件](../aws-wechat-article-formatting/references/components/)和信息位配图干同一件事，同一份内容只能给其中一个。判据是**内容里有没有空间关系**（大小/流向/嵌套 → 图；纯文字并列/对照/枚举 → 组件）。五个形态的实测归属见 [image-method.md 第一步半](references/image-method.md)。
+- **先分工再选形态** ⛔：排版侧的[版式组件](../aws-wechat-article-formatting/references/components/)和信息位配图干同一件事，同一份内容只能给其中一个。判据是**内容里有没有空间关系**（大小/流向/嵌套 → 图），但**只有标准 markdown 够得到的组件才算数**——`:::` 私有语法写作侧是禁止的，判给够不到的组件等于图和组件两头落空。实测归属见 [image-method.md 第一步半](references/image-method.md)：只有**金句卡片**归组件，对比两栏与清单要点一律出图。
+- **删图有上限** ⛔：每篇最多删 1 个图位并须写明理由；要删 2 个以上时不要自行删，把「本篇内容与 `image_density` 对不上」这个判断告诉用户。
 - **正文配图**：8 个内容形态，见 [references/image-styles/](references/image-styles/)。判断只有一条——删掉这张图，读者会**看不懂**（信息位，必须带文章真实内容）还是**读不下去**（节奏位，不加字）？都不影响就不要这张图。
 
 ### 封面 vs 正文（资源策略）⛔
@@ -252,6 +253,12 @@ Prompt 构建：封面见 [cover-method.md](references/cover-method.md)，正文
 **封面排除**：封面图（`![封面：...]`）**仅用于微信文章封面上传**，**禁止**作为 `<img>` 嵌入 HTML 正文。替换 placeholder 时**跳过封面标记行**（或直接删除该行），封面图单独复制到文章根目录 `cover.{ext}`。`publish.py` 也支持从 `imgs/` 目录自动发现封面图（`cover.*` 或 `*-cover.*`）。
 
 **修复 HTML 的触发条件**：仅当在 `article.html` 中**确实存在** `href="placeholder"` 或 placeholder 被渲染成可点击链接时，才将误转的 `<a>` 改为 `<img>` 或占位说明；**不要**默认每次都执行「修复流程图占位」或「修复 HTML」。
+
+**⛔ 收尾自检（三条，缺一不可）**：
+
+1. **`article.yaml` 的 `image_medium` 非空**，且等于第四步实际用的那个媒介。它是下一篇「平手时避开上一篇」的唯一依据；实测 45 份 `article.yaml` 里 44 份是空的，等于这条依据一直查不到东西。
+2. **正文图数量与 `image_density` 对得上**（每节一图 = 每个 `##` 各一张）。删过图位的话，在结果里写明删了哪个、为什么——上限是每篇 1 个。
+3. **本篇所有信息位配图用的是同一个媒介**。
 
 **⛔ 插图入正文之后又重跑生图时，必须复核引用。** 端点返回的格式会变（同一 prompt 这次 PNG 下次 JPEG），脚本会删掉同名旧后缀的图并打 `[WARN]`，`article.md` / `article.html` 里的 `imgs/xxx.png` 就指向了不存在的文件。实测踩过：补跑两张分辨率不达标的图，其中一张换成了 `.jpg`，正文引用当场断掉且不报错。重跑后按文件名主干（`05-金句卡片`）重新匹配实际存在的文件，两个文件一起改。
 
