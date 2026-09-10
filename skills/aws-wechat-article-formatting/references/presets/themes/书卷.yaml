@@ -29,7 +29,11 @@ schemes:
   description: 偏灰的苔绿，适合自然、乡土、慢生活。
 styles:
   p: font-family:Baskerville, Georgia, 'Times New Roman', serif; font-size:15.5px; line-height:1.95; letter-spacing:0.3px; color:#222222; margin:0 0 20px;
-  strong: color:#111111; font-weight:900;
+  # 加粗跟主题色走。此前写死纯黑（纸书感），代价是正文一整片黑白，朱砂只出现在
+  # 导语细线、金句卡和文末记号上，加粗完全不承担扫读落点的作用，只剩字重差别。
+  # 衬线正文里的彩色加粗接近古籍朱批，不违和。primary-ink 由 _derive_palette 保证
+  # 在白底上对比度 ≥4.5，换任何配色都不会读不清。
+  strong: color:{primary-ink}; font-weight:900;
   em: font-style:normal; color:{primary-ink};
   a: 'color:{text-color}; text-decoration:none; border-bottom:1px solid #B9BEC4;'
   h1: font-family:Baskerville, Georgia, 'Times New Roman', serif; font-size:24px; font-weight:700; color:#111111; line-height:1.5; text-align:center; margin:0 0 28px;

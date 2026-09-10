@@ -181,3 +181,35 @@ class SchemesTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EmphasisFollowsThemeTest(unittest.TestCase):
+    """加粗是正文里唯一的扫读落点，它的颜色该跟着模版走。
+
+    书卷此前把 strong 写死成纯黑（纸书感），代价是正文一整片黑白——朱砂只出现在
+    导语细线、金句卡和文末记号上，加粗只剩字重差别，不承担落点作用。
+    """
+
+    # 技术例外：它的加粗是「代码块」造型（灰底 + 灰边框 + box-shadow 撑出内边距），
+    # 靠底纹而不是字色区分，是这套模版的身份。改动它要连造型一起重做。
+    CHIP_STYLE = {"技术"}
+
+    def test_bold_color_tracks_the_theme(self):
+        for name, _ in EIGHT:
+            if name in self.CHIP_STYLE:
+                continue
+            strong = str(_theme(name)["styles"].get("strong", ""))
+            self.assertRegex(
+                strong, r"\{(primary|secondary|highlight)[^}]*\}",
+                f"{name} 的加粗没有引用任何主题色变量，换配色时它不会跟着变：{strong}")
+
+    def test_bold_stays_readable_in_every_scheme(self):
+        """跟主题色走以后，每一档配色下的加粗都必须还读得清。"""
+        for name, sk in EIGHT:
+            t = _theme(name)
+            for s in t["schemes"]:
+                st = fmt._build_styles(fmt._apply_scheme(dict(t), s["name"]))
+                ink = st["primary-ink"]
+                self.assertGreaterEqual(
+                    fmt._contrast_on_white(ink), 4.5,
+                    f"{name}/{s['name']} 的 primary-ink {ink} 在白底上对比度不足")
