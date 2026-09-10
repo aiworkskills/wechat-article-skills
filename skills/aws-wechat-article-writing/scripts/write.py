@@ -26,6 +26,8 @@
     python write.py continue <article.md>              续写未完成的文章
     python write.py prompt draft <topic_card.md>       只输出提示词JSON(不调LLM)
     python write.py prompt rewrite <article.md> --instruction "..."
+    python write.py check <draft.md>                  按产出配额量一遍稿子（摘要/加粗/金句/标签列表）
+                                                       打印加粗串成的提要；有硬性项未达标时退出码 1
     python write.py strip-citations <draft.md> -o <article.md>
                                                        剥离 （资料路径：...） 引用标注（review skill 定稿前调用）
 """
@@ -714,13 +716,21 @@ def build_system_prompt(
         # 只有 28% 在 6 字以内、含数字的仅 4%——正文里 9 个数字只有 2 个被加粗。
         # 把整句的意思复述一遍再加粗，读者扫到它等于把这段又读一次，不构成落点。
         # 所以这条规则管的是**加粗什么**，不再只管多久一次。
-        "- 正文**每 2-3 段至少有一处 `**加粗**`**，一段里最多两处。"
-        "**一处只加粗 2-6 个字**——超过 8 个字就不是重点，是把整句复述了一遍。\n",
-        "  按这个优先级挑：① **具体数字与单位**（`**88%**`、`**37 分**`、`**两倍**`）——"
-        "文中出现的关键数字要尽量加粗，这是最有效的落点；② **专有名词或术语第一次出现时**；"
-        "③ 一处转折或判断的**关键词**（不是整个判断句）。\n",
-        "  **禁止**加粗对整句的概括或改写，**禁止**每段都加在首句同一位置。"
-        "排版会给加粗上重点色或荧光底，它是读者扫读时唯一的落点，位置和长度都要有变化\n",
+        # 加粗的用途是让读者从密密麻麻的正文里一眼抓住关键信息，所以验收标准是
+        # 「只读加粗能不能串成一份提要」。两个失败方向都见过：
+        # 复述整句（9-11 字的抽象概括，扫到它等于把这段重读一遍），
+        # 和只留裸数字（`**88%**` 单独拎出来看不出是什么的 88%）。
+        "- 正文**每 2-3 段至少有一处 `**加粗**`**，一段里最多两处，"
+        "**每处 2-8 个字**。\n",
+        "  **验收标准：把全文的加粗单独抽出来连起来读，应该像一份能看懂的提要。**"
+        "串不起来就是挑错了。\n",
+        "  所以加粗的必须是**自带信息的最小单位**："
+        "数字要连着它的意思一起加粗（`**省 88% Token**`，不是光一个 `**88%**`）；"
+        "术语第一次出现时连着它的定性（`**按问题找证据**`）。"
+        "文中的关键数字要尽量覆盖到——那是最有效的落点。\n",
+        "  **禁止**加粗对整句的概括或改写（「**成果来自工程能力的扩张**」这种），"
+        "**禁止**每段都加在首句同一位置。排版会给加粗上重点色或荧光底，"
+        "位置和长度都要有变化，否则整篇看下去是均匀的纹理，不是重点\n",
         # 实测四篇「完整自然段」风格的深度分析文，列表项 0 个，li-label 因此从不触发。
         # 问题不是该不该用列表——而是三四个并列的条件被塞进一个长段落，读者只能顺读，
         # 没法跳读也没法对照。段落偏好管的是叙述段的长短，不该把枚举也压成散文。
@@ -885,6 +895,64 @@ def _strip_citations(text: str) -> str:
     return cleaned
 
 
+def check_output(text: str) -> tuple[list[str], list[str], str]:
+    """对着产出配额量一遍稿子，返回 (不合格项, 提醒项, 加粗串成的提要)。
+
+    自检此前是一张表，靠人肉数——实测漏得很稳定：连着三篇没写摘要、四篇一个列表
+    都没有、加粗密度够了但全是复述整句。这些都是能直接数出来的，不该靠眼睛。
+
+    加粗那一项尤其需要机器量：数量达标不等于有重点。判据是「只读加粗能不能串成
+    一份提要」，这里把提要打印出来，让人一眼看出串不串得起来。
+    """
+    lines = text.splitlines()
+    bad: list[str] = []
+    warn: list[str] = []
+
+    first_h2 = next((i for i, l in enumerate(lines) if l.startswith("## ")), len(lines))
+    if not any(l.strip().startswith(">") for l in lines[:first_h2]):
+        bad.append("第一个 `##` 之前没有 `>` 摘要 —— 导语版式整篇不会出现")
+
+    body = [l for l in lines
+            if l.strip() and not l.startswith(("#", "!", ">", "-", "|", "```"))]
+    bolds = [m for l in body for m in re.findall(r"\*\*([^*\n]+)\*\*", l)]
+    paras = len(body)
+    need = max(1, paras // 3)
+    if len(bolds) < need:
+        bad.append(f"正文 {paras} 段只有 {len(bolds)} 处加粗，至少要 {need} 处（每 2-3 段一处）")
+
+    long_ones = [b for b in bolds if len(b) > 8]
+    if long_ones:
+        warn.append(f"{len(long_ones)} 处加粗超过 8 字，多半是把整句复述了一遍："
+                    + "、".join(f"「{b}」" for b in long_ones[:3]))
+
+    nums_in_text = len(re.findall(r"\d+(?:\.\d+)?\s*(?:%|倍|美元|分|万|亿|个百分点)",
+                                  "\n".join(body)))
+    nums_bolded = len([b for b in bolds if re.search(r"\d", b)])
+    if nums_in_text and nums_bolded * 2 < nums_in_text:
+        warn.append(f"正文有 {nums_in_text} 个关键数字，只有 {nums_bolded} 个被加粗 —— "
+                    f"数字是最有效的落点")
+
+    if bolds:
+        heads = sum(1 for l in body for m in re.finditer(r"\*\*[^*\n]+\*\*", l)
+                    if m.start() < len(re.split(r"[。！？]", l)[0]))
+        if heads > len(bolds) * 0.6:
+            warn.append(f"{heads}/{len(bolds)} 处加粗都落在段落首句，位置要有变化")
+
+    quotes = " ".join(l.strip()[1:].strip() for l in lines[first_h2:]
+                      if l.strip().startswith(">"))
+    n_card = len(re.findall(r"(?:——|—|--)\s*[^\s—][^—]{0,24}(?:\s|$)", quotes))
+    if n_card == 0:
+        bad.append("没有带出处的金句（`> 金句。 —— 出处`）—— 少一块可截图转发的内容")
+    elif n_card > 1:
+        warn.append(f"有 {n_card} 处带出处的引用，金句卡应恰好一处，多了就退化成装饰条")
+
+    if not any(re.match(r"^\s*[-*+]\s+\*\*", l) for l in lines):
+        warn.append("全文没有 `- **标签**：说明` 列表 —— 若文中有三项以上并列，"
+                    "压在长段落里读者没法跳读")
+
+    return bad, warn, " / ".join(bolds)
+
+
 def _build_prompts(mode, input_text, screening, writing_spec,
                    structure_template, closing_block, image_source,
                    img_analysis, instruction="", reference_library_block=""):
@@ -955,6 +1023,12 @@ def main():
     p_prompt.add_argument("--instruction", default="", help="改写要求（仅 rewrite）")
     p_prompt.add_argument("--reference", action="append", metavar="PATH", help=ref_help)
 
+    p_check = sub.add_parser(
+        "check",
+        help="对着产出配额量一遍稿子（摘要/加粗/金句/标签列表），不调 LLM",
+    )
+    p_check.add_argument("input", help="稿件路径（draft.md 或 article.md）")
+
     p_strip = sub.add_parser(
         "strip-citations",
         help="剥离正文 （资料路径：...） 引用标注（review skill 定稿前调用）",
@@ -1002,6 +1076,25 @@ def main():
         )
         print(json.dumps(prompts, ensure_ascii=False))
         sys.exit(0)
+
+    # check subcommand: pure local measurement, no LLM / no config
+    if args.command == "check":
+        p = Path(args.input)
+        if not p.is_file():
+            _err(f"文件不存在: {p}")
+        bad, warn, digest = check_output(p.read_text(encoding="utf-8"))
+        if digest:
+            print("加粗串起来是这样（读得通才算挑对了）：")
+            print(f"  {digest}\n")
+        for b in bad:
+            print(f"[FAIL] {b}")
+        for w in warn:
+            print(f"[WARN] {w}")
+        if not bad and not warn:
+            _ok("产出配额全部达标")
+        elif not bad:
+            _ok(f"硬性项达标，另有 {len(warn)} 条提醒")
+        sys.exit(1 if bad else 0)
 
     # strip-citations subcommand: pure local text rewrite, no LLM / no config
     if args.command == "strip-citations":

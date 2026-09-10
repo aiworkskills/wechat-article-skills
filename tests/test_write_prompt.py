@@ -101,9 +101,19 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
         把整句复述一遍再加粗，读者扫到它等于把这段又读一次。
         """
         sp = self._prompt()
-        self.assertIn("2-6 个字", sp, "没有长度上限，模型会加粗整句的概括")
-        self.assertIn("具体数字与单位", sp, "数字是最有效的落点，必须点名")
+        self.assertIn("每处 2-8 个字", sp, "没有长度上限，模型会加粗整句的概括")
+        self.assertIn("自带信息的最小单位", sp, "光有长度上限会退化成裸数字")
         self.assertIn("禁止**加粗对整句的概括", sp, "不禁掉复述，密度再高也没有落点")
+
+    def test_emphasis_states_the_skim_test(self):
+        """加粗的用途是让读者从密密麻麻的正文里一眼抓住关键信息。
+
+        所以验收标准不是数量，是「把全文加粗抽出来连起来读，像不像一份提要」——
+        `write.py check` 会把这一串打印出来交给人判断。
+        """
+        sp = self._prompt()
+        self.assertIn("连起来读", sp)
+        self.assertIn("提要", sp)
 
     def test_lead_must_differ_from_the_digest_field(self):
         """实测 7 篇导语与 article.yaml 的 digest 逐字相同——读者在列表页读一遍，
@@ -218,3 +228,62 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipUnless(_WRITE.exists(), "writing skill 未安装")
+class OutputQuotaCheckTest(unittest.TestCase):
+    """`write.py check` —— 把产出配额从一张靠人肉数的表变成能跑的检查。
+
+    这些项实测漏得很稳定：连着三篇没写摘要、四篇一个列表都没有、加粗密度够了但
+    全是复述整句。都是能直接数出来的，不该靠眼睛。
+    """
+
+    def setUp(self):
+        self.w = _load()
+
+    GOOD = (
+        "# 标题\n\n> 摘要，交代这篇讲什么、按什么顺序讲，和列表页那句不一样。\n\n"
+        "## 一节\n\n开头一段，讲清背景和来龙去脉，交代清楚上下文。\n\n"
+        "这一段里有 **省 88% Token** 这个数。\n\n"
+        "第三段继续说，把前面的判断展开一层，给出理由。\n\n"
+        "- **标签**：说明文字\n\n"
+        "又一段，这里提到 **按问题找证据** 这个说法。\n\n"
+        "> 金句压在这里。 —— 马斯\n"
+    )
+
+    def test_good_draft_passes(self):
+        bad, warn, digest = self.w.check_output(self.GOOD)
+        self.assertEqual(bad, [], f"合格稿被判不合格: {bad}")
+        self.assertIn("省 88% Token", digest)
+
+    def test_missing_lead_is_a_hard_failure(self):
+        bad, _, _ = self.w.check_output(self.GOOD.replace("> 摘要，交代这篇讲什么、按什么顺序讲，和列表页那句不一样。\n\n", ""))
+        self.assertTrue(any("没有 `>` 摘要" in b for b in bad))
+
+    def test_missing_quote_card_is_a_hard_failure(self):
+        bad, _, _ = self.w.check_output(self.GOOD.replace(" —— 马斯", ""))
+        self.assertTrue(any("金句" in b for b in bad))
+
+    def test_thin_emphasis_is_a_hard_failure(self):
+        """正文段落数够多而加粗太少 —— 手机上扫过去没有落点。"""
+        thin = "# t\n\n> 摘要摘要摘要摘要摘要摘要摘要摘要。\n\n## 一\n\n" + "\n\n".join(
+            f"第{i}段正文，没有任何强调。" for i in range(12)) + "\n\n> 金句。 —— 马斯\n"
+        bad, _, _ = self.w.check_output(thin)
+        self.assertTrue(any("加粗" in b for b in bad), bad)
+
+    def test_paraphrase_length_is_warned(self):
+        """9-11 字的抽象概括是实测最常见的失败形态：扫到它等于把这段重读一遍。"""
+        _, warn, _ = self.w.check_output(
+            self.GOOD.replace("**省 88% Token**", "**成果来自工程能力的扩张**"))
+        self.assertTrue(any("超过 8 字" in w for w in warn), warn)
+
+    def test_unbolded_numbers_are_warned(self):
+        _, warn, _ = self.w.check_output(
+            self.GOOD.replace("**省 88% Token**", "省 88% Token，另有 37 分与 2 倍"))
+        self.assertTrue(any("关键数字" in w for w in warn), warn)
+
+    def test_digest_line_lets_a_human_judge_the_skim(self):
+        """加粗的用途是让读者一眼抓住关键信息，验收标准是「只读加粗能否串成提要」。
+        机器判不了读不读得通，所以把它打印出来交给人。"""
+        _, _, digest = self.w.check_output(self.GOOD)
+        self.assertIn(" / ", digest, "多处加粗要串成一行给人读")
