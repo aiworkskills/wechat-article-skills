@@ -185,7 +185,7 @@ class MinSizeRetryTest(unittest.TestCase):
         Image.effect_noise((w, h), 64).convert("RGB").save(buf, "PNG")
         return buf.getvalue()
 
-    def _run(self, sizes):
+    def _run(self, sizes, retries=None, check_resolution=True):
         """按 sizes 顺序依次返回图片，记录实际调用次数。"""
         calls = []
 
@@ -197,7 +197,8 @@ class MinSizeRetryTest(unittest.TestCase):
         import contextlib
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
-            data = ic._generate_with_checks("t.md", gen)
+            data = ic._generate_with_checks("t.md", gen, retries=retries,
+                                            check_resolution=check_resolution)
         return data, calls, err.getvalue()
 
     def test_no_retry_when_large_enough(self):
@@ -206,23 +207,48 @@ class MinSizeRetryTest(unittest.TestCase):
         self.assertEqual(err, "")
         self.assertEqual(Image.open(io.BytesIO(data)).size, (1376, 586))
 
-    def test_retries_once_when_undersized(self):
-        data, calls, err = self._run([(384, 163), (1376, 586)])
+    def test_default_does_not_retry(self):
+        """默认零重试。**每一次重试都是一次付费生成，而被丢弃的候选图不落盘**——
+        目录里一张废图都看不见，钱已经花了。曾经默认 3 次，一篇五图的文章期望要
+        烧掉十次生成，只为把正文图从 683px 换成 1376px。"""
+        self.assertEqual(ic.CHECK_RETRIES, 0)
+        data, calls, err = self._run([(384, 163)])
+        self.assertEqual(len(calls), 1, "默认不该自动重跑")
+        self.assertIn("384", err)
+        self.assertIn("--retries", err, "要告诉用户怎么显式重试")
+
+    def test_retries_when_explicitly_asked(self):
+        """机制本身保留：显式传 --retries 时照旧重跑并取更好的一张。"""
+        data, calls, err = self._run([(384, 163), (1376, 586)], retries=1)
         self.assertEqual(len(calls), 2)
         self.assertEqual(Image.open(io.BytesIO(data)).size, (1376, 586))
         self.assertEqual(err, "")
 
     def test_keeps_larger_when_retry_is_worse(self):
         """重试可能更差，须保留较大的一张而不是最后一张。"""
-        data, calls, err = self._run([(704, 300), (384, 163)])
+        data, calls, err = self._run([(704, 300), (384, 163)], retries=1)
         self.assertEqual(Image.open(io.BytesIO(data)).size, (704, 300))
         self.assertIn("704", err)
 
     def test_warns_after_exhausting_retries(self):
-        data, calls, err = self._run([(384, 163)])
-        self.assertEqual(len(calls), 1 + ic.CHECK_RETRIES)
+        data, calls, err = self._run([(384, 163)], retries=2)
+        self.assertEqual(len(calls), 3)
         self.assertIn("384", err)
         self.assertIn("4K", err)  # 提醒不要设 4K
+
+    def test_body_image_skips_resolution_check(self):
+        """900px 是**封面**的线（官方推荐 900x383）。正文插图在微信里只有 375pt 宽，
+        683px 和 1376px 读者分不出来——为这个差别重生成是白花钱。"""
+        data, calls, err = self._run([(683, 384)], retries=3, check_resolution=False)
+        self.assertEqual(len(calls), 1, "正文图不该因为分辨率被重跑")
+        self.assertEqual(err, "")
+
+    def test_cover_detection(self):
+        self.assertTrue(ic._is_cover("01-cover"))
+        self.assertTrue(ic._is_cover("01-封面"))
+        self.assertTrue(ic._is_cover("02-对比", {"role": "cover"}))
+        self.assertFalse(ic._is_cover("02-对比两栏"))
+        self.assertFalse(ic._is_cover("01-cover", {"role": "body"}))
 
     def test_threshold_matches_wechat_cover_minimum(self):
         self.assertGreaterEqual(ic.MIN_LONG_EDGE, 900)

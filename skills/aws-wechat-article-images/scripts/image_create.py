@@ -270,12 +270,23 @@ DEFAULT_IMAGE_SIZE = "2K"
 
 # 公众号封面长边建议 ≥900px（900x383 是官方推荐的 2.35:1 尺寸）。
 # imageSize 未必被中转站透传：实测同一 prompt、同一 imageSize=2K，返回过 1376px
-# 也返回过 384px。波动大且随机，所以出图后按实际像素检查，过小就重试一次。
+# 也返回过 384px。波动大且随机，所以出图后按实际像素检查。
+#
+# **这条线只卡封面。** 正文插图在微信里显示宽度只有 375pt，683px 和 1376px 读者
+# 分不出来；用同一条线卡所有图，等于为看不见的差别反复付费重生成。
 #
 # 不要用 4K：实测发 imageSize=4K 时该端点连 aspectRatio 一起忽略（3/3 返回 ~1.8:1），
 # 比不发还差。2K 对公众号封面已绰绰有余。
 MIN_LONG_EDGE = 900
-CHECK_RETRIES = 3
+
+# 自动重试次数。**默认 0——每一次重试都是一次付费调用，而被丢弃的那几张不落盘，
+# 账单之外看不见。** 曾经默认 3（每张图最多 4 次调用），按端点约五成的小图率算，
+# 一篇五图的文章期望烧掉十次生成、最坏二十次，换来的只是正文图从 683px 变成 1376px。
+# 现在不合格只打 WARN，由人决定值不值得重跑；确实要自动重试的场合传 --retries N。
+CHECK_RETRIES = 0
+
+# 本次进程里真正调用生图 API 的次数。生成是按张计费的，跑完必须让人看见花了多少。
+_api_calls = 0
 
 # ── 封面标题区与出图检查 ────────────────────────────────
 # 标题区默认位置（归一化 x0,y0,x1,y1）：右侧 55%~92%、垂直 30%~70%，与预设库里
@@ -417,6 +428,8 @@ def generate_image(model_cfg: dict, prompt: str, size: str = None,
     `extra_body.imageConfig.aspectRatio`，Gemini 原生走 `generationConfig.imageConfig`。
     不支持的端点忽略该参数，仍按 `size` 处理。
     """
+    global _api_calls
+    _api_calls += 1          # 计费点唯一入口：所有 provider 分支都从这里过
     api_type = _detect_api_type(model_cfg)
 
     if api_type == "openai" or api_type == "volcengine":
@@ -1074,11 +1087,30 @@ def _image_stddev(img_data: bytes) -> float | None:
     return ImageStat.Stat(im).stddev[0]
 
 
-def _cover_problems(img_data: bytes, zone=None) -> list[str]:
-    """出图后的纯代码检查（不需要任何模型），返回问题列表，空即通过。"""
+def _is_cover(stem: str, meta: dict | None = None) -> bool:
+    """这张图是不是封面。
+
+    封面和正文插图的验收标准不一样，只有封面要过 900px 那条线（见 MIN_LONG_EDGE）。
+    判据沿用全流程一致的约定：frontmatter 的 `role:`，或文件名带 cover / 封面——
+    配图标记里封面的写法就是 `![封面：…]`，format.py 跳过封面图用的是同一套判断。
+    """
+    role = str((meta or {}).get("role") or "").strip().lower()
+    if role in ("cover", "封面"):
+        return True
+    if role in ("body", "正文", "article"):
+        return False
+    return "cover" in stem.lower() or "封面" in stem
+
+
+def _cover_problems(img_data: bytes, zone=None, check_resolution: bool = True) -> list[str]:
+    """出图后的纯代码检查（不需要任何模型），返回问题列表，空即通过。
+
+    `check_resolution=False` 用于正文插图：它只在 375pt 宽的正文里显示，分辨率
+    达不达 900px 读者看不出来，而按这条线重生成是要按张付费的。
+    """
     problems = []
     edge = _image_long_edge(img_data)
-    if edge is not None and edge < MIN_LONG_EDGE:
+    if check_resolution and edge is not None and edge < MIN_LONG_EDGE:
         problems.append(f"长边 {edge}px 不足 {MIN_LONG_EDGE}px")
     sd = _image_stddev(img_data)
     if sd is not None and sd < MONO_STDDEV_THRESHOLD:
@@ -1090,21 +1122,26 @@ def _cover_problems(img_data: bytes, zone=None) -> list[str]:
     return problems
 
 
-def _generate_with_checks(label: str, gen, zone=None) -> bytes:
-    """生成并做纯代码检查，不合格就重试，所有结果里取最好的一张。
+def _generate_with_checks(label: str, gen, zone=None, check_resolution: bool = True,
+                          retries: int | None = None) -> bytes:
+    """生成并做纯代码检查；按 retries 决定要不要重跑，所有结果里取最好的一张。
 
     端点返回的尺寸波动很大（同参数实测 384px~1584px 都出现过）；模型也时常无视
-    「标题区留白」的要求。实测同一 prompt 连着跑，返回 683px 的概率接近一半，
-    只重试一次不够——跑完整篇文章五张图，仍有两张卡在 683px。仍不合格则保留较好的
-    并告警，由 Agent 决定是否再跑。
+    「标题区留白」的要求。
+
+    **默认不重跑**（`CHECK_RETRIES = 0`）。重试是按张计费的，而被丢弃的候选图
+    不落盘——目录里一张废图都看不到，钱却已经花了。曾经默认重试 3 次，一篇五图的
+    文章期望要烧掉十次生成。现在不合格就打 WARN，由人看着决定值不值得重跑。
     """
+    retries = CHECK_RETRIES if retries is None else retries
+
     def score(data):
-        probs = _cover_problems(data, zone)
+        probs = _cover_problems(data, zone, check_resolution)
         return (-len(probs), _image_long_edge(data) or 0), probs
 
     best = gen()
     best_score, best_probs = score(best)
-    for attempt in range(CHECK_RETRIES):
+    for attempt in range(retries):
         if not best_probs:
             return best
         _info(f"{label} 检查未通过（{'；'.join(best_probs)}），重试第 {attempt + 1} 次")
@@ -1113,25 +1150,28 @@ def _generate_with_checks(label: str, gen, zone=None) -> bytes:
         if cand_score > best_score:
             best, best_score, best_probs = cand, cand_score, cand_probs
     if best_probs:
-        print(f"[WARN] {label} 重试后仍有问题：{'；'.join(best_probs)}\n"
-              f"       已保留较好的一张，可重跑本条。分辨率问题勿设 resolution: 4K，"
+        hint = ("可用 --retries 1 重跑本条（每次重试都是一次付费生成）。"
+                if not retries else "已保留较好的一张，可重跑本条。")
+        print(f"[WARN] {label} 检查未通过：{'；'.join(best_probs)}\n"
+              f"       {hint}分辨率问题勿设 resolution: 4K，"
               f"实测会连比例一起失效。", file=sys.stderr)
     return best
 
 
-def _write_if_not_worse(out_path: Path, img_data: bytes, zone=None) -> bool:
+def _write_if_not_worse(out_path: Path, img_data: bytes, zone=None,
+                        check_resolution: bool = True) -> bool:
     """写出图片；若新图不合格而磁盘上已有一张合格的同名图，则保留旧图。
 
     端点的分辨率是随机的，重跑同一条 prompt 完全可能拿到更差的一张。实测跑完
     整篇文章后补跑两张，其中一张把上一轮已经合格的图覆盖成了 683px——重跑只能
     让结果变好，不该让它变坏。
     """
-    new_probs = _cover_problems(img_data, zone)
+    new_probs = _cover_problems(img_data, zone, check_resolution)
     if new_probs:
         for old in out_path.parent.glob(out_path.stem + ".*"):
             if old.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
                 continue
-            if not _cover_problems(old.read_bytes(), zone):
+            if not _cover_problems(old.read_bytes(), zone, check_resolution):
                 print(f"[WARN] {out_path.stem} 新图不合格（{'；'.join(new_probs)}），"
                       f"磁盘上的 {old.name} 是合格的，保留旧图未覆盖。", file=sys.stderr)
                 return False
@@ -1214,6 +1254,9 @@ def main():
     p_gen.add_argument("--title", help="合成到封面的标题文案（覆盖 frontmatter 的 title）")
     p_gen.add_argument("--title-zone", help="标题区归一化坐标 x0,y0,x1,y1（覆盖 frontmatter 的 title_zone）")
     p_gen.add_argument("--title-font", help="中文字体文件路径（默认自动搜索系统字体）")
+    p_gen.add_argument("--retries", type=int, default=None, metavar="N",
+                       help=f"检查不合格时自动重跑几次（默认 {CHECK_RETRIES}）。"
+                            "每次重试都是一次付费生成，被丢弃的候选图不落盘")
 
     p_batch = sub.add_parser("batch", help="批量生成（读取目录下所有 prompt 文件）")
     p_batch.add_argument("prompts_dir", help="prompt 文件目录")
@@ -1221,6 +1264,10 @@ def main():
     p_batch.add_argument("--size", help="统一尺寸")
     p_batch.add_argument("--quality", help="统一质量")
     p_batch.add_argument("--title-font", help="中文字体文件路径（标题/标题区从各 prompt 的 frontmatter 读）")
+    p_batch.add_argument("--retries", type=int, default=None, metavar="N",
+                       help=f"检查不合格时自动重跑几次（默认 {CHECK_RETRIES}）")
+    p_batch.add_argument("--skip-existing", action="store_true",
+                       help="输出目录已有合格的同名图就跳过，不重复生成（重跑批量时用）")
 
     p_comp = sub.add_parser("compose", help="把标题合成到已有图片的标题区（不调 API）")
     p_comp.add_argument("image", help="图片路径")
@@ -1307,6 +1354,9 @@ def main():
         quality = args.quality or meta.get("quality")
         title, zone = _resolve_title(meta, args.title, args.title_zone)
         check_zone = zone or (DEFAULT_TITLE_ZONE if title else None)
+        # 900px 那条线只卡封面；正文插图按它重生成，是为读者看不见的差别付费
+        is_cover = _is_cover(prompt_path.stem, meta) or (
+            bool(args.output) and _is_cover(Path(args.output).stem))
 
         def gen():
             data = generate_image(model_cfg, prompt, size=size, quality=quality,
@@ -1314,7 +1364,8 @@ def main():
             # 端点已按比例出图时裁切是空操作（差异 <1% 直接返回原图）
             return _crop_to_aspect(data, crop_aspect) if crop_aspect else data
 
-        img_data = _generate_with_checks(prompt_path.name, gen, zone=check_zone)
+        img_data = _generate_with_checks(prompt_path.name, gen, zone=check_zone,
+                                         check_resolution=is_cover, retries=args.retries)
         if title:
             img_data = _compose_title(img_data, title, zone=check_zone, font_path=args.title_font)
 
@@ -1325,8 +1376,11 @@ def main():
                 print(f"[WARN] 输出后缀 {output_path.suffix or '(无)'} 与实际图片格式 {ext} 不一致", file=sys.stderr)
         else:
             output_path = prompt_path.with_suffix(ext)
-        if _write_if_not_worse(output_path, img_data, zone=check_zone):
+        if _write_if_not_worse(output_path, img_data, zone=check_zone,
+                               check_resolution=is_cover):
             _ok(f"已保存: {output_path} ({len(img_data)} 字节)")
+        if _api_calls > 1:
+            _info(f"本次调用生图 API {_api_calls} 次（按张计费）")
 
     elif args.command == "batch":
         prompts_dir = Path(args.prompts_dir)
@@ -1342,7 +1396,19 @@ def main():
 
         _info(f"找到 {len(prompt_files)} 个 prompt 文件")
         failed: list[tuple[str, str]] = []
+        skipped = 0
         for i, pf in enumerate(prompt_files, 1):
+            # 已经有一张合格的同名图时跳过。批量里任意一条失败就要重跑整个命令，
+            # 没有这个开关的话，重跑会把已经生成好的图全部重新生成一遍——按张计费。
+            if args.skip_existing:
+                done = next((p for p in output_dir.glob(pf.stem + ".*")
+                             if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp", ".gif")
+                             and not _cover_problems(p.read_bytes(), None,
+                                                     _is_cover(pf.stem))), None)
+                if done:
+                    _info(f"[{i}/{len(prompt_files)}] {pf.name} 已有合格的 {done.name}，跳过")
+                    skipped += 1
+                    continue
             _info(f"[{i}/{len(prompt_files)}] {pf.name}")
             # 单条失败不该丢掉整批：批量常跑几十条，一次读超时就全废代价太高
             try:
@@ -1352,18 +1418,22 @@ def main():
                 quality = args.quality or meta.get("quality")
                 title, zone = _resolve_title(meta, None, None)
                 check_zone = zone or (DEFAULT_TITLE_ZONE if title else None)
+                is_cover = _is_cover(pf.stem, meta)
 
                 def gen(p=prompt, sz=size, q=quality, ca=crop_aspect, m=meta):
                     data = generate_image(model_cfg, p, size=sz, quality=q, aspect=ca,
                                           resolution=m.get("resolution"))
                     return _crop_to_aspect(data, ca) if ca else data
 
-                img_data = _generate_with_checks(pf.name, gen, zone=check_zone)
+                img_data = _generate_with_checks(pf.name, gen, zone=check_zone,
+                                                 check_resolution=is_cover,
+                                                 retries=args.retries)
                 if title:
                     img_data = _compose_title(img_data, title, zone=check_zone,
                                               font_path=args.title_font)
                 out_path = output_dir / (pf.stem + (_detect_image_ext(img_data) or ".png"))
-                if _write_if_not_worse(out_path, img_data, zone=check_zone):
+                if _write_if_not_worse(out_path, img_data, zone=check_zone,
+                                       check_resolution=is_cover):
                     _ok(f"  → {out_path}")
             except SystemExit:
                 # _err 已打印原因；记下并继续下一条
@@ -1377,15 +1447,17 @@ def main():
             if i < len(prompt_files):
                 time.sleep(1)
 
-        done = len(prompt_files) - len(failed)
+        done = len(prompt_files) - len(failed) - skipped
+        _info(f"本次调用生图 API {_api_calls} 次（按张计费）")
         if failed:
-            print(f"[WARN] 批量结束：成功 {done}，失败 {len(failed)}", file=sys.stderr)
+            print(f"[WARN] 批量结束：成功 {done}，跳过 {skipped}，失败 {len(failed)}",
+                  file=sys.stderr)
             for name, why in failed:
                 print(f"       - {name}: {why}", file=sys.stderr)
-            print("       重跑本命令即可，已成功的会被覆盖重生成；"
+            print("       重跑本命令时加 --skip-existing，已生成好的会跳过不再重复付费；"
                   "或把失败的 prompt 单独放一个目录再跑。", file=sys.stderr)
             sys.exit(1)
-        _ok(f"批量生成完成：{done} 张")
+        _ok(f"批量生成完成：{done} 张" + (f"，跳过 {skipped} 张" if skipped else ""))
 
 
 if __name__ == "__main__":
