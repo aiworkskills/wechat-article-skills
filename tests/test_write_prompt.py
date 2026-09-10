@@ -75,6 +75,17 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
     # 5 篇原始模型产出里正文段落内的加粗是 0——写出来的加粗全在列表标签里。
     # 于是版式做的金句卡、重点色、荧光底在自动链路上全是死代码。
 
+    def test_lead_paragraph_quota_is_in_the_quota_block(self):
+        """摘要在「输出要求」里本来就写过，实测仍连漏 3 篇——那是一串并列项里的一条。
+
+        配额区是唯一被稳定执行的一段（配图数、金句数都做到了），所以摘要挪进来重申。
+        漏了不报错，只是第一个 `##` 之前没有 `>`，导语版式整篇不出现。
+        """
+        sp = self._prompt()
+        quota = sp[sp.index("产出配额"):]
+        self.assertIn("正文开头必须有摘要", quota)
+        self.assertIn("不是**只填到别处的摘要字段", quota, "要说清它和 article.yaml 的 digest 不是一回事")
+
     def test_emphasis_quota_is_stated(self):
         """加粗是正文里唯一的扫读落点，且是「重点色 / 荧光底」这些主题样式的唯一入口。
         没有密度要求，模型只在列表标签里加粗，整篇正文一片平。"""
