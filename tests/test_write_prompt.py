@@ -93,6 +93,30 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
         self.assertIn("每 2-3 段至少有一处", sp, "加粗密度配额没了")
         self.assertIn("最多两处", sp, "缺上限，会变成整篇乱加粗")
 
+    def test_emphasis_rule_says_what_to_bold_not_only_how_often(self):
+        """密度达标 ≠ 有重点。
+
+        实测四篇平均每 2.1 段就有一处加粗，读者仍然觉得「几乎没有重点」——加粗的全是
+        9-11 字的抽象概括短句，平均 7.9 字，含数字的只有 4%（正文 9 个数字仅 2 个被加粗）。
+        把整句复述一遍再加粗，读者扫到它等于把这段又读一次。
+        """
+        sp = self._prompt()
+        self.assertIn("2-6 个字", sp, "没有长度上限，模型会加粗整句的概括")
+        self.assertIn("具体数字与单位", sp, "数字是最有效的落点，必须点名")
+        self.assertIn("禁止**加粗对整句的概括", sp, "不禁掉复述，密度再高也没有落点")
+
+    def test_lead_must_differ_from_the_digest_field(self):
+        """实测 7 篇导语与 article.yaml 的 digest 逐字相同——读者在列表页读一遍，
+        点进来第一段再读一遍。两处的读者处境不同：一个要决定点不点，一个已经点进来了。"""
+        self.assertIn("不要和摘要字段写成同一句话", self._prompt())
+
+    def test_enumerations_must_become_labeled_lists(self):
+        """实测四篇「完整自然段」风格的深度分析文列表项 0 个，li-label 从不触发。
+        段落偏好管的是叙述段的长短，不该把三四项并列的条件也压成散文。"""
+        sp = self._prompt()
+        self.assertIn("三项以上的并列", sp)
+        self.assertIn("**标签**", sp)
+
     def test_quote_card_quota_is_exactly_one(self):
         """金句卡的价值来自稀缺——一篇两张，两张都不会被转（见 quote-card.yaml
         的 when_not_to_use）。所以配额必须是「恰好一处」，不是「可以写」。"""

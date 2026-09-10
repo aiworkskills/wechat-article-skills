@@ -1209,6 +1209,41 @@ def _detect_image_ext(data: bytes) -> str | None:
     return None
 
 
+def _is_source_note(path: Path) -> bool:
+    """这个 .md 是取证说明（真截图的出处），不是生图 prompt。
+
+    实证类图位（官方原帖截图、产品界面实拍）**必须是真截图**，它的 .md 记的是来源
+    URL 和截图要求。这类文件混在 `prompts/` 里非常危险：batch 是整目录 glob 的，
+    照着「来源：https://x.com/... 保留作者、完整正文和日期」去生成，出来的就是一张
+    伪造的原帖截图，还会覆盖掉真的那张——文章里正好用它当证据。
+
+    判据取两条，命中任一即跳过：frontmatter 写了 `source:`/`type: source`，
+    或正文第一行以「来源：」开头。宁可误跳过一张让人手动补，也不能伪造证据。
+    """
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    body = text
+    if text.startswith("---"):
+        parts = text.split("---", 2)
+        if len(parts) >= 3:
+            meta = _safe_frontmatter(parts[1])
+            if str(meta.get("type", "")).strip().lower() == "source" or meta.get("source"):
+                return True
+            body = parts[2]
+    first = next((ln.strip() for ln in body.splitlines() if ln.strip()), "")
+    return first.startswith(("来源：", "来源:"))
+
+
+def _safe_frontmatter(raw: str) -> dict:
+    try:
+        meta = yaml.safe_load(raw)
+    except yaml.YAMLError:
+        return {}
+    return meta if isinstance(meta, dict) else {}
+
+
 def _read_prompt_file(path: Path) -> tuple[str, dict]:
     """读取 prompt 文件，支持 YAML frontmatter。"""
     text = path.read_text(encoding="utf-8")
@@ -1398,6 +1433,13 @@ def main():
         failed: list[tuple[str, str]] = []
         skipped = 0
         for i, pf in enumerate(prompt_files, 1):
+            # 取证说明不是生图 prompt，照着它生成等于伪造证据。永远跳过，不受开关控制。
+            if _is_source_note(pf):
+                print(f"[WARN] {pf.name} 是取证说明（真截图的出处），跳过不生成——"
+                      f"照它生成会得到一张伪造的截图。请按其中的来源手动截图。",
+                      file=sys.stderr)
+                skipped += 1
+                continue
             # 已经有一张合格的同名图时跳过。批量里任意一条失败就要重跑整个命令，
             # 没有这个开关的话，重跑会把已经生成好的图全部重新生成一遍——按张计费。
             if args.skip_existing:
