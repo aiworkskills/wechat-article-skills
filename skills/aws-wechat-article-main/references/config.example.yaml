@@ -40,6 +40,9 @@ default_title_style:
 default_format_preset:                # Template names → presets/themes|formatting/ (亲和 / 资讯 / 书卷 / 杂志 …)
   - 资讯
 default_format_scheme: []             # Color scheme of the chosen template; see `format.py --list-themes`
+                                      # Empty = every scheme the template declares is available; the agent
+                                      # picks one per article. Selecting a template always brings all of its
+                                      # schemes — the website does not narrow this.
 default_cover_image_style: []   # Cover preset names → cover-styles/ (built-in + .aws-article/presets/cover-styles/)
 default_article_image_style: [] # Body image preset names → presets/image-styles/
 default_sticker_style: []         # e.g. - storyboard; sticker workflow — agent picks one from the list
@@ -51,7 +54,8 @@ custom_structure: []
 custom_closing_block: []
 custom_title_style: []
 custom_format_preset: []
-custom_format_scheme: []          # Overrides default_format_scheme
+custom_format_scheme: []          # Overrides default_format_scheme. Hand-edit only — the website never
+                                  # writes it; leave empty unless you want to bar some schemes.
 custom_cover_image_style: []      # Overrides default_cover_image_style; same paths as default_cover_image_style
 custom_article_image_style: []    # Overrides default_article_image_style; loads from presets/image-styles/
 custom_sticker_style: []

@@ -281,6 +281,14 @@ def _list_themes() -> list[dict]:
                 "source": source,
                 "skeleton": str(data.get("skeleton") or ""),
                 "sort_order": data.get("sort_order"),
+                # 顶层 variables 到底是哪一档配色，只能由模版自己声明。
+                #
+                # 此前这里按 schemes 的下标 0 猜。导出时用户在网站上选的那档会被
+                # **烘进顶层 variables**，而 schemes 三档原样保留——两者一分叉，
+                # 列表就开始说谎：渲染出来是松绿，列表却标「[默认] 黛紫」。
+                # 后果不止是复述对不上，agent 为了「显式用默认色」传一个
+                # --scheme 黛紫，就把用户特意换掉的那档又换了回去。
+                "default_scheme": str(data.get("default_scheme") or ""),
                 "when_to_use": str(data.get("when_to_use") or "").strip(),
                 "when_not_to_use": str(data.get("when_not_to_use") or "").strip(),
                 "schemes": [
@@ -296,6 +304,21 @@ def _list_themes() -> list[dict]:
     # 文件名的 unicode 顺序对读者没有意义，而这份列表是 agent 选模版时唯一的菜单。
     themes.sort(key=lambda t: (t.get("sort_order") is None, t.get("sort_order") or 0, t["name"]))
     return themes
+
+
+def _default_scheme_index(theme_row: dict) -> int:
+    """顶层 variables 对应 schemes 里的第几档；声明缺失或对不上时返回 -1（一档都不标默认）。
+
+    只认模版自己声明的 `default_scheme`，不按颜色反推——两档同色、或者用户在导出后
+    手改了 variables，反推都会给出一个看似合理其实是错的答案。宁可不标。
+    """
+    want = str(theme_row.get("default_scheme") or "").strip()
+    if not want:
+        return -1
+    for i, sc in enumerate(theme_row.get("schemes") or []):
+        if str(sc.get("name", "")).strip() == want:
+            return i
+    return -1
 
 
 def _export_theme(name: str) -> None:
@@ -1844,13 +1867,16 @@ def main():
                 print(f"    适合：{_indent_lines(t['when_to_use'])}")
             if t.get("when_not_to_use"):
                 print(f"    不适合：{_indent_lines(t['when_not_to_use'])}")
-            for i, sc in enumerate(t.get("schemes") or []):
-                mark = "默认" if i == 0 else "    "
+            schemes = t.get("schemes") or []
+            default_i = _default_scheme_index(t)
+            for i, sc in enumerate(schemes):
+                mark = "默认" if i == default_i else "    "
                 color = f" {sc['color']}" if sc["color"] else ""
                 print(f"    配色 [{mark}] {sc['name']}{color}  {sc['description']}")
-            if t.get("schemes"):
+            if schemes:
                 print(f"    预览：format.py --preview {t['name']}"
-                      + (f"  或 {PREVIEW_BASE}/{t['skeleton']}/0.html" if t["skeleton"] else ""))
+                      + (f"  或 {PREVIEW_BASE}/{t['skeleton']}/{max(default_i, 0)}.html"
+                         if t["skeleton"] else ""))
             print()
         return
 

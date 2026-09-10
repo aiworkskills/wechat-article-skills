@@ -11,6 +11,9 @@ variables:
   primary-color: '#1F6F5F'
   text-color: '#111111'
   text-muted: '#8A8F98'
+# 顶层 variables 用的是哪一档配色。导出时用户选了别的档，这一行跟着换——
+# 它是「默认」的唯一来源，不再靠 schemes 的下标猜。
+default_scheme: 墨绿
 schemes:
 - name: 墨绿
   variables:
