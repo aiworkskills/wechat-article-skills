@@ -891,10 +891,16 @@ def _crop_to_aspect(img_data: bytes, aspect: str) -> bytes:
     # 这一步此前只打一行 INFO，看着像正常流程，没人知道封面为什么难看。
     kept = (cropped.size[0] * cropped.size[1]) / (w * h)
     if kept < CROP_KEEP_MIN:
+        # 重试值不值得，要看端点是**偶尔**忽略还是**这一阵子一直**忽略。实测
+        # 2026-09-12：同一端点同一模型，一边连出 6 张方图（封面 3 次、正文 3 次全中），
+        # 另一边同一天正常返回 1584x672 / 1408x768 一次没裁。所以重试只在前几次
+        # 有意义，连着两次都被腰斩就是这一阵子不灵，再试就是纯烧钱。
         print(f"[WARN] {w}x{h} 裁成 {cropped.size[0]}x{cropped.size[1]}，只剩 {kept:.0%}——"
               f"端点没有按 {aspect} 出图，这张是按原比例构图后被腰斩的，构图多半已经废了。\n"
-              f"       这种情况值得重跑（--retries 1），和分辨率略低不一样：那个读者看不出，"
-              f"这个一眼就看得出。", file=sys.stderr)
+              f"       值得重跑一次（--retries 1）。但**连着两次都被腰斩就别再试了**："
+              f"那说明端点这一阵子在忽略 aspectRatio，改 prompt 也救不回来。\n"
+              f"       这时要么接受，要么在 config 的 image_model.default_size 里"
+              f"明确写死目标尺寸再跑。", file=sys.stderr)
     else:
         _info(f"已按 {aspect} 居中裁切: {w}x{h} -> {cropped.size[0]}x{cropped.size[1]}")
     return buf.getvalue()
@@ -1097,6 +1103,67 @@ def _read_prompt_file(path: Path) -> tuple[str, dict]:
 
 # ── CLI ──────────────────────────────────────────────────────
 
+
+def _list_style_names(subdir: str) -> list[str]:
+    """内置形态名 + 用户自定义（.aws-article/presets/<subdir>/ 同名覆盖）。"""
+    names: set[str] = set()
+    builtin = Path(__file__).resolve().parent.parent / "references" / subdir
+    if builtin.is_dir():
+        for f in builtin.glob("*.example.md"):
+            names.add(f.name[: -len(".example.md")])
+    user = Path(".aws-article") / "presets" / subdir
+    if user.is_dir():
+        for f in user.glob("*.md"):
+            names.add(f.stem)
+    return sorted(names)
+
+
+def _cmd_styles() -> int:
+    """列出真实存在的形态，并校验 config 候选池——名字对不上就报错，不静默。
+
+    形态名此前没有任何脚本校验过：image_create.py 压根不读候选池，全靠 Agent 自觉。
+    实测 2026-09-12，网站导出的 config 里写着「对比说明 / 板书白板 / 氛围烘托」，
+    三个都不存在（真名是 对比两栏 / 概念隐喻 / 场景还原，而「板书白板」根本是
+    **媒介**不是形态）。Agent 挑中它只能自己编，整套形态方法论静默失效。
+    """
+    groups = [
+        ("正文形态", "image-styles",
+         ("custom_article_image_style", "default_article_image_style")),
+        ("封面形态", "cover-styles",
+         ("custom_cover_image_style", "default_cover_image_style")),
+    ]
+    cfg_path = Path(".aws-article/config.yaml")
+    cfg = {}
+    if cfg_path.is_file():
+        try:
+            cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as e:
+            _info(f"读不了 config.yaml（{e}），只列形态不校验")
+    bad = False
+    for label, subdir, keys in groups:
+        real = _list_style_names(subdir)
+        print(f"\n■ {label}（{subdir}/）共 {len(real)} 个")
+        print("   " + " · ".join(real))
+        for key in keys:
+            pool = cfg.get(key)
+            if not isinstance(pool, (list, tuple)) or not pool:
+                continue
+            missing = [str(x).strip() for x in pool if str(x).strip() not in real]
+            if missing:
+                bad = True
+                print(f"   [FAIL] {key} 里这些名字不存在：{' / '.join(missing)}",
+                      file=sys.stderr)
+            else:
+                print(f"   [OK] {key} {len(pool)} 个候选全部有对应模板")
+    if bad:
+        print("\n候选池里有认不出的形态名。挑中它的话没有模板可依，"
+              "只能靠模型自由发挥——那正是形态方法论要防的事。\n"
+              "请改 .aws-article/config.yaml 里的名字（或在 "
+              ".aws-article/presets/<目录>/ 放一个同名 .md 模板）。", file=sys.stderr)
+        return 1
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="图片生成工具",
@@ -1129,6 +1196,9 @@ def main():
 
     p_test = sub.add_parser("test", help="测试 API 连通性")
 
+    sub.add_parser("styles",
+                   help="列出可用形态，并校验 config 候选池里的名字是否都存在")
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -1150,6 +1220,9 @@ def main():
             sys.exit(1)
         _ok("检查通过")
         return
+
+    if args.command == "styles":
+        sys.exit(_cmd_styles())
 
     _require_repo_root()
     model_cfg = _resolve_model_config()
@@ -1199,8 +1272,11 @@ def main():
             output_path = prompt_path.with_suffix(ext)
         if _write_if_not_worse(output_path, img_data, check_resolution=is_cover):
             _ok(f"已保存: {output_path} ({len(img_data)} 字节)")
-        if _api_calls > 1:
-            _info(f"本次调用生图 API {_api_calls} 次（按张计费）")
+        # 无条件打印。此前是 `if _api_calls > 1`，于是单张模式几乎从不打印——
+        # 而单张恰恰是重跑用的模式。实测 2026-09-12 一篇稿子连着跑了 6 次 generate，
+        # 六条日志里一个计数都没有，花了多少钱完全看不出来。
+        # 计数器的意义就是让花销可见，它不该在花销上升的那个模式里是哑的。
+        _info(f"本次调用生图 API {_api_calls} 次（按张计费）")
 
     elif args.command == "batch":
         prompts_dir = Path(args.prompts_dir)

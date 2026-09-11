@@ -410,3 +410,50 @@ class CropGuillotineTest(unittest.TestCase):
     def test_threshold_leaves_room_for_real_ratio_mapping(self):
         self.assertLess(ic.CROP_KEEP_MIN, 16 / 9 / (2.35) + 0.01)
         self.assertGreater(ic.CROP_KEEP_MIN, 1 / 2.35, "方图裁 2.35:1 只剩 43%，必须被拦住")
+
+
+class StyleNameValidationTest(unittest.TestCase):
+    """形态名此前没有任何脚本校验过。
+
+    image_create.py 压根不读候选池，全靠 Agent 自觉。实测 2026-09-12：网站导出的
+    config 里写着「对比说明 / 板书白板 / 氛围烘托」，三个都不存在（真名是 对比两栏 /
+    概念隐喻 / 场景还原，而「板书白板」根本是**媒介**不是形态）。Agent 挑中它只能
+    自己编，整套形态方法论静默失效——而且不报错。
+    """
+
+    def _run_in(self, cfg: dict | None):
+        import os, tempfile, yaml as _y
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = os.getcwd()
+            try:
+                os.chdir(tmp)
+                if cfg is not None:
+                    os.makedirs(".aws-article")
+                    with open(".aws-article/config.yaml", "w", encoding="utf-8") as f:
+                        _y.safe_dump(cfg, f, allow_unicode=True)
+                return ic._cmd_styles()
+            finally:
+                os.chdir(cwd)
+
+    def test_real_names_pass(self):
+        self.assertEqual(0, self._run_in(
+            {"custom_article_image_style": ["对比两栏", "概念隐喻", "金句卡片"]}))
+
+    def test_bogus_names_fail(self):
+        self.assertEqual(1, self._run_in(
+            {"custom_article_image_style": ["对比说明", "板书白板", "氛围烘托"]}))
+
+    def test_medium_name_is_not_a_style(self):
+        """「板书白板」是媒介，不是形态——最容易混的一类，单独钉住。"""
+        self.assertEqual(1, self._run_in({"custom_article_image_style": ["板书白板"]}))
+
+    def test_empty_pool_is_fine(self):
+        self.assertEqual(0, self._run_in({"custom_article_image_style": []}))
+
+    def test_no_config_still_lists(self):
+        self.assertEqual(0, self._run_in(None))
+
+    def test_builtin_style_files_exist(self):
+        """内置形态目录不能是空的，否则上面所有校验都会变成「全都不存在」。"""
+        self.assertGreaterEqual(len(ic._list_style_names("image-styles")), 8)
+        self.assertGreaterEqual(len(ic._list_style_names("cover-styles")), 10)
