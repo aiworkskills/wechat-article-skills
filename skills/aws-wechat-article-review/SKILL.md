@@ -19,30 +19,19 @@ metadata:
 
 ## 能力披露（Capabilities）
 
-本 skill 为**纯本地规则/清单审稿**，零网络、零凭证、不调用任何外部脚本。
+本 skill 为**纯本地规则/清单审稿**，零网络、零凭证。
 
 - **凭证**：无
 - **网络**：无
-- **文件读**：仓库内 `.aws-article/config.yaml`、`.aws-article/writing-spec.md`（如有）、`.aws-article/presets/review-rules.yaml`（如有）、本篇 `draft.md` / `article.html` / `article.yaml`
-- **文件写**：本篇 `article.md` 定稿、审稿记录
-- **shell**：无（不调用任何脚本）
+- **文件读**：`.aws-article/config.yaml`、`.aws-article/writing-spec.md`（如有）、`.aws-article/presets/review-rules.yaml`（如有）、本篇 `draft.md` / `article.html` / `article.yaml` / `imgs/`
+- **文件写**：本篇 `draft-stripped.md`（中间产物）、`article.md`（定稿）、`review.md`
+- **shell**：只在第 5 步调 `{python} .../aws-wechat-article-writing/scripts/write.py strip-citations`，第 2 步调同一脚本的 `check` 子命令。**两者都是纯本地正则/计数，不联网、不读凭证、不调 LLM。**
 
-> 往期推荐链接的**自动补齐**由 [publish skill](../aws-wechat-article-publish/SKILL.md) 处理（那里才有微信 API 凭证与 `getdraft.py`）；本 skill 只做「若 `embeds.related_articles.manual` 非空则按其排占位符」与「若为空则在审稿输出中提示需 publish 补齐或手填」，**不直接调任何网络脚本**。
-
-## 配套 skill（informational）
-
-本 skill 是 `aws-wechat-article-*` 一条龙公众号套件的**审稿环节**（入口 `aws-wechat-article-main`）。工作流中的若干步骤会读取同级 `../aws-wechat-article-main/references/*.md` 等共享文档（首次引导、writing-spec、articlescreening schema 等）。
-
-- **套件完整装齐到同一 `skills/` 根目录**时，跨 skill 引用都能读到。
-- **单独安装本 skill** 时，跨 skill 引用的步骤会在读取阶段遇到 `file not found`；本 skill 内的纯本地规则/清单审稿仍可用。
-
-完整 9 slug 清单见 [源码仓库](https://github.com/aiworkskills/wechat-article-skills)。
+> 往期推荐链接的**自动补齐**由 [publish skill](../aws-wechat-article-publish/SKILL.md) 处理（那里才有微信 API 凭证与 `getdraft.py`）；本 skill 只按已有 `manual` 排占位符，**不直接调任何网络脚本**。
 
 ## 路由
 
-「能不能发」若含代为发布或从稿到发出整条收尾 → [aws-wechat-article-main](../aws-wechat-article-main/SKILL.md)。
-
-对文章做系统性检查，发现问题并引导修改。
+「能不能发」若含代为发布、或从稿到发出整条收尾 → [aws-wechat-article-main](../aws-wechat-article-main/SKILL.md)。
 
 ## 两种审稿模式
 
@@ -58,144 +47,118 @@ metadata:
 ```
 审稿进度：
 - [ ] 第1步：环境检查 + 本篇约束与规范
-- [ ] 第2步：逐项检查
+- [ ] 第2步：逐项检查（含机器自检）
 - [ ] 第3步：输出审稿结果
 - [ ] 第4步：修改循环 🔄
-- [ ] 第5步：确认通过 → **文末 embed（⛔ BLOCKING）** → 保存 `article.md` 定稿
+- [ ] 第5步：⛔ 剥离引用标注 → 文末 embed → 保存 article.md 定稿
 ```
 
-### 智能体行为约束（与定稿强相关）
+### 智能体行为约束 ⛔
 
-- **禁止**在未完成 **第5步「文末 embed」**（见下 **⛔ BLOCKING**）的情况下，将稿件称为「已定稿」、写入 **`article.md`**、或进入 **排版（`format.py`）**。
-- **禁止**用「用户没提」「节省时间」等理由跳过文末占位符；**唯一例外**：用户**书面**声明本篇不要任何嵌入元素（名片/小程序/链接），则须在审稿记录中写明「用户声明跳过 embed」，且仍须确认不是误操作。
-- **一条龙 / 完整流程**（[main SKILL](../aws-wechat-article-main/SKILL.md)）中，**内容审**产出的 **`article.md` 必须已含文末 embed**（按合并规则或合法省略），再进入排版。
+- **禁止**在未完成第 5 步「文末 embed」的情况下，把稿件称为「已定稿」、写入 `article.md`、或进入排版（`format.py`）。
+- **禁止**用「用户没提」「节省时间」等理由跳过文末占位符。**唯一例外**：用户**书面**声明本篇不要任何嵌入元素，则须在审稿记录中写明「用户声明跳过 embed」，且仍须确认不是误操作。
+- 一条龙流程中，内容审产出的 `article.md` **必须已含文末 embed**（按合并规则或合法省略），再进入排版。
 
-### 第1步：环境检查 + 本篇约束与规范 ⛔
+### 第1步：环境检查 + 读取约束 ⛔
 
-任何操作执行前，**必须**按 **[首次引导](../aws-wechat-article-main/references/first-time-setup.md)** 执行其中的 **「检测顺序」**。检测通过后才能进行以下操作（或用户明确书面确认「本次不检查」）：
-
-从选题到发布的阻断规则见 [main SKILL](../aws-wechat-article-main/SKILL.md)；**单独启用本 skill** 时亦须先满足同一套环境检查（或用户按 main 约定声明「本次例外」）。
+任何操作前先按 **[首次引导 · 检测顺序](../aws-wechat-article-main/references/first-time-setup.md)** 执行，通过后才继续（或用户明确书面确认「本次不检查」）。单独启用本 skill 时的口径见 [branches.md「四」](references/branches.md)。
 
 然后读取：
 
 - **`.aws-article/writing-spec.md`**（如有）
-- **`.aws-article/presets/review-rules.yaml`**（如有）
-- **本篇合并配置**（与 [writing](../aws-wechat-article-writing/SKILL.md)、`format.py` 一致）：先 **`.aws-article/config.yaml`** 顶层（不含 `writing_model` / `image_model`），再叠 **本篇目录 `article.yaml`**（**同键本篇优先**；**仅** `embeds.related_articles` 与全局深度合并，其余 `embeds` 仍以全局为准）。审稿与内容向检查以合并结果为准（如 `review_output_format`、`custom_sensitive_words`、`forbidden_words`、`target_reader`、`tone`、`image_density` 等）。字段说明：[articlescreening-schema.md](../aws-wechat-article-main/references/articlescreening-schema.md)。
+- **`.aws-article/presets/review-rules.yaml`**（如有，见 [branches.md「二」](references/branches.md)）
+- **本篇合并配置**（与 [writing](../aws-wechat-article-writing/SKILL.md)、`format.py` 一致）：先 `.aws-article/config.yaml` 顶层（不含 `writing_model` / `image_model`），再叠本篇 `article.yaml`（**同键本篇优先**；**仅** `embeds.related_articles` 与全局深度合并，其余 `embeds` 仍以全局为准）。审稿以合并结果为准（`review_output_format`、`custom_sensitive_words`、`forbidden_words`、`target_reader`、`tone`、`image_density` 等）。字段说明见 [articlescreening-schema.md](../aws-wechat-article-main/references/articlescreening-schema.md)。
 
-**fallback**：合并后仍缺关键约束时向用户说明「部分维度无法按本篇约束对齐」，并建议补全 `config.yaml` / `article.yaml`；无写作规范时跳过规范检查项；无自定义审稿规则时仅执行内置检查清单 [references/checklist.md](references/checklist.md)。
+约束缺失时按 [branches.md「三」](references/branches.md) 降级，**不要中断审稿**。
 
 ### 第2步：逐项检查
 
-按模式执行不同检查项，详见：[references/checklist.md](references/checklist.md)
+完整清单见 [references/checklist.md](references/checklist.md)。
 
-**内容审** 检查以下维度：
+**先跑机器自检**（内容审模式）—— 产出配额里能数出来的部分不该靠眼睛：
+
+```bash
+{python} {baseDir}/../aws-wechat-article-writing/scripts/write.py check <本篇 draft.md>
+```
+
+与 [writing 第 7 步](../aws-wechat-article-writing/SKILL.md) 同一套判据。writing 阶段本该跑过，但稿子可能是用户自己贴进来的、或中途手改过，**这里是最后一道能机器量的关口**。映射：脚本报的**硬性项 → 🔴**，**提醒项 → 🟡**。它还会把全文加粗串成一行打印出来——**那一串读起来像不像一份提要，仍要自己读一遍**，脚本量不了挑得对不对。
+
+**内容审**再逐维度人工过：
 
 | 维度 | 检查内容 |
 |------|---------|
 | **标题** | 长度、禁用套路、与正文一致性 |
-| **摘要** | 长度、信息量、与正文一致性 |
+| **摘要** | 长度、信息量、与正文一致；**且与正文首个 `>` 导语不是同一句话** |
 | **正文** | 敏感词、禁用词、错别字、事实出处 |
-| **写作规范** | 对照 writing-spec.md 检查用词、句式、段落；深度与调性是否与 **本篇合并配置** 的 `target_reader`、`tone` 一致 |
-| **AI 味自检** | 对照 [references/ai-flavor-check.md](references/ai-flavor-check.md) 的指纹库诊断文风，逐处标注信号强度（强/中/弱）。**默认只诊断**：命中折算为 🟡 建议修改，**不 blocking、不影响定稿**，由作者决定改不改 |
-| **配图标记** | 封面标记存在、数量与 **本篇合并配置** 的 `image_density` 匹配、描述清晰 |
-| **文末 embed** | 定稿前须完成 **第5步 ⛔ BLOCKING**（与 `format.py` 的 `{embed:…}` 一致）；未写入 `article.md` 不得定稿 |
-| **原创标注** | 按 original_attribution 处理 |
+| **写作规范** | 对照 writing-spec.md 检查用词、句式、段落；深度与调性是否与合并配置的 `target_reader`、`tone` 一致 |
+| **AI 味自检** | 对照 [ai-flavor-check.md](references/ai-flavor-check.md) 逐处诊断并标注信号强度。**默认只诊断**：一律折算 🟡，不 blocking、不影响定稿（两套判级的区别见 [branches.md「五」](references/branches.md)） |
+| **配图标记** | 封面标记存在、数量与 `image_density` 匹配、描述具体 |
+| **文末 embed** | 定稿前须完成第 5 步 ⛔；未写入 `article.md` 不得定稿 |
+| **原创标注** | 按 `original_attribution` 处理 |
 
-**终审** 额外检查：
+**终审**额外检查：
 
 | 维度 | 检查内容 |
 |------|---------|
-| 排版 | article.html 存在且完整 |
-| 图片 | imgs/ 下图片齐全、placeholder 已替换 |
-| 发布要素 | 标题/摘要/作者/封面 全部就绪 |
+| 排版 | `article.html` 存在且完整，无乱码 |
+| 图片 | **文章目录下有 `cover.*`**（封面不在 `imgs/` 里）、`imgs/` 正文图齐全、`placeholder` 已全部替换、文件真实存在 |
+| 发布要素 | 标题/摘要/作者/封面全部就绪 |
 
 ### 第3步：输出审稿结果
 
-按 `review_output_format` 输出：
-- **分块详细**：按维度分块，逐项列 ✅/❌ + 修改建议
-- **简要清单**：表格式，一行一项
-
-输出模板：[references/output-format.md](references/output-format.md)
+按 `review_output_format` 输出：**分块详细**（按维度分块，逐项 ✅/❌ + 修改建议）或**简要清单**（表格，一行一项）。模板见 [references/output-format.md](references/output-format.md)。
 
 结果分三级：
-- 🔴 **必须修改**：不改不能过（敏感词、严重错别字、缺封面）
-- 🟡 **建议修改**：改了更好（用词优化、段落调整）
-- 🟢 **通过**：无问题
+
+- 🔴 **必须修改**：不改不能过（敏感词、严重错别字、缺封面、机器自检的硬性项）
+- 🟡 **建议修改**：改了更好（用词优化、段落调整、AI 味、机器自检的提醒项）
+- 🟢 **通过**
 
 ### 第4步：修改循环 🔄
 
-有 🔴 项时**必须进入修改循环**：
+有 🔴 项时**必须进入修改循环**：`发现问题 → 展示审稿结果 → 修改 → 重新检查 → 直到无 🔴`。
 
-```
-发现问题 → 展示审稿结果 → 等用户/agent 修改 → 重新检查 → 直到无 🔴
-```
+修改方式：Agent 直接改 `draft.md` / 用户手改后说「改好了」/ 调 [writing](../aws-wechat-article-writing/SKILL.md) 的 rewrite。
 
-修改方式：
-- Agent 直接修改 `draft.md`
-- 用户手动修改后说「改好了」
-- 调用 writing skill 的 rewrite 能力
+每轮只重审被标为 🔴 的项，不必全量重审。
 
-每轮修改后自动重审被标记为 🔴 的项，不需要全量重审。
+> ⚠️ **第 4 步完成不代表可以保存 `article.md`**，必须先走完第 5 步。
 
-> ⚠️ **Step 4 完成不代表可以保存 `article.md`**。必须先完成 Step 5（文末 embed ⛔⛔ BLOCKING）才能写入 `article.md` 或进入排版。
+### 第5步：剥离引用标注 → 文末 embed → 保存定稿 ⛔ BLOCKING
 
-### 第5步：确认通过 → 剥离引用标注 → 文末 embed → 保存定稿 ⛔⛔ BLOCKING
+全部 🔴 消除后：
 
-全部 🔴 项消除后：
-1. 展示最终审稿结果
-2. 等待用户确认 ⛔
-3. **⛔ BLOCKING · 剥离引用标注**：在仓库根执行
-   `{python} {baseDir}/../aws-wechat-article-writing/scripts/write.py strip-citations <本篇 draft.md> -o <本篇 draft-stripped.md>`
-   纯本地正则剥离正文中所有 `（资料路径：...）` 引用标注（writing 阶段为事实溯源强制注入，发布版必须去除以免泄露内部产品目录路径）。**禁止**用 sed / agent 肉眼撕替代该脚本 —— 历史多次出现"撕一遍漏一条"的事故。
-4. **⛔ BLOCKING · 文末 `embeds`**：**在写入 `article.md` 之前**完成本节下方「规则与表格」——**先读取** `.aws-article/config.yaml` 并与本篇 `article.yaml` **合并**（与第 1 步一致：**除 `embeds.related_articles` 外，`embeds` 仅以全局为准**；**`related_articles` 与全局深度合并**），再在 `draft-stripped.md` 的**正文末尾**（原有正文之后）按规则**追加或合法省略**占位符。**占位符必须与合并后可解析的配置一致**，否则排版阶段会失败。**未完成本节不得保存定稿、不得调用 `format.py`。**
-5. 将已剥离引用标注且含文末 embed（或已按规则省略并记录在审稿说明中）的稿件保存为 **`article.md`（定稿）**；中间产物 `draft-stripped.md` 可保留备查或删除。
+1. 展示最终审稿结果，**等待用户确认** ⛔。
+2. **剥离引用标注** —— 在仓库根执行：
 
-**定稿文末 `embeds`（规则与表格）**
+   ```bash
+   {python} {baseDir}/../aws-wechat-article-writing/scripts/write.py strip-citations <本篇 draft.md> -o <本篇 draft-stripped.md>
+   ```
 
-| 占位符 | 何时写入文末 | 配置对齐 |
-|--------|----------------|----------|
-| `{embed:profile:…}` | 全局 **`embeds.profiles`** 存在**至少一条有效项**（非空 `nickname`） | 每条有效 profile **一行**，占位中 `…` = 该项 `nickname` |
-| `{embed:miniprogram:…}` | 全局 **`embeds.miniprograms`** 存在**至少一条有效项**（非空 `title`） | 每条有效项一行，`…` = `title` |
-| `{embed:miniprogram_card:…}` | 全局 **`embeds.miniprogram_cards`** 存在**至少一条有效项**（非空 `title`） | 每条有效项一行，`…` = `title` |
-| `{embed:link:…}` | **往期链接**：合并后 **`embeds.related_articles.manual`** 有有效项时；或见下方「无 manual」 | `…` = 该项 `name`；**文末相关链接至多 3 条** |
+   纯本地正则剥掉正文里所有 `（资料路径：…）`（writing 阶段为事实溯源强制注入，发布版必须去除，以免泄露内部产品目录路径）。**禁止**用 sed 或肉眼撕替代该脚本——历史上多次「撕一遍漏一条」。
 
-- **前三类（名片 / 小程序文字链 / 小程序卡片）**：若对应列表**未配置或为空或无非空关键字段**，**不追加**该类占位符，无需处理。
-- **往期 `{embed:link:…}`**：
-  - 若合并后 **`manual` 已有** `name` + `url`：在文末追加对应占位符，**最多 3 条**（超过则只保留 3 条，优先与本文主题最相关的条目或按列表顺序取前 3）。
-  - 若合并后 **`manual` 缺失或为空**：**本 skill 不自动补齐**（以保持 review 纯本地、无网络、无凭证）。处理方式：
-    1. 首选由用户手动把已发表文章的 `name` + `url` 写入本篇 `article.yaml` 的 `embeds.related_articles.manual`（每项至多 3 条）；
-    2. 或在**进入 [publish skill](../aws-wechat-article-publish/SKILL.md)** 时，由 publish 在发布前调用 `getdraft.py published-fields` 自动补齐（publish 才有微信 API 凭证与网络能力）；
-    3. 若用户声明跳过往期：**不伪造** `manual`，在审稿说明中注明「本篇跳过往期推荐」，`{embed:link:…}` 占位省略即可。
+3. **文末 `embeds`** —— **在写入 `article.md` 之前**，按第 1 步的合并结果在 `draft-stripped.md` 的**正文末尾**追加占位符：
 
-字段含义与示例见 **`{baseDir}/../aws-wechat-article-main/references/config.example.yaml`** 的 `embeds` 注释及 **[topics SKILL](../aws-wechat-article-topics/SKILL.md)** 文末「推荐链接」说明；排版脚本据此生成 `article.html`。
+   | 占位符 | 何时写入 | 配置对齐 |
+   |--------|----------|----------|
+   | `{embed:profile:…}` | `embeds.profiles` 有至少一条非空 `nickname` | 每条有效项一行，`…` = 该项 `nickname` |
+   | `{embed:miniprogram:…}` | `embeds.miniprograms` 有至少一条非空 `title` | 每条有效项一行，`…` = `title` |
+   | `{embed:miniprogram_card:…}` | `embeds.miniprogram_cards` 有至少一条非空 `title` | 每条有效项一行，`…` = `title` |
+   | `{embed:link:…}` | `embeds.related_articles.manual` 有有效项 | `…` = 该项 `name`；**至多 3 条** |
 
-**全空时的处理**：当所有 embed 配置（profiles / miniprograms / miniprogram_cards / related_articles）均为空或未配置时，仍须在审稿输出中**显式标注**「文末 embed：无配置，已跳过」，**不得静默跳过**。这确保流程可追溯，避免遗漏。
+   **占位符必须与合并后可解析的配置一致**，否则排版阶段会失败。列表为空、`manual` 缺失、用户声明跳过、以及全空时仍须显式标注——见 [branches.md「一」](references/branches.md)。
 
-## 自定义检查规则
+4. 将**已剥离引用标注且含文末 embed**（或已按规则省略并记入审稿说明）的稿件保存为 **`article.md`（定稿）**。中间产物 `draft-stripped.md` 可保留备查或删除。
 
-用户可在 `.aws-article/presets/review-rules.yaml` 添加自定义检查项：
+**未完成第 3 小步不得保存定稿、不得调用 `format.py`。**
 
-```yaml
-# .aws-article/presets/review-rules.yaml
-custom_rules:
-  - name: 品牌名称规范
-    check: 正文中「XX公司」必须使用全称，不能简写
-    level: 必须    # 必须 / 建议
+## 分支与异常
 
-  - name: 数据来源
-    check: 所有引用的数据必须标注来源和日期
-    level: 必须
-
-  - name: CTA 检查
-    check: 文末必须包含明确的行动号召
-    level: 建议
-```
-
-自定义规则会追加到标准检查项之后执行。
+往期链接三种情况与全空标注、自定义检查规则、约束缺失 fallback、单独启用本 skill、AI 味两套判级 → [references/branches.md](references/branches.md)。
 
 ## 过程文件
 
 | 模式 | 读取 | 产出 |
 |------|------|------|
-| 内容审 | `draft.md`、**`.aws-article/config.yaml` + 本篇 `article.yaml`**、`writing-spec.md` | `review.md`、`article.md`（定稿） |
-| 终审 | `article.html`、`imgs/`、同上合并配置、`article.yaml`（发布元数据等） | `review.md`（终审结果） |
+| 内容审 | `draft.md`、`.aws-article/config.yaml` + 本篇 `article.yaml`、`writing-spec.md` | `review.md`、`article.md`（定稿） |
+| 终审 | `article.html`、`cover.*`、`imgs/`、同上合并配置、`article.yaml` | `review.md`（终审结果） |
