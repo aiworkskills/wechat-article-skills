@@ -24,7 +24,7 @@
 
 **配图风格**：**封面**预设目录为 **`cover-styles/`**（内置随 `aws-wechat-article-images` + **`.aws-article/presets/cover-styles/`**）；**正文配图**为 **`presets/image-styles/`** 下同名 `.md`。配置键：**`default_cover_image_style`** / **`default_article_image_style`**（账号默认候选）与 **`custom_cover_image_style`** / **`custom_article_image_style`**（覆盖层）；**`custom_*` 非空时优先于同名 `default_*`**。
 
-**预设候选列表**：**`default_structure`**、**`default_closing_block`**、**`default_title_style`**、**`default_format_preset`**、**`default_cover_image_style`**、**`default_article_image_style`**（及 **`default_sticker_style`**）**须为 YAML 字符串列表**：`[]`、单元素 `[名]`，或多项候选；**多项时**智能体须在本篇 **`article.yaml`** 同键改为**单元素列表**后，再运行 **`write.py`**（结构/文末）与 **`format.py`**（排版主题）。**勿使用字符串标量。** 配图风格字段（`custom_cover_image_style`、`custom_article_image_style` 及对应的 `default_*`）同理。
+**预设候选列表**：**`default_structure`**、**`default_closing_block`**、**`default_title_style`**、**`default_format_preset`**、**`default_cover_image_style`**（及 **`default_sticker_style`**）**须为 YAML 字符串列表**：`[]`、单元素 `[名]`，或多项候选；**多项时**智能体须在本篇 **`article.yaml`** 同键改为**单元素列表**后，再运行 **`write.py`**（结构/文末）与 **`format.py`**（排版主题）。**勿使用字符串标量。** 配图风格字段（`custom_cover_image_style`、`custom_article_image_style` 及对应的 `default_*`）同理。
 
 **`custom_*` 覆盖层**：`default_structure`、`default_closing_block` 等字段均有对应的 `custom_*`（如 `custom_structure`、`custom_format_preset` 等），格式相同。当 `custom_*` 非空时，优先于同名 `default_*`。合并优先级：**`article.yaml` > `custom_*` > `default_*`**；配图风格在解析完上述合并后的列表后，再按 skill 规则从内置与用户 **`cover-styles` / `image-styles`** 目录加载预设文件。
 

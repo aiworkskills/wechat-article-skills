@@ -115,7 +115,7 @@ metadata:
 ### 第1步：环境检查 + 本篇约束与文章
 
 - **全局**：读 **`.aws-article/config.yaml`** — `cover_aspect`、`cover_style`、`image_density`、`caption_style`、`multi_image_count`、`tone` 等以之为准（完整字段见 [articlescreening-schema.md](../aws-wechat-article-main/references/articlescreening-schema.md) 与 **`config.example.yaml`**）。
-- **本篇**：若同目录有 **`article.yaml`**，读取 **`default_cover_image_style`**、**`default_article_image_style`**（应为单元素列表，代表本篇已选预设）及 `cover_image` 等字段。
+- **本篇**：若同目录有 **`article.yaml`**，读取 **`default_cover_image_style`**（单元素列表，本篇已选的封面形态）与 **`default_article_image_style`**（**多元素候选池**，正文形态逐个图位选，不收敛成单选——收敛等于让整篇所有配图用同一种形态）及 `cover_image` 等字段。
 - 读取 **`article.md`**（或当前流程规定的正文来源）。
 - 当 `image_source: user`（全局或本篇）时，进入「用户供图模式」：先创建本篇 `imgs/` 并生成/更新 `img_analysis.md`，记录每张图的内容分析、建议章节与推荐用途。
 
@@ -175,7 +175,7 @@ metadata:
 
 **加载优先级**：
 1. 用户当次指定（如「正文要扁平插画」）
-2. **本篇 `article.yaml.default_article_image_style`**（单元素列表）→ 加载 **`.aws-article/presets/image-styles/<名>.md`**
+2. **本篇 `article.yaml.default_article_image_style`**（候选池，可多元素）→ 逐个图位从中挑一个形态，各自加载 **`.aws-article/presets/image-styles/<名>.md`**
 3. **fallback**：`custom_article_image_style` 为空即全选，Agent 按 [image-method.md](references/image-method.md) 逐个图位判断——删掉它读者会看不懂（信息位）还是读不下去（节奏位）？都不影响就删掉该图位。
 
 ### 第4步：生成配图方案

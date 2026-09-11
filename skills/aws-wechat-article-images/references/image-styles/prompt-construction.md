@@ -94,7 +94,7 @@ PIL、SVG 等绘图库按同样的文案重画一张。
 
 正文配图不用本文件的模板。按 [image-method.md](../image-method.md) 六步走：先判断这张图要不要（看不懂 / 读不下去 / 都不影响就删）→ 选形态 → **取文章真实内容**（信息位必做）→ 套模板与可轮换维度 → 写成 prompt → 回看。
 
-九个形态见 [image-styles/](./)，schema 与判断标准见 [README](README.md)。
+8 个形态见 [image-styles/](./)，schema 与判断标准见 [README](README.md)。
 
 ### 封面
 
@@ -111,7 +111,9 @@ aspect: "2.35:1"
 
 ## 高级布局（适用于复杂信息可视化）
 
-在标记描述中指定布局类型：`![data-viz-漏斗：...]`、`![data-viz-冰山：...]`。
+⚠ **不要用 `![data-viz-漏斗：…]` 这类标记。** 写作侧的类型名白名单只有「封面 / 信息图 / 氛围 / 流程图 / 对比 / 实证」六个（见 writing skill 的配图标记规范），`data-viz-*` 写进 markdown 只会成为一个认不出的类型名。
+
+下面这些布局是**写 prompt 时的构图词汇**，不是 markdown 标记——在 `imgs/prompts/*.md` 的正文里描述它们即可。
 
 **布局类型一览**：
 
