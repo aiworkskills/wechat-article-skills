@@ -101,8 +101,9 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
         把整句复述一遍再加粗，读者扫到它等于把这段又读一次。
         """
         sp = self._prompt()
-        self.assertIn("每处 2-8 个字", sp, "没有长度上限，模型会加粗整句的概括")
-        self.assertIn("自带信息的最小单位", sp, "光有长度上限会退化成裸数字")
+        self.assertIn("5-8 个字最好", sp, "给上限不给目标区间，模型会贴着下限写裸名词")
+        self.assertIn("独立成立", sp, "光有长度约束会退化成裸数字或裸名词")
+        self.assertIn("裸名词不合格", sp, "不点名这个失败形态，收紧长度就会滑到另一个极端")
         self.assertIn("禁止**加粗对整句的概括", sp, "不禁掉复述，密度再高也没有落点")
 
     def test_emphasis_states_the_skim_test(self):
@@ -275,7 +276,7 @@ class OutputQuotaCheckTest(unittest.TestCase):
         """9-11 字的抽象概括是实测最常见的失败形态：扫到它等于把这段重读一遍。"""
         _, warn, _ = self.w.check_output(
             self.GOOD.replace("**省 88% Token**", "**成果来自工程能力的扩张**"))
-        self.assertTrue(any("超过 8 字" in w for w in warn), warn)
+        self.assertTrue(any("偏长" in w for w in warn), warn)
 
     def test_unbolded_numbers_are_warned(self):
         _, warn, _ = self.w.check_output(
@@ -287,3 +288,30 @@ class OutputQuotaCheckTest(unittest.TestCase):
         机器判不了读不读得通，所以把它打印出来交给人。"""
         _, _, digest = self.w.check_output(self.GOOD)
         self.assertIn(" / ", digest, "多处加粗要串成一行给人读")
+
+
+    def test_check_flags_both_emphasis_failure_modes(self):
+        """两头都要拦。只拦长的那次，模型转头去写 2-4 字裸名词——48 处平均 3.6 字、
+        94% 在 4 字以内，机械指标全绿而串起来是个词云，工具报了假绿灯。"""
+        w = _load()
+        base = ("# t\n\n> 摘要交代本篇讲什么按什么顺序讲与列表页那句不同。\n\n## 一\n\n"
+                "第一段正文说明背景与来龙去脉。\n\n第二段有 {b} 这个重点。\n\n"
+                "第三段继续展开理由。\n\n第四段再有 {b} 一处。\n\n"
+                "> 金句。 —— 马斯\n")
+        _, warn_short, _ = w.check_output(base.replace("{b}", "**透明度**"))
+        self.assertTrue(any("裸名词" in x for x in warn_short), warn_short)
+        _, warn_long, _ = w.check_output(base.replace("{b}", "**成果来自工程能力的扩张**"))
+        self.assertTrue(any("偏长" in x for x in warn_long), warn_long)
+        # 中英混排的理想加粗不能被任何一头误伤：按字符数它有 11 个，按显示单位是 3 个
+        _, warn_ok, _ = w.check_output(base.replace("{b}", "**省 88% Token**"))
+        self.assertFalse([x for x in warn_ok if "裸名词" in x or "偏长" in x], warn_ok)
+
+    def test_emphasis_length_counts_display_units_not_characters(self):
+        """按字符数会误伤中英混排——`省 88% Token` 正是我们要的样子（数字连着它的
+        意思），len() 却是 11，会被当成「复述整句」拦下来。"""
+        w = _load()
+        self.assertEqual(w._emph_units("省 88% Token"), 3)
+        self.assertEqual(w._emph_units("成果来自工程能力的扩张"), 11)
+        self.assertTrue(w._is_bare_noun("透明度"))
+        self.assertFalse(w._is_bare_noun("省 88% Token"))
+        self.assertFalse(w._is_bare_noun("按问题找证据"))
