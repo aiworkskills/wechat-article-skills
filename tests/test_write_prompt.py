@@ -91,9 +91,13 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
         """加粗是正文里唯一的扫读落点，且是「重点色 / 荧光底」这些主题样式的唯一入口。
         没有密度要求，模型只在列表标签里加粗，整篇正文一片平。"""
         sp = self._prompt()
-        self.assertIn("每 2-3 段一处", sp, "加粗密度配额没了")
+        # 密度必须按**字数**表述。段是会伸缩的单位：同一条「每 2-3 段一处」，
+        # 短段账号是每 40 字一处、自然段账号是每 194 字一处，差两倍多。
+        self.assertIn("每 100 字左右就该有一个落点", sp, "加粗密度配额没了")
+        self.assertIn("连续 200 字不许一个都没有", sp, "缺空档上限，平均数会把空白抹平")
+        self.assertNotIn("每 2-3 段一处", sp, "不许退回按段数表述")
         self.assertIn("最多两处", sp, "缺上限，会变成整篇乱加粗")
-        self.assertIn("每个 `##` 小节至少贡献一处", sp, "缺覆盖要求，会集中在前半篇")
+        self.assertIn("每个 `##` 小节至少一处", sp, "缺覆盖要求，会集中在前半篇")
 
     def test_emphasis_rule_says_what_to_bold_not_only_how_often(self):
         """密度达标 ≠ 有重点。
@@ -269,15 +273,20 @@ class OutputQuotaCheckTest(unittest.TestCase):
 
     def test_thin_emphasis_is_a_hard_failure(self):
         """正文段落数够多而加粗太少 —— 手机上扫过去没有落点。"""
+        para = ("这是一段八十字左右的自然段落，讲的是需要铺陈的内容，读者读起来要花"
+                "一点时间才能走完它，中间没有任何可以停下来的地方。")
         thin = "# t\n\n> 摘要摘要摘要摘要摘要摘要摘要摘要。\n\n## 一\n\n" + "\n\n".join(
-            f"第{i}段正文，没有任何强调。" for i in range(12)) + "\n\n> 金句。 —— 马斯\n"
+            f"第{i}段。{para}" for i in range(12)) + "\n\n> 金句。 —— 马斯\n"
         bad, _, _ = self.w.check_output(thin)
         self.assertTrue(any("加粗" in b for b in bad), bad)
 
     def test_paraphrase_length_is_warned(self):
-        """9-11 字的抽象概括是实测最常见的失败形态：扫到它等于把这段重读一遍。"""
+        """真正该拦的是二十来字的整句复述——扫到它等于把这段重读一遍。
+
+        阈值从 8 提到 12：8 会连「形式化不等于首次发现证明」这种标准答案一起点名。
+        """
         _, warn, _ = self.w.check_output(
-            self.GOOD.replace("**省 88% Token**", "**成果来自工程能力的扩张**"))
+            self.GOOD.replace("**省 88% Token**", "**成果来自工程能力的扩张而不是模型本身变强了**"))
         self.assertTrue(any("偏长" in w for w in warn), warn)
 
     def test_unbolded_numbers_are_warned(self):
@@ -302,7 +311,7 @@ class OutputQuotaCheckTest(unittest.TestCase):
                 "> 金句。 —— 马斯\n")
         _, warn_short, _ = w.check_output(base.replace("{b}", "**透明度**"))
         self.assertTrue(any("裸名词" in x for x in warn_short), warn_short)
-        _, warn_long, _ = w.check_output(base.replace("{b}", "**成果来自工程能力的扩张**"))
+        _, warn_long, _ = w.check_output(base.replace("{b}", "**成果来自工程能力的扩张而不是模型本身变强了**"))
         self.assertTrue(any("偏长" in x for x in warn_long), warn_long)
         # 中英混排的理想加粗不能被任何一头误伤：按字符数它有 11 个，按显示单位是 3 个
         _, warn_ok, _ = w.check_output(base.replace("{b}", "**省 88% Token**"))
@@ -356,3 +365,55 @@ class QuoteCardParityTest(unittest.TestCase):
         md = f"# T\n\n> 导语。\n\n## 一\n\n正文**重点**一段。\n\n> {self.SHORT}\n"
         bad, _warn, _ = self.w.check_output(md)
         self.assertFalse(any("金句" in b or "出处" in b for b in bad), bad)
+
+
+class BoldDensityTest(unittest.TestCase):
+    """加粗密度按**字数**算，不按段数。
+
+    段是会伸缩的单位：`paragraph_preference` 写「短段为主」的账号一段 35 字，
+    写「自然段为主」的一段 80 字。同一条「每 2-3 段一处」落到读者眼里差两倍多——
+    2026-09-12 实测两篇都报 [OK]，一篇每 194 字一处，另一篇每 40 字一处。
+    读者感受到的是划过多少屏才碰到下一个落点，所以判据必须用字数。
+    """
+
+    HEAD = "# T\n\n> 这是一段足够长的导语，用来占住摘要那一项。\n\n## 一\n\n"
+    TAIL = "\n\n> 金句。 —— 马斯\n"
+
+    def _check(self, body):
+        return _load().check_output(self.HEAD + body + self.TAIL)
+
+    def test_sparse_long_paragraphs_are_caught(self):
+        """自然段账号：段数达标（每 2 段一处）但字数密度不够，旧规则放行、新规则拦下。"""
+        para = "这是一段八十字左右的自然段落，讲的是一些需要铺陈的内容，读者读起来要花一点时间才能走完它，中间没有任何可以停下来的地方。"
+        body = "\n\n".join([f"{para}**一个落点**。", para] * 6)
+        bad, _w, _ = self._check(body)
+        self.assertTrue(any("字一处" in b for b in bad), f"应按字数拦下，实际 bad={bad}")
+
+    def test_short_paragraph_account_passes(self):
+        """短段账号：同样每 2 段一处，但字数密度够，不该被拦。"""
+        body = "\n\n".join(["短短一句**有落点**。", "另一句短的没有。"] * 10)
+        bad, _w, _ = self._check(body)
+        self.assertFalse(any("字一处" in b for b in bad), bad)
+
+    def test_long_gap_is_caught_even_when_average_is_fine(self):
+        """总量达标也可能局部空一屏——平均数会把空档抹平。"""
+        dense = "这一段里有一个**关键落点**在中间位置。\n\n" * 16
+        hole = "\n\n".join(["这一段完全没有加粗，讲的是铺垫内容，读者扫过去找不到任何"
+                            "可以停下来的地方，只能一直往下划着看。"] * 6)
+        bad, _w, _ = self._check(dense + hole)
+        self.assertFalse(any("字一处" in b for b in bad), "密度本身应达标")
+        self.assertTrue(any("连续空白" in b for b in bad), f"应拦下长空档，实际 bad={bad}")
+
+    def test_short_pieces_are_exempt(self):
+        """不足 300 字的短文不套密度规则——那是短文案不是长文。"""
+        bad, _w, _ = self._check("很短的一段话，没有加粗。")
+        self.assertFalse(any("字一处" in b or "连续空白" in b for b in bad), bad)
+
+    def test_judgement_bold_is_not_flagged_as_too_long(self):
+        """「判断连着它的对象」是提示词要求的形态，不该被当成复述整句。
+
+        阈值 8 时这三个全被点名，而它们正是范例里的标准答案。
+        """
+        w = _load()
+        for s in ("形式化不等于首次发现证明", "候选产量不等于交付吞吐量", "打断不等于撤销"):
+            self.assertLessEqual(w._emph_units(s), 12, f"「{s}」不该超阈值")

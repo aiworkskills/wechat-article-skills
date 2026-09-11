@@ -729,7 +729,11 @@ def build_system_prompt(
         "- **加粗是划重点**：读者没时间读完两千字，加粗要让他只看这些就知道你说了什么。\n",
         "  **验收标准：把全文的加粗按顺序抽出来连读，应该是一篇能独立看懂的缩写版。**"
         "读起来像词云（「透明度 / 瓶颈 / 采用」）或像把段落重念一遍，都是挑错了。\n",
-        "  据此倒推：每个 `##` 小节至少贡献一处，正文每 2-3 段一处、一段最多两处；"
+        # 密度用**字数**表述，不用段数——段是会伸缩的单位，「每 2-3 段一处」在
+        # 短段账号和自然段账号那里差两倍多，实测两篇分别是每 40 字和每 194 字一处。
+        "  据此倒推：**每 100 字左右就该有一个落点**（手机上约 4-5 行），"
+        "连续 200 字不许一个都没有——那是读者划过整整一屏还找不到重点。"
+        "每个 `##` 小节至少一处，结尾段也要有；一段里最多两处；"
         "每处都要**能独立看懂**——数字连着它的意思（`**省 88% Token**`），"
         "判断连着它的对象（`**打断不等于撤销**`），术语连着它的定性（`**按问题找证据**`）。\n",
         "  文中的关键数字尽量都覆盖到，那是读者扫读时最先停下的地方。"
@@ -954,14 +958,52 @@ def check_output(text: str) -> tuple[list[str], list[str], str]:
     body = [l for l in lines
             if l.strip() and not l.startswith(("#", "!", ">", "-", "|", "```"))]
     bolds = [m for l in body for m in re.findall(r"\*\*([^*\n]+)\*\*", l)]
-    paras = len(body)
-    need = max(1, paras // 3)
-    if len(bolds) < need:
-        bad.append(f"正文 {paras} 段只有 {len(bolds)} 处加粗，至少要 {need} 处（每 2-3 段一处）")
+
+    # 密度按**字数**算，不按段数。段是个会伸缩的单位：`paragraph_preference` 写
+    # 「短段为主」的账号一段 35 字，写「自然段为主」的一段 80 字，同一条「每 2-3 段
+    # 一处」落到读者眼里差了两倍多。实测 2026-09-12 两篇都报 [OK]：一篇每 194 字
+    # 一处，另一篇每 40 字一处——规则被严格执行，读者体验天差地别。
+    #
+    # 读者感受到的是**划过多少屏才碰到下一个落点**，所以判据用字数。
+    # 手机上一行约 22 字，100 字≈4-5 行，是「一眼扫过去总能停一次」的距离。
+    #
+    # 落点包含列表里的 `- **标签**：` ——读者的眼睛不区分它和段内加粗，
+    # 都是扫读时停下来的地方；只算段内加粗会逼一篇以列表为主的稿子硬塞。
+    CHARS_PER_BOLD = 100        # 目标密度：每 100 字一处
+    MAX_GAP = 200               # 硬上限：连续 200 字没有落点就是一屏空白
+    all_bolds = re.findall(r"\*\*([^*\n]+)\*\*", text)
+    read_text = "\n".join(l for l in lines
+                          if l.strip() and not l.startswith(("#", "!", ">", "|", "```")))
+    total_cjk = len(re.findall(rf"[{_CJK}]", read_text))
+    if total_cjk >= 300:
+        need = max(1, total_cjk // CHARS_PER_BOLD)
+        if len(all_bolds) < need:
+            bad.append(f"正文 {total_cjk} 字只有 {len(all_bolds)} 处加粗（每 "
+                       f"{total_cjk // max(1, len(all_bolds))} 字一处），至少要 {need} 处 —— "
+                       f"目标是每 {CHARS_PER_BOLD} 字左右有一个落点")
+
+        # 平均够了也可能局部全是空白：实测有连着三段一个加粗都没有的稿子。
+        gap = 0
+        worst = 0
+        for l in read_text.splitlines():
+            n = len(re.findall(rf"[{_CJK}]", l))
+            if re.search(r"\*\*[^*\n]+\*\*", l):
+                worst = max(worst, gap)
+                gap = 0
+            else:
+                gap += n
+        worst = max(worst, gap)
+        if worst > MAX_GAP:
+            bad.append(f"有一段 {worst} 字的连续空白没有任何加粗（上限 {MAX_GAP}）—— "
+                       f"读者在手机上要划过约 {worst // 22} 行才碰到下一个落点")
 
     # 两头都要拦。只拦长的那次，模型转头去写 2-4 字的裸名词，48 处平均 3.6 字，
     # 机械指标全绿而串起来是个词云——工具报了假绿灯，比不报还糟。
-    long_ones = [b for b in bolds if _emph_units(b) > 8]
+    #
+    # 上限从 8 提到 12：8 在惩罚正确答案。实测三篇连着被点名的是
+    # 「形式化不等于首次发现证明」「候选产量不等于交付吞吐量」——正是提示词要求的
+    # 「判断连着它的对象」那个形态。真正该拦的是二十来字的整句复述。
+    long_ones = [b for b in bolds if _emph_units(b) > 12]
     if long_ones:
         warn.append(f"{len(long_ones)} 处加粗偏长，多半是把整句复述了一遍："
                     + "、".join(f"「{b}」" for b in long_ones[:3]))
