@@ -33,9 +33,15 @@ schemes:
   description: 深松绿，适合运维、数据库、稳定性一类话题。
 styles:
   p: font-size:16px; line-height:1.95; letter-spacing:0.2px; color:#111827; margin:0 0 26px; font-variant-numeric:tabular-nums;
-  strong: 'font-weight:600; color:#111827; background:#F6F8FA; box-shadow:0 0 0 3px #F6F8FA; border-bottom:1px solid #E5E7EB;'
+  # 加粗跟配色走。此前写死成灰码片（#111827 字 + #F6F8FA 底），三套配色下长得
+  # 一模一样——而加粗是正文里最密集的一层，用户换了配色最先该看见变化的就是它。
+  # 八套模版里只有这一套的 strong 不跟色，是个孤例，不是设计取向。
+  #
+  # 去掉码片后加粗与链接都只剩「彩字」，读者分不清哪个能点。所以加粗靠字重
+  # （800）拉开，链接补一条下划线——另外五套模版的链接本来就带线。
+  strong: color:{primary-ink}; font-weight:800;
   em: font-style:normal; color:{primary-ink}; font-weight:600;
-  a: color:{primary-ink}; text-decoration:none; font-weight:500;
+  a: color:{primary-ink}; text-decoration:none; border-bottom:1px solid {primary-ink};
   h1: font-size:25px; font-weight:700; color:#111827; line-height:1.4; letter-spacing:-0.3px; margin:0 0 28px;
   h2: font-size:20px; font-weight:700; color:#111827; line-height:1.5; letter-spacing:-0.2px; margin:8px 0 20px;
   h3: font-size:16px; font-weight:700; color:#111827; margin:36px 0 12px;

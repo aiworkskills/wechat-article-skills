@@ -1263,27 +1263,12 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
                 if lines[look].strip() == ":::":
                     end = look
                     break
-            # highlight 是主题里的样式键，不是组件文件。门户预览一直在渲染这个提示框，
-            # 但此前**没有任何语法能产出它**——预览承诺了交付不了的东西，和当初
-            # formatDecorations 是同一类问题。这里给它接上 :::highlight（别名 :::note）。
-            # 注意现有四套内置模版都没写 highlight 样式键，下面会退回 blockquote，
-            # 所以此刻它和普通引用块长得一样。要有自己的长相：模版 YAML 里加 highlight:，
-            # 或放一个同名组件文件覆盖这条兜底。
-            if not spec and name in ("highlight", "note") and end is not None:
-                flush_paragraph()
-                close_list()
-                close_blockquote()
-                body = [x.strip() for x in lines[line_idx + 1:end] if x.strip()]
-                inner = "".join(
-                    f'<section style="margin:0 0 {"0.8em" if i < len(body) - 1 else "0"};">'
-                    f'{_inline_format(x, styles)}</section>'
-                    for i, x in enumerate(body)) if len(body) > 1 else \
-                    "".join(_inline_format(x, styles) for x in body)
-                hl = styles.get("highlight") or styles.get("blockquote", "")
-                html_parts.append(f'<section style="{hl}">{inner}</section>')
-                for skip_i in range(line_idx + 1, end + 1):
-                    lines[skip_i] = ""
-                continue
+            # 这里一度有条 :::highlight / :::note 的内置兜底，套主题的 highlight
+            # 样式键。已删除：没有一套模版定义 highlight，兜底退回 blockquote，
+            # 渲出来和普通引用块逐字相同——两个语义不同的东西长成一样，正是给
+            # 导语单独做样式时要避开的那个问题。而且 ::: 语法写手已经不产出了，
+            # 留着就是养一个假功能。真要提示框：放一个组件文件 highlight.yaml，
+            # 走下面的通用组件路径即可。
             if spec and end is not None:
                 flush_paragraph()
                 close_list()

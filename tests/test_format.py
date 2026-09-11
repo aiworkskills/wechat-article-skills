@@ -461,10 +461,13 @@ class CaptionGateTest(unittest.TestCase):
 
 
 class HighlightBlockTest(unittest.TestCase):
-    """highlight 一度是只活在预览里的死样式。
+    """:::highlight 的内置兜底已删除。
 
-    16 套主题全都给它写了样式、门户预览也一直在渲染它，但没有任何 markdown 语法
-    能产出它——预览里那个提示框，真实文章根本做不出来。
+    它套主题的 highlight 样式键，而没有一套模版定义过 highlight——兜底一路退回
+    blockquote，渲出来和普通引用块逐字相同。两个语义不同的东西长成一样，正是给
+    导语单独做样式时要避开的问题。加上 ::: 写手已经不产出，留着就是养假功能。
+
+    删掉之后它走通用的「未知组件」路径：告警 + 按原文输出，不吞内容。
     """
 
     def _render(self, md, styles=None):
@@ -472,30 +475,21 @@ class HighlightBlockTest(unittest.TestCase):
                                       "p": "font-size:16px;", "strong": "font-weight:800;"}}
         return fmt._md_to_html(md, fmt._build_styles(theme), components=_load_comps())
 
-    def test_highlight_block_uses_theme_style(self):
+    def test_no_builtin_highlight_fallback(self):
+        """主题写了 highlight 样式也不再被 :::highlight 套用。"""
         html = self._render(":::highlight\n先确定风格模板，再开始写作。\n:::")
-        self.assertIn("background:#EDF3F9", html)
+        self.assertNotIn("background:#EDF3F9", html)
+
+    def test_content_is_not_swallowed(self):
+        """认不出的组件按原文输出——宁可漏出 ::: 也不能吞掉正文。"""
+        html = self._render(":::highlight\n先确定风格模板，再开始写作。\n:::")
         self.assertIn("先确定风格模板", html)
-        self.assertNotIn(":::", html)
 
-    def test_note_is_an_alias(self):
-        self.assertIn("background:#EDF3F9", self._render(":::note\n注意事项\n:::"))
+    def test_note_alias_is_gone_too(self):
+        self.assertNotIn("background:#EDF3F9", self._render(":::note\n注意事项\n:::"))
 
-    def test_inline_format_applies_inside(self):
-        html = self._render(":::highlight\n这里有**重点**\n:::")
-        self.assertIn("font-weight:800", html)
-
-    def test_multi_paragraph_gets_real_spacing(self):
-        html = self._render(":::highlight\n第一段\n\n第二段\n:::")
-        self.assertIn("margin:0 0 0.8em", html)
-
-    def test_falls_back_to_blockquote_when_theme_lacks_highlight(self):
-        html = self._render(":::highlight\n内容\n:::",
-                            styles={"blockquote": "border-left:3px solid #DDD;", "p": ""})
-        self.assertIn("border-left:3px solid #DDD", html)
-
-    def test_real_component_file_wins_over_the_builtin_fallback(self):
-        """骨架想给提示框做结构时，放一个同名组件文件就能覆盖这条兜底。"""
+    def test_a_component_file_still_works(self):
+        """真要提示框：放一个 highlight.yaml 组件文件，走通用组件路径。"""
         comps = dict(_load_comps())
         comps["highlight"] = {"name": "highlight", "body": "free",
                               "template": '<section style="border:2px solid red;">{content}</section>'}
