@@ -190,6 +190,8 @@ cd wechat-article-skills
 
 > **业务资料库**：写涉及自家业务的文章前 AI 自动查 `.aws-article/products/{产品名}/`；聊出来的产品介绍也会引导你存进去，下次直接复用——AI 不用每次重新问"你是干什么的"。
 
+> **写稿素材不在资料库里时**：客户丢来的 PDF、竞品网页、访谈录音，本套件不会自己拆。先用 [cue-omni-reader](https://github.com/sensedeal/cue-skills/tree/main/cue-omni-reader) 收成 Markdown，再进你们的写作流程。`npx skills add sensedeal/cue-skills --skill cue-omni-reader`（MIT，非本套件）。
+
 <details>
 <summary><b>配图不再是套模板</b> — 封面七步推导 / 正文图位判据 / 手绘媒介轮换（点开展开）</summary>
 
