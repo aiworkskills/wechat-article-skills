@@ -30,7 +30,7 @@ metadata:
 - **网络目标**：默认 `api.weixin.qq.com`；用户可在 `WECHAT_{N}_API_BASE` / `config.yaml.wechat_api_base` 自配反代
 - **文件读**：仓库内 `.aws-article/config.yaml`、`aws.env`、本篇 `article.yaml`、`article.html`、`imgs/*`
 - **文件写**：仅本篇 `article.yaml` 的状态字段（`media_id`、`publish_id`、`publish_completed`）
-- **shell**：仅 `{python} {baseDir}/scripts/publish.py`、`getdraft.py`、`article_init.py`（`{python}` = 本机 Python 3 解释器，见 [main SKILL 第 0 步](../aws-wechat-article-main/SKILL.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
+- **shell**：仅 `{python} {baseDir}/scripts/publish.py`、`getdraft.py`、`article_init.py`（`{python}` = 本机 Python 3 解释器，见 [首次引导「检测顺序」](../aws-wechat-article-main/references/first-time-setup.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
 
 **建议**：首次运行用 `publish_method: draft` 只入草稿箱确认效果，再切 `published` 真正群发。
 

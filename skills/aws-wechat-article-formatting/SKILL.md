@@ -26,7 +26,7 @@ metadata:
 - **文件读（仓库内）**：`.aws-article/config.yaml`、本篇 `article.yaml`、`article.md`、可选 `closing.md`、`.aws-article/presets/formatting/<名>.yaml`
 - **文件读（仓库外）**：`format.py` 还会检查用户家目录 `~/.aws-article/presets/formatting/`（跨项目共享的自定义排版主题；**只读预设文件，不读凭证**）。不需要这个能力可清空 / 不创建该目录
 - **文件写**：本篇 `article.html`
-- **shell**：仅 `{python} {baseDir}/scripts/format.py`（`{python}` = 本机 Python 3 解释器，见 [main SKILL 第 0 步](../aws-wechat-article-main/SKILL.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
+- **shell**：仅 `{python} {baseDir}/scripts/format.py`（`{python}` = 本机 Python 3 解释器，见 [首次引导「检测顺序」](../aws-wechat-article-main/references/first-time-setup.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
 
 ## 配套 skill（informational）
 

@@ -30,7 +30,7 @@ metadata:
 - **内容外发**：图片 prompt 发给图像 API；图片文件（PNG/WEBP）发给微信 `material/add_material` / `draft/add`
 - **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`imgs/prompts/*.md`
 - **文件写**：本篇 `imgs/*.{png,webp}`、`imgs/outline.md`、`article.yaml` 状态字段
-- **shell**：`{python} {baseDir}/../aws-wechat-article-images/scripts/image_create.py`；可选 `{python} {baseDir}/../aws-wechat-article-publish/scripts/publish.py`（`{python}` = 本机 Python 3 解释器，见 [main SKILL 第 0 步](../aws-wechat-article-main/SKILL.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
+- **shell**：`{python} {baseDir}/../aws-wechat-article-images/scripts/image_create.py`；可选 `{python} {baseDir}/../aws-wechat-article-publish/scripts/publish.py`（`{python}` = 本机 Python 3 解释器，见 [首次引导「检测顺序」](../aws-wechat-article-main/references/first-time-setup.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
 
 ## 配套 skill（informational）
 

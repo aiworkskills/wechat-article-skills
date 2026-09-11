@@ -25,7 +25,7 @@ metadata:
 - **网络**：Agent 可能使用 `web_search` / `web_fetch`（Claude Code 内置能力，非本 skill 脚本层发起）
 - **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`.aws-article/products/{产品名}/*.md`（业务介绍 .md，直接挂在产品根；选题涉及用户业务时必读）
 - **文件写**：本篇目录下 `topic-card.md`、`research.md`；更新本篇 `article.yaml`
-- **shell**：可能调用同仓库的 `{python} {baseDir}/../aws-wechat-article-publish/scripts/article_init.py`（`{python}` = 本机 Python 3 解释器，见 [main SKILL 第 0 步](../aws-wechat-article-main/SKILL.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
+- **shell**：可能调用同仓库的 `{python} {baseDir}/../aws-wechat-article-publish/scripts/article_init.py`（`{python}` = 本机 Python 3 解释器，见 [首次引导「检测顺序」](../aws-wechat-article-main/references/first-time-setup.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
 
 ## 配套 skill（informational）
 

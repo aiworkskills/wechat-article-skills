@@ -26,7 +26,7 @@ metadata:
 - **文件读**：用户指定的本地图片路径或 `.aws` 文件（脚本边界）；AI 在引导业务介绍入库时会先 `ls .aws-article/products/` 看已有产品名
 - **文件写**：仓库内 `.aws-article/products/{产品名}/*.md`（业务介绍，AI 用 Write 工具直接落库）、`.aws-article/products/{产品名}/images/*`（图片 + 同名 `.md`，由脚本写）、`.aws-article/presets/<子目录>/*`（预设文件）、`.aws-article/downloads/*.aws`（下载缓存）、`.aws-article/tmp/*`（解压临时目录）；导入 `.aws` 时**仓库根 `aws.env`** 会按映射表增量写入密钥字段（覆盖现有键前自动备份为 `aws.env.bak.{ts}`，stderr 仅打印键名不打印值）
 - **归档**：解压 `.aws` 扩展名的 ZIP 到 `.aws-article/tmp/`，按白名单子目录合并到 `.aws-article/presets/`。**已内置 ZIP slip 防御**：逐项校验 ZIP 成员路径，拒绝含绝对路径、`..` 段或解析后指向解压目录外的路径，任一违反立即退出不写入任何文件
-- **shell**：仅 `{python} {baseDir}/scripts/product_image_ingest.py`、`import_presets_aws.py`（`{python}` = 本机 Python 3 解释器，见 [main SKILL 第 0 步](../aws-wechat-article-main/SKILL.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
+- **shell**：仅 `{python} {baseDir}/scripts/product_image_ingest.py`、`import_presets_aws.py`（`{python}` = 本机 Python 3 解释器，见 [首次引导「检测顺序」](../aws-wechat-article-main/references/first-time-setup.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
 
 所有写入限制在仓库根下的 `.aws-article/` 内。
 
