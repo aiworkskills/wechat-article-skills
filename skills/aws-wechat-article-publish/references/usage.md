@@ -2,7 +2,8 @@
 
 脚本路径：**`skills/aws-wechat-article-publish/scripts/publish.py`**（在**仓库根**执行）。
 
-- **微信凭证**来自仓库根 **`aws.env`**：`NUMBER_ACCOUNTS`、`WECHAT_1_NAME`、`WECHAT_1_APPID`、`WECHAT_1_APPSECRET`、`WECHAT_1_API_BASE`（1..N 槽位）。`WECHAT_N_API_BASE` 可空（空则官方 `https://api.weixin.qq.com`）。
+- **微信凭证**来自仓库根 **`aws.env`**，每个槽位只有三个键：`WECHAT_{N}_APPID`、`WECHAT_{N}_APPSECRET`、可选 `WECHAT_{N}_API_BASE`（空则用官方 `https://api.weixin.qq.com`）。
+- **槽位的数量与展示名在 `config.yaml`**：`wechat_accounts`、`wechat_{i}_name`。`aws.env` 里**没有** `NUMBER_ACCOUNTS` 或 `WECHAT_N_NAME` 这类键，写了也不会被读。
 - **`publish_method`** 在 **`config.yaml`**：**`draft`**（默认）= **`full`** 只进**草稿箱**；**`published`** = 再**提交发布**；**`none`** = **`full`** **不调接口**（用户不填微信）。**`full --publish`** 可在 **`draft`** 下单次强制发布（**`none`** 下仍跳过）。
 
 ## `publish_method` 检查

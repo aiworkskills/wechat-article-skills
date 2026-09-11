@@ -22,130 +22,89 @@ metadata:
 
 ## 能力披露（Capabilities）
 
-本 skill 调 `publish.py` **直连微信公众号官方 API** 发布图文。**会把本篇 `article.html` 与 `imgs/*` 文件作为 POST body 上传到微信服务器。** 具体行为：
+本 skill 调 `publish.py` **直连微信公众号官方 API** 发布图文。**会把本篇 `article.html` 与 `imgs/*` 文件作为 POST body 上传到微信服务器。**
 
-- **凭证读取**：`aws.env` 的 `WECHAT_{N}_APPID` / `WECHAT_{N}_APPSECRET`（多槽位支持 N≥1）
-- **凭证外发**：`APPID` / `APPSECRET` 以 query string 形式发给 `api.weixin.qq.com/cgi-bin/token` 换 `access_token`；后续请求带 `access_token` query string。微信返回的 `access_token` 在进程内存短期缓存，**不落盘**
-- **内容外发**：本篇封面、正文插图以 multipart upload 发给 `material/add_material`；`article.html` 正文与标题/摘要以 JSON POST 发给 `draft/add`、`freepublish/submit`
-- **网络目标**：默认 `api.weixin.qq.com`；用户可在 `WECHAT_{N}_API_BASE` / `config.yaml.wechat_api_base` 自配反代
-- **文件读**：仓库内 `.aws-article/config.yaml`、`aws.env`、本篇 `article.yaml`、`article.html`、`imgs/*`
-- **文件写**：仅本篇 `article.yaml` 的状态字段（`media_id`、`publish_id`、`publish_completed`）
-- **shell**：仅 `{python} {baseDir}/scripts/publish.py`、`getdraft.py`、`article_init.py`（`{python}` = 本机 Python 3 解释器，见 [首次引导「检测顺序」](../aws-wechat-article-main/references/first-time-setup.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
+- **凭证读取**：`aws.env` 的 `WECHAT_{N}_APPID` / `WECHAT_{N}_APPSECRET`（多槽位，N≥1）
+- **凭证外发**：`APPID` / `APPSECRET` 以 query string 发给 `api.weixin.qq.com/cgi-bin/token` 换 `access_token`；后续请求带 `access_token`。微信返回的 token 只在进程内存短期缓存，**不落盘**
+- **内容外发**：封面与正文插图以 multipart 发给 `material/add_material`；`article.html` 正文与标题/摘要以 JSON POST 发给 `draft/add`、`freepublish/submit`
+- **网络目标**：默认 `api.weixin.qq.com`；可用 `WECHAT_{N}_API_BASE` / `config.yaml.wechat_api_base` 自配反代
+- **文件读**：`.aws-article/config.yaml`、`aws.env`、本篇 `article.yaml`、`article.html`、`imgs/*`
+- **文件写**：
+  - `publish.py` **不写 `article.yaml`**——`media_id` / `publish_id` / `publish_completed` 只打印，写回由智能体做（见下「`publish_completed` 门禁」）
+  - 图片超过微信大小限制时会在源图旁生成压缩缓存 `<原名>_compressed.jpg`（需 Pillow）。这个文件**不会被自动清理**，也不会被当作正文图上传
+  - `article_init.py` 写本篇 `article.yaml` 与可选 `closing.md`
+- **shell**：`{python} {baseDir}/scripts/` 下的 `publish.py`、`getdraft.py`、`article_init.py`
 
 **建议**：首次运行用 `publish_method: draft` 只入草稿箱确认效果，再切 `published` 真正群发。
 
-## 配套 skill（informational）
+## 路由
 
-本 skill 是 `aws-wechat-article-*` 一条龙公众号套件的**发布环节**（入口 `aws-wechat-article-main`）。工作流中的若干步骤会读取同级 `../aws-wechat-article-main/references/*.md` 等共享文档（首次引导、articlescreening schema、env/config 示例等）。
-
-- **套件完整装齐到同一 `skills/` 根目录**时，跨 skill 引用都能读到。
-- **单独安装本 skill** 时，跨 skill 引用的步骤会在读取阶段遇到 `file not found`；但 `publish.py`、`getdraft.py`、`article_init.py` 这几个脚本本身可独立运行（只要 `aws.env` 与 `.aws-article/config.yaml` 就绪）。
-
-完整 9 slug 清单见 [源码仓库](https://github.com/aiworkskills/wechat-article-skills)。
-
-通过微信公众号 API 将排版稿写入**草稿箱**或再**提交发布**（由 **`config.yaml`** 的 **`publish_method`** 与命令行 **`--publish`** 控制）。
+从选题到发出整条流程 → [aws-wechat-article-main](../aws-wechat-article-main/SKILL.md)。本 skill 单独触发适用于**已有 `article.html` 与封面**、只差最后一步上传的场景。
 
 ## 配置检查 ⛔
 
-任何操作执行前，**必须**按 **[首次引导](../aws-wechat-article-main/references/first-time-setup.md)** 执行其中的 **「检测顺序」**。检测通过后才能进行以下操作（或用户明确书面确认「本次不检查」）：
+任何操作前先按 **[首次引导 · 检测顺序](../aws-wechat-article-main/references/first-time-setup.md)** 执行，通过后才继续（或用户明确书面确认「本次不检查」）。单独安装本 skill 时的口径见 [branches.md「六」](references/branches.md)。
 
-## 脚本目录
+## 脚本与子命令
 
-**Agent 执行**：确定本 SKILL.md 所在目录为 `{baseDir}`。发布子命令在 **`{baseDir}/scripts/publish.py`**（项目根执行）。
+`{baseDir}` = 本 SKILL.md 所在目录，所有命令在**仓库根**执行。
 
 | 脚本 / 子命令 | 用途 |
 |--------|------|
-| **`article_init.py`** | 初始化或更新本篇 **`article.yaml`**（及可选 **`closing.md`**）。用于总览 **本篇准备**（建目录后）或 **发布前** 补全元数据。仓库根执行：`{python} {baseDir}/scripts/article_init.py <文章目录> [--title … --author … --digest …]` |
-| **`getdraft.py`** | 独立于 `publish.py`：用于正式文章查询（`published-list` / `published-fields` / `publish-get` / `article-get`，对应 `freepublish/*`），可用于 `embeds.related_articles.manual` 为空时自动补全推荐链接。注意：`freepublish/*` 需要公众号具备对应接口权限。仓库根：`{python} {baseDir}/scripts/getdraft.py published-fields` |
-| `check-screening` | 校验 **`config.yaml`** 的 **`publish_method`**（**`draft`** / **`published`** / **`none`**） |
-| `check-wechat-env` | 按 **`config.yaml` 槽位**检查 `aws.env` 的 `WECHAT_N_APPID` / `WECHAT_N_APPSECRET` 是否已填（**调用 `publish.py` 前建议跑**） |
+| **`article_init.py`** | 初始化或更新本篇 `article.yaml`（及可选 `closing.md`）。`{python} {baseDir}/scripts/article_init.py <文章目录> [--title … --author … --digest …]` |
+| **`getdraft.py`** | 查已群发文章（`published-list` / `published-fields` / `publish-get` / `article-get`），用于补齐往期推荐链接。见 [branches.md「五」](references/branches.md) |
+| `check-screening` | 校验 `config.yaml` 的 `publish_method` |
+| `check-wechat-env` | 按 `config.yaml` 槽位检查 `aws.env` 的 `WECHAT_N_APPID` / `APPSECRET` 是否已填 |
 | `check` | 环境检查：`aws.env`、各槽位、依赖、可选探测 token |
-| `accounts` | 列出 **`config.yaml`** 中各微信槽位名称，并标记 `aws.env` 凭证缺项 |
-| `full` / `token` / … | 调微信 API（需 **`aws.env`** 微信凭证） |
+| `accounts` | 列出 `config.yaml` 中各槽位名称，并标记 `aws.env` 缺项 |
+| `full` | 一键全流程（上传封面 → 上传正文图 → 建草稿 → 视配置提交发布） |
+| `token` / `upload-thumb` / `upload-content-image` / `create-draft` / `publish` / `status` | 分步操作，见 [usage.md](references/usage.md) |
 
-## 凭证与 `publish_method` ⛔
+## `publish_method`（以 `.aws-article/config.yaml` 为准）⛔
 
-### `publish_method`（以仓库 **`config.yaml`** 为准）
-
-| 值 | 含义 | 行为 |
+| 值 | 含义 | `full` 的行为 |
 |----|------|------|
-| **`draft`**（默认） | 只进公众号**草稿箱** | **`full`** 创建草稿后**不**调用 freepublish 提交发布。 |
-| **`published`** | 草稿 + **提交发布** | **`full`** 创建草稿后继续提交发布（异步）。**`full --publish`** 可**单次强制**带发布，即使当前为 **`draft`**。 |
-| **`none`** | 用户明确不填微信 | **`full`** **立即退出**，不调任何微信接口（**`--publish`** 也会被忽略）。其它子命令（`token` 等）仍要凭证。 |
+| **`draft`**（默认） | 只进**草稿箱** | 创建草稿后**不**调 freepublish |
+| **`published`** | 草稿 + **提交发布** | 创建草稿后继续提交发布（异步）。`full --publish` 可在 `draft` 下**单次强制**带发布 |
+| **`none`** | 用户明确不填微信 | **立即退出**，不调任何微信接口（`--publish` 也被忽略）。其它子命令仍要凭证 |
 
-### 多账号时如何选槽位
+## 多账号选槽位 ⛔
 
-1. 运行 **`{python} {baseDir}/scripts/publish.py accounts`**，从 **`config.yaml` 的 `wechat_accounts` + `wechat_N_name`** 向用户展示列表（例如：`您有2个账号：1."xiaoming"，2."xiaoz"`）必须询问用户选择哪个账号发布到草稿箱，然后根据用户选择发布到指定的账号。
-2. 在 **`config.yaml`** 写 **`wechat_publish_slot: <整数>`**，**或**命令行 **`--account <序号或名称>`**（**CLI 优先**，见 [articlescreening-schema.md](../aws-wechat-article-main/references/articlescreening-schema.md)）。
+1. 跑 `{python} {baseDir}/scripts/publish.py accounts`，把 `config.yaml` 的 `wechat_accounts` + `wechat_{i}_name` 列给用户（例如「您有 2 个账号：1. xiaoming，2. xiaoz」）。**必须请用户选一个**，不要替他挑。
+2. 选定后写 `config.yaml` 的 `wechat_publish_slot: <整数>`，**或**命令行 `--account <序号或名称>`（**CLI 优先**）。
 
-### 全局环境
+**槽位的数量与名称只来自 `config.yaml`**；`aws.env` 里只有凭证。字段说明见 [articlescreening-schema.md](../aws-wechat-article-main/references/articlescreening-schema.md)。
 
-在仓库根具备 **`aws.env`**（微信密钥）与 **`config.yaml`**（微信槽位数量与名称）。写作/生图见 **`validate_env.py`**（微信未齐仍可先做内容）。**`publish_method: none`** 时 **`full`** 会跳过；**`draft`/`published`** 发布前建议 **`check-wechat-env`**。API 端点优先取 **`WECHAT_N_API_BASE`**，若槽位未配则回退 **`config.yaml.wechat_api_base`**（两者都空时使用官方）。
+## `publish_completed` 门禁 ⛔
 
-### 作者名回退
+字段在**本篇 `article.yaml`**。**`publish.py` 不读、不改**，由智能体维护：`false` = 发布流程未闭环，`true` = 已视为发布完成。
 
-`full` / `create-draft` 若 **`article.yaml` 无 author**，回退 **`config.yaml`** 的 **`default_author`**。
-
-### `publish_completed`（本篇是否已发布完成）
-
-- 字段在**本篇** **`article.yaml`**。**`publish.py` 不读、不改**；由智能体维护。
-- **`false`**：发布流程未闭环。
-- **`true`**：已视为发布完成（草稿已确认 / 或 **`published`** 流程成功且运营确认）。
-
-**本篇发布真正结束后**：将 **`publish_completed: true`** 写回 **`article.yaml`**。
-
-**写回 `true` 的前置门禁（缺啥补啥）**：
+**写回 `true` 之前，四项缺一不可：**
 
 1. `article.html` 存在；
-2. 文章目录存在封面图 `cover.(png/jpg/jpeg/webp)`；
-
-   **封面裁剪框**：微信只收一张封面，但 `draft/add` 可附带两个裁剪框，分别决定 **2.35:1**（订阅号信息流首图）与 **1:1**（分享卡片、公众号主页、历史列表）怎么裁；不传时微信自行居中裁切。`publish.py` 会按封面实际尺寸自动算出两个框并随草稿提交（需 Pillow；未安装则跳过，交给微信默认行为）。
-   
-   设计取向是 **2.35:1 优先**——信息流那一眼决定点不点，1:1 作降级视图。所以封面按 2.35:1 构图即可，不必为迁就方形而牺牲主视图。
-   
-   需要手动指定时，在本篇 `article.yaml` 写 **`pic_crop_235_1`** / **`pic_crop_1_1`**（`X1_Y1_X2_Y2` 归一化 0~1），脚本不再覆盖。注意裁出区域的宽高比须与目标比例一致，否则接口返回 **53402**「封面裁剪失败」。
-3. `article.md` 与 `article.html` 中均不含 `placeholder`；
+2. 文章目录下存在封面 `cover.(png|jpg|jpeg|webp)`（**不在 `imgs/` 里**）；
+3. `article.md` 与 `article.html` 中均**不含 `placeholder`**；
 4. 发布命令成功并拿到回执（`media_id` 或 `publish_id`）。
 
-任一不满足：只可标记为“已提交草稿，未闭环”，**不得**写回 `publish_completed: true`。
+任一不满足：只可标记为「已提交草稿，未闭环」，**不得**写回 `publish_completed: true`。
 
-## 用户仅说「发布」且未明确路径时 ⛔
-
-在用户**未给出** `drafts/…` 路径、仅说「发布文章」「帮我发一下」等时：
-
-1. **确定本篇目录**：列出仓库下 **`drafts/`** 中子目录；若**多篇**，请用户**指定一篇**或选「最新修改」的一篇再读该目录 **`article.yaml`**。**勿**在未确认目录时假定路径。
-2. 读取该目录 **`article.yaml`** 中的 **`publish_completed`**（YAML 布尔：`true` / `false`；**缺省按 `false` 处理**）。
-
-| `publish_completed` | 智能体对用户说明（可略作口语化，勿改含义） |
-|---------------------|---------------------------------------------|
-| **`true`** | 告知：**项目里本篇文档已按记录成功发布**；问：**您是否需要编写新文章？** 若需要 → 转交 [main](../aws-wechat-article-main/SKILL.md) / [writing](../aws-wechat-article-writing/SKILL.md) 从本篇准备或选题起走。 |
-| **`false`** 或缺省 | 读取 **`article.yaml`** 的 **`title`**（若无则用目录名简述），说明：**《{title}》尚未执行完成（发布流程未闭环）**；问：**是否需要继续并完成发布？** 或 **编写新文章？** 若继续本篇 → 再核对 **`config.yaml`** 的 **`publish_method`**、**`check-screening`**、**`check-wechat-env`** 等。 |
+封面裁剪框（2.35:1 / 1:1）的细则见 [branches.md「三」](references/branches.md)。
 
 ## 工作流
 
 ```
 发布进度：
-- [ ] 前置：配置检查（见本节「配置检查」）⛔
-- [ ] 第0步：若用户未给路径 → 选本篇目录 → 读 publish_completed → 按上表分流（true/false）
-- [ ] 第1步：读 **`config.yaml`** → **`draft` / `published`**（及是否 **`full --publish`**）
-- [ ] 第2步：读取 **`config.yaml`** 的 `wechat_accounts` + `wechat_N_name` 向用户展示账号列表并询问目标槽位；随后跑 **`check-wechat-env`** 校验 `aws.env` 凭证 → **`wechat_publish_slot` 或 `--account`**
-- [ ] 第3步：发布前检查（checklist + **`check-screening`** + **`check`**）
-- [ ] 第4步：准备文章目录
-- [ ] 第5步：**`full`**（仅草稿或含发布，视上步）
-- [ ] 第6步：确认结果与用户说明
-- [ ] 第7步：成功后写回 **`article.yaml`** 的 **`publish_completed: true`**；按需归档
+- [ ] 第0步：⛔ 配置检查；用户未给路径 → 先定目录并读 publish_completed 分流
+- [ ] 第1步：读 config.yaml 的 publish_method（及是否 full --publish）
+- [ ] 第2步：accounts 列账号 → ⛔ 请用户选槽位 → check-wechat-env 校验凭证
+- [ ] 第3步：发布前检查（pre-publish-checklist + check-screening + check）
+- [ ] 第4步：确认本篇目录产物齐全（article.html、cover.*、无 placeholder）
+- [ ] 第5步：full（仅草稿或含发布，视第 1 步）
+- [ ] 第6步：确认回执并向用户说明
+- [ ] 第7步：⛔ 四项门禁全过 → 写回 publish_completed: true
 ```
 
-## 交互顺序（最小提问）
-
-0) **未给路径时**：先按上文 **「用户仅说发布」** 处理 **`publish_completed`**；用户选 **继续本篇** 后再做下列步骤。  
-1) **先看 `config.yaml` 的 `publish_method`**：**`draft`** = 默认只进草稿箱；**`published`** 或 **`full --publish`** = 再提交发布。  
-2) **多槽位**：展示账号列表（来源：`config.yaml` 的 `wechat_accounts` + `wechat_N_name`），**必须请用户选槽位** → **`wechat_publish_slot`** 或 **`--account`**。  
-3) 缺微信字段：运行 **`check-wechat-env`**，补全 **`aws.env`** 后再发。  
-4) **发布失败**（由脚本 stderr / 微信 errcode 判断）：  
-   - **网络类**（超时、连接失败、5xx）：脚本已对单次请求 **自动重试 1 次**；仍失败 → 告知「网络不可用，请稍后重试或检查代理」。  
-   - **凭证/配置类**（如 token 失败带 errcode、缺字段）→ 提示 **第几槽位**、检查 **APPID/SECRET、IP 白名单**，用户改正后再执行 **`full`** / **`publish`**。
-5) **中间产物缺失**（封面缺失 / 存在 `placeholder`）：先补产物再发；若用户坚持先发草稿，必须明确告知“正文配图未完成”，且保持 `publish_completed: false`。
+第 0 步的分流表见 [branches.md「一」](references/branches.md)；第 3 步清单见 [references/pre-publish-checklist.md](references/pre-publish-checklist.md)；第 5/6 步失败时的四类处理见 [branches.md「二」](references/branches.md)。
 
 ## 命令示例（仓库根）
 
@@ -158,10 +117,16 @@ metadata:
 {python} {baseDir}/scripts/getdraft.py published-fields
 ```
 
-详见 [references/usage.md](references/usage.md)、[references/submit-guide.md](references/submit-guide.md)、[references/api-reference.md](references/api-reference.md)。
+注意 `--account` 是**全局选项，放在子命令之前**。
+
+## 分支与异常
+
+未给路径的分流、发布失败四分类、封面裁剪框、几处回退、往期链接补齐、单独安装 → [references/branches.md](references/branches.md)。
+
+更多用法：[usage.md](references/usage.md)、[submit-guide.md](references/submit-guide.md)、[api-reference.md](references/api-reference.md)。
 
 ## 过程文件
 
 | 读取 | 产出 |
 |------|------|
-| `article.html`、`imgs/`、**`article.yaml`**（含 **`publish_completed`** 等）、**`.aws-article/config.yaml`**、**`aws.env`**（微信槽位） | 发布到公众号草稿或提交发布；**成功后**由智能体将 **`publish_completed: true`** 写回 **`article.yaml`**（`publish.py` 不改此键） |
+| `article.html`、`cover.*`、`imgs/`、本篇 `article.yaml`、`.aws-article/config.yaml`、`aws.env` | 公众号草稿或已提交发布；**成功后**由智能体把 `publish_completed: true` 写回 `article.yaml`（`publish.py` 不改此键） |
