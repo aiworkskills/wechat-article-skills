@@ -19,7 +19,7 @@
 
 无信息量的氛围图会稀释信息密度，让读者划得更快、退出更早——排版的目的是降低阅读成本，不是填满页面。
 
-标记的数量由 writing 阶段按 config `image_density` 决定。**这张表与 `write.py` 的 `_DENSITY_RULES`、[writing SKILL 第 4 条](../../aws-wechat-article-writing/SKILL.md) 是同一套定义，措辞须一致：**
+标记的数量由 writing 阶段按 config `image_density` 决定。**这张表与 `write.py` 的 `_DENSITY_RULES`、[writing SKILL 第 6 步「配图占位」](../../aws-wechat-article-writing/SKILL.md) 是同一套定义，措辞须一致：**
 
 | `image_density` | 就是说 |
 |---|---|
