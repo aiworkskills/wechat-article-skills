@@ -1227,6 +1227,18 @@ def main():
                 continue
             # 已经有一张合格的同名图时跳过。批量里任意一条失败就要重跑整个命令，
             # 没有这个开关的话，重跑会把已经生成好的图全部重新生成一遍——按张计费。
+            # 封面按约定落在**文章根目录**的 cover.*（见 SKILL「封面 vs 正文」），
+            # 而 batch 的输出目录是 imgs/。于是 --skip-existing 在 imgs/ 里找不到
+            # 00-cover.*，把封面又生成一遍——实测多花一次钱，旧文章里那对
+            # cover.jpg + imgs/01-cover.jpg 就是这么来的。这里额外看一眼上一级。
+            if args.skip_existing and _is_cover(pf.stem):
+                done = next((p for p in output_dir.parent.glob("cover.*")
+                             if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp")
+                             and not _cover_problems(p.read_bytes(), True)), None)
+                if done:
+                    _info(f"[{i}/{len(prompt_files)}] {pf.name} 封面已存在于 {done}，跳过")
+                    skipped += 1
+                    continue
             if args.skip_existing:
                 done = next((p for p in output_dir.glob(pf.stem + ".*")
                              if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp", ".gif")

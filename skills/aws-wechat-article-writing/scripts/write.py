@@ -53,12 +53,15 @@ def _err(msg: str):
     sys.exit(1)
 
 
+# 诊断信息一律走 stderr。stdout 是**数据通道**：`prompt` 往它输出 JSON、
+# `strip-citations` 往它输出正文。把 [INFO] 混进去，`write.py prompt … > x.json`
+# 拿到的就不是合法 JSON——实测踩到，文件头两行是 [INFO] 然后才是 `{`。
 def _ok(msg: str):
-    print(f"[OK] {msg}")
+    print(f"[OK] {msg}", file=sys.stderr)
 
 
 def _info(msg: str):
-    print(f"[INFO] {msg}")
+    print(f"[INFO] {msg}", file=sys.stderr)
 
 
 def _coerce_single_preset(field_label: str, raw) -> str:
@@ -958,12 +961,16 @@ def check_output(text: str) -> tuple[list[str], list[str], str]:
                     f"单独读看不出想说什么，读者得回原句才懂："
                     + "、".join(f"「{b}」" for b in bare[:3]))
 
+    # 覆盖率要相对**加粗预算**算，不是相对数字总数。实测一篇数据稿：14 段正文的加粗
+    # 预算约 7 处，而正文有 16 个带单位的数字——按「覆盖过半」要求就得加粗 9 个数字，
+    # 预算全给了数字，一句判断都放不下。两条规则在数字密集的文章里直接互斥。
+    # 改判「加粗里有没有数字的份额」：数字是最有效的落点，但不必、也不可能个个都加。
     nums_in_text = len(re.findall(r"\d+(?:\.\d+)?\s*(?:%|倍|美元|分|万|亿|个百分点)",
                                   "\n".join(body)))
     nums_bolded = len([b for b in bolds if re.search(r"\d", b)])
-    if nums_in_text and nums_bolded * 2 < nums_in_text:
-        warn.append(f"正文有 {nums_in_text} 个关键数字，只有 {nums_bolded} 个被加粗 —— "
-                    f"数字是最有效的落点")
+    if nums_in_text >= 3 and bolds and nums_bolded * 3 < len(bolds):
+        warn.append(f"正文有 {nums_in_text} 个关键数字，而 {len(bolds)} 处加粗里只有 "
+                    f"{nums_bolded} 处带数字 —— 数字是读者扫读时最先停下的地方")
 
     if bolds:
         heads = sum(1 for l in body for m in re.finditer(r"\*\*[^*\n]+\*\*", l)
