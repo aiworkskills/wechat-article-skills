@@ -90,8 +90,9 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
         """加粗是正文里唯一的扫读落点，且是「重点色 / 荧光底」这些主题样式的唯一入口。
         没有密度要求，模型只在列表标签里加粗，整篇正文一片平。"""
         sp = self._prompt()
-        self.assertIn("每 2-3 段至少有一处", sp, "加粗密度配额没了")
+        self.assertIn("每 2-3 段一处", sp, "加粗密度配额没了")
         self.assertIn("最多两处", sp, "缺上限，会变成整篇乱加粗")
+        self.assertIn("每个 `##` 小节至少贡献一处", sp, "缺覆盖要求，会集中在前半篇")
 
     def test_emphasis_rule_says_what_to_bold_not_only_how_often(self):
         """密度达标 ≠ 有重点。
@@ -101,10 +102,10 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
         把整句复述一遍再加粗，读者扫到它等于把这段又读一次。
         """
         sp = self._prompt()
-        self.assertIn("5-8 个字最好", sp, "给上限不给目标区间，模型会贴着下限写裸名词")
-        self.assertIn("独立成立", sp, "光有长度约束会退化成裸数字或裸名词")
-        self.assertIn("裸名词不合格", sp, "不点名这个失败形态，收紧长度就会滑到另一个极端")
-        self.assertIn("禁止**加粗对整句的概括", sp, "不禁掉复述，密度再高也没有落点")
+        self.assertIn("加粗是划重点", sp, "先说清用途，规则才有依据")
+        self.assertIn("能独立看懂", sp, "光有长度约束会退化成裸数字或裸名词")
+        self.assertIn("词云", sp, "不点名这个失败形态，收紧长度就会滑到另一个极端")
+        self.assertIn("不要**加粗整句的概括", sp, "不禁掉复述，密度再高也没有落点")
 
     def test_emphasis_states_the_skim_test(self):
         """加粗的用途是让读者从密密麻麻的正文里一眼抓住关键信息。
@@ -113,8 +114,8 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
         `write.py check` 会把这一串打印出来交给人判断。
         """
         sp = self._prompt()
-        self.assertIn("连起来读", sp)
-        self.assertIn("提要", sp)
+        self.assertIn("连读", sp)
+        self.assertIn("能独立看懂的缩写版", sp, "验收标准要是「读得完」，不是字数")
 
     def test_lead_must_differ_from_the_digest_field(self):
         """实测 7 篇导语与 article.yaml 的 digest 逐字相同——读者在列表页读一遍，
@@ -189,7 +190,7 @@ class MarkdownSpecIsSystemInvariantTest(unittest.TestCase):
     # 但提示词本身不会报错——所以逐条钉住，不能靠「改的时候记得别碰」。
     IMAGE_RULES = [
         "![类型名：画面内容](placeholder)",   # 占位格式
-        "封面、信息图、氛围、流程图、对比、实证",  # 类型名白名单
+        "封面**（放标题前，不进正文）",   # 类型名白名单收窄为四个，各自有下游含义
         "配图密度：",
         "不能写成 []()",                     # 少一个 ! 会被排版成链接
         "每个配图标记独占一行",

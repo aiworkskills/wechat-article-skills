@@ -121,9 +121,11 @@ class CaptionStyleTest(unittest.TestCase):
         # 两者用途完全不同，不能互相兼任（见 test_caption_only_from_explicit_title）。
         return (
             "正文一段。\n\n"
-            '![流程步骤：白板上四个手写方框](imgs/a.png "怎么定媒介")\n\n'
-            '![概念隐喻：马克笔笔尖是打印喷头](imgs/b.png "完美就是破绽")\n\n'
-            '![对比两栏：左右两栏并排](imgs/c.png "改前 vs 改后")\n\n'
+            # alt 冒号前用的是**写作侧**的类型名（封面/实证/信息图/氛围），
+            # 那才是写手真会写出来的东西；配图阶段的形态名不出现在 markdown 里。
+            '![信息图：白板上四个手写方框](imgs/a.png "怎么定媒介")\n\n'
+            '![氛围：马克笔笔尖是打印喷头](imgs/b.png "完美就是破绽")\n\n'
+            '![实证：官方原帖截图](imgs/c.png "改前 vs 改后")\n\n'
             '![封面：不该进正文](imgs/cover.png "封面图注")\n\n'
             '![没有冒号的alt](imgs/d.png "无类型前缀")\n'
         )
@@ -438,9 +440,18 @@ class CaptionGateTest(unittest.TestCase):
         self.assertNotIn("图 1：说明", html)
 
     def test_key_only_filters_by_slot(self):
-        info = self._render('![数据图表：画面指令](x.png "图 1：说明")', fmt.CAPTION_KEY_ONLY)
+        """判据必须认**写手写在 alt 里的类型名**，不是配图阶段的形态名。
+
+        此前 INFO_SLOT_FORMS 装的是 {数据图表, 流程步骤, …}——那是 image-styles/ 的
+        形态，而 alt 冒号前永远是写作侧白名单（封面/实证/信息图/氛围）里的词。两套零
+        交集，于是「关键图有」对每张图都判 False，这个选项等于「从不出图注」且不报错。
+        本用例改用写手真会写出来的 alt，正是为了钉住这一点。
+        """
+        info = self._render('![信息图：画面指令](x.png "图 1：说明")', fmt.CAPTION_KEY_ONLY)
         self.assertIn("图 1：说明", info)
-        rhythm = self._render('![概念隐喻：画面指令](x.png "图 1：说明")', fmt.CAPTION_KEY_ONLY)
+        evidence = self._render('![实证：官方原帖](x.png "图 2：说明")', fmt.CAPTION_KEY_ONLY)
+        self.assertIn("图 2：说明", evidence)
+        rhythm = self._render('![氛围：画面指令](x.png "图 1：说明")', fmt.CAPTION_KEY_ONLY)
         self.assertNotIn("图 1：说明", rhythm)
 
     def test_key_only_drops_unknown_slot(self):
