@@ -263,52 +263,30 @@ class MinSizeRetryTest(unittest.TestCase):
 
 @unittest.skipIf(Image is None, "Pillow 未安装")
 class CoverChecksTest(unittest.TestCase):
-    """出图后的纯代码检查：标题区干净度与近单色。"""
+    """出图后的纯代码检查只剩两项：分辨率与近单色。
 
-    def _img(self, w, h, busy_right=False):
-        from PIL import ImageDraw
-        # 平滑渐变：有足够方差不被判单色，又没有逐像素噪声那种假边缘（真实留白区是平滑的）
-        im = Image.linear_gradient("L").resize((w, h)).convert("RGB")
-        if busy_right:
-            d = ImageDraw.Draw(im)
-            for i in range(0, w // 2, 6):  # 右半密集竖线，模拟主体画进标题区
-                d.line([(w // 2 + i, 0), (w // 2 + i, h)], fill=(0, 0, 0), width=2)
-        buf = io.BytesIO(); im.save(buf, "PNG"); return buf.getvalue()
-
-    def test_clean_zone_passes(self):
-        self.assertEqual(ic._cover_problems(self._img(1400, 600), ic.DEFAULT_TITLE_ZONE), [])
-
-    def test_busy_zone_flagged(self):
-        probs = ic._cover_problems(self._img(1400, 600, busy_right=True), ic.DEFAULT_TITLE_ZONE)
-        self.assertTrue(any("标题区不干净" in p for p in probs), probs)
+    「标题区干净度」那一项已随标题合成一起删除——它是为「先出底图、再用 Pillow 往
+    留白区贴中文标题」那条路存在的，而那条路的前提（模型画不好中文）已经不成立。
+    """
 
     def test_monochrome_flagged(self):
         buf = io.BytesIO(); Image.new("RGB", (1400, 600), (10, 10, 10)).save(buf, "PNG")
-        probs = ic._cover_problems(buf.getvalue(), None)
+        probs = ic._cover_problems(buf.getvalue())
         self.assertTrue(any("近单色" in p for p in probs), probs)
 
-    def test_no_zone_skips_zone_check(self):
-        self.assertEqual(ic._cover_problems(self._img(1400, 600, busy_right=True), None), [])
+    def test_normal_image_passes(self):
+        im = Image.linear_gradient("L").resize((1400, 600)).convert("RGB")
+        buf = io.BytesIO(); im.save(buf, "PNG")
+        self.assertEqual(ic._cover_problems(buf.getvalue()), [])
+
+    def test_title_compositing_is_gone(self):
+        """中文出错那条线上的东西不该再留在代码里。"""
+        for gone in ("_compose_title", "_split_title", "_find_cjk_font",
+                     "_zone_edge_density", "_parse_zone", "_resolve_title",
+                     "ZONE_BUSY_THRESHOLD", "DEFAULT_TITLE_ZONE"):
+            self.assertFalse(hasattr(ic, gone), f"{gone} 还在")
 
 
-class TitleHelpersTest(unittest.TestCase):
-    def test_parse_zone(self):
-        self.assertEqual(ic._parse_zone("0.55,0.30,0.92,0.70"), (0.55, 0.30, 0.92, 0.70))
-        self.assertEqual(ic._parse_zone([0.1, 0.2, 0.3, 0.4]), (0.1, 0.2, 0.3, 0.4))
-        for bad in ("0.9,0,0.5,1", "0,0,1", "a,b,c,d", "0,0,1.5,1", None):
-            self.assertIsNone(ic._parse_zone(bad), bad)
-
-    def test_split_title(self):
-        self.assertEqual(ic._split_title("规矩一次填清楚"), ["规矩一次填清楚"])
-        self.assertEqual(ic._split_title("网页配置台：把公众号规矩一次填清楚"), ["网页配置台", "把公众号规矩一次填清楚"])
-        self.assertEqual(len(ic._split_title("一二三四五六七八九十")), 2)
-
-
-if __name__ == "__main__":
-    unittest.main()
-
-
-@unittest.skipIf(Image is None, "Pillow 未安装")
 class WriteIfNotWorseTest(unittest.TestCase):
     """重跑只能让结果变好，不该让它变坏。
 

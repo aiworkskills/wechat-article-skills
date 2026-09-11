@@ -2,7 +2,7 @@
 """
 图片生成工具
 
-调用 OpenAI 兼容的图片生成 API（DALL-E、Flux、SD 等）。
+调用 OpenAI 兼容的图片生成 API。
 
 图片模型（可选）：`image_model`（base_url / model / default_size / default_quality；provider 可选）须写在 **`.aws-article/config.yaml`**，
 **`IMAGE_MODEL_API_KEY`** 写在仓库根 **`aws.env`**，与 **`validate_env.py`** 一致。
@@ -293,37 +293,9 @@ CHECK_RETRIES = 0
 # 本次进程里真正调用生图 API 的次数。生成是按张计费的，跑完必须让人看见花了多少。
 _api_calls = 0
 
-# ── 封面标题区与出图检查 ────────────────────────────────
-# 标题区默认位置（归一化 x0,y0,x1,y1）：右侧 55%~92%、垂直 30%~70%，与预设库里
-# 绝大多数条目的「标题区」一致。prompt frontmatter 的 title_zone 可覆盖。
-DEFAULT_TITLE_ZONE = (0.55, 0.30, 0.92, 0.70)
-# 标题区边缘密度阈值（0~255）。按 12 张真实预览图标定：纯留白区中位数 4.9，
-# 带宣纸纹理 / 印刷颗粒的留白区 10~12，模型画进去的标题字约 15~16。
-# 只用于「合成标题前须留白」这条路径（frontmatter 写了 title:）；默认路径里
-# 标题由模型画在区内，不做此检查。
-ZONE_BUSY_THRESHOLD = 13.0
+# ── 出图检查 ────────────────────────────────────────
 # 整图灰度标准差低于此值视为近单色（空白/生成失败）。
 MONO_STDDEV_THRESHOLD = 8.0
-TITLE_MAX_LINES = 2
-
-_CJK_FONT_CANDIDATES: tuple[tuple[str, int], ...] = (
-    # macOS
-    ("/System/Library/Fonts/PingFang.ttc", 0),
-    ("/System/Library/Fonts/Hiragino Sans GB.ttc", 1),  # index 1 = W6 粗体
-    ("/System/Library/Fonts/STHeiti Medium.ttc", 0),
-    # Linux：apt install fonts-noto-cjk 或 fonts-wqy-microhei
-    ("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc", 0),
-    ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 0),
-    ("/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc", 0),
-    ("/usr/share/fonts/noto-cjk/NotoSansCJK-Bold.ttc", 0),
-    ("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", 0),
-    ("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 0),
-    ("/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf", 0),
-    # Windows
-    ("C:/Windows/Fonts/msyhbd.ttc", 0),
-    ("C:/Windows/Fonts/msyh.ttc", 0),
-    ("C:/Windows/Fonts/simhei.ttf", 0),
-)
 
 GEMINI_ASPECT_RATIOS = (
     "1:1", "1:4", "1:8", "2:3", "3:2", "3:4", "4:1",
@@ -942,156 +914,6 @@ def _image_long_edge(data: bytes) -> int | None:
     return max(im.size)
 
 
-def _parse_zone(value) -> tuple[float, float, float, float] | None:
-    """'x0,y0,x1,y1'（归一化 0~1）→ tuple；非法返回 None。也接受 4 元素列表。"""
-    if value is None:
-        return None
-    parts = value if isinstance(value, (list, tuple)) else str(value).replace("，", ",").split(",")
-    if len(parts) != 4:
-        return None
-    try:
-        x0, y0, x1, y1 = (float(v) for v in parts)
-    except (ValueError, TypeError):
-        return None
-    if not (0 <= x0 < x1 <= 1 and 0 <= y0 < y1 <= 1):
-        return None
-    return (x0, y0, x1, y1)
-
-
-def _find_cjk_font(explicit: str | None = None) -> tuple[str, int] | None:
-    """找一款可用的中文字体，返回 (路径, ttc index)；找不到返回 None。"""
-    if explicit:
-        if Path(explicit).is_file():
-            return (explicit, 0)
-        print(f"[WARN] 指定字体不存在: {explicit}，改为自动搜索", file=sys.stderr)
-    for path, idx in _CJK_FONT_CANDIDATES:
-        if Path(path).is_file():
-            return (path, idx)
-    return None
-
-
-_TITLE_BREAK_PUNCT = "：:，,、；;—|"
-
-
-def _split_title(title: str, max_lines: int = TITLE_MAX_LINES) -> list[str]:
-    """标题折行：≤8 字一行；更长优先在离中点最近的标点处折（标点丢弃），否则按字数对半。"""
-    t = title.strip()
-    if max_lines < 2 or len(t) <= 8:
-        return [t]
-    mid = len(t) // 2
-    best = None
-    for i, ch in enumerate(t):
-        if ch in _TITLE_BREAK_PUNCT and 2 <= i <= len(t) - 3:
-            if best is None or abs(i - mid) < abs(best - mid):
-                best = i
-    if best is not None:
-        return [t[:best].strip(), t[best + 1:].strip()]
-    return [t[:mid].strip(), t[mid:].strip()]
-
-
-def _compose_title(img_data: bytes, title: str, zone=None, font_path: str | None = None) -> bytes:
-    """把标题合成到标题区：自动字号、自动折行、按底色选深浅字色并加细描边。
-
-    模型渲染长中文标题不遵守画布边界（实测五种约束写法全部被裁，还出过「一」变「5」），
-    所以封面 prompt 里不写字，标题在这里精确排版。无 Pillow 或找不到中文字体时原样
-    返回并告警，不阻断流程。
-    """
-    zone = zone or DEFAULT_TITLE_ZONE
-    try:
-        from PIL import Image, ImageDraw, ImageFont, ImageStat
-    except ImportError:
-        print("[WARN] 未安装 Pillow，无法合成标题（pip install Pillow）", file=sys.stderr)
-        return img_data
-    font = _find_cjk_font(font_path)
-    if not font:
-        print("[WARN] 未找到中文字体，无法合成标题。macOS 自带 PingFang/Hiragino；"
-              "Linux 请 apt install fonts-noto-cjk；或用 --title-font 指定。", file=sys.stderr)
-        return img_data
-    fpath, fidx = font
-    try:
-        im = Image.open(io.BytesIO(img_data))
-    except Exception as e:  # noqa: BLE001
-        print(f"[WARN] 图片无法解析，跳过标题合成: {e}", file=sys.stderr)
-        return img_data
-    fmt = im.format or "PNG"
-    im = im.convert("RGB")
-    W, H = im.size
-    x0, y0, x1, y1 = int(W * zone[0]), int(H * zone[1]), int(W * zone[2]), int(H * zone[3])
-    zw, zh = x1 - x0, y1 - y0
-    if zw < 20 or zh < 20:
-        print("[WARN] 标题区过小，跳过合成", file=sys.stderr)
-        return img_data
-
-    def measure(lines, size):
-        f = ImageFont.truetype(fpath, size, index=fidx)
-        boxes = [f.getbbox(l) for l in lines]
-        widths = [b[2] - b[0] for b in boxes]
-        heights = [b[3] - b[1] for b in boxes]
-        gap = int(size * 0.25)
-        return f, boxes, widths, heights, gap, sum(heights) + gap * (len(lines) - 1)
-
-    def fit(lines):
-        lo, hi, best = 8, zh, 8
-        while lo <= hi:
-            mid = (lo + hi) // 2
-            _, _, widths, _, _, total_h = measure(lines, mid)
-            if max(widths) <= zw * 0.94 and total_h <= zh * 0.92:
-                best, lo = mid, mid + 1
-            else:
-                hi = mid - 1
-        return best
-
-    lines = [title.strip()]
-    size = fit(lines)
-    if len(lines[0]) > 8:
-        alt = _split_title(lines[0])
-        if len(alt) == 2:
-            alt_size = fit(alt)
-            if alt_size > size * 1.15:  # 折行明显更大才折
-                lines, size = alt, alt_size
-    if size < H * 0.045:
-        print(f"[WARN] 标题「{title}」在标题区只能排到 {size}px，建议缩到 12 字以内或加大标题区",
-              file=sys.stderr)
-
-    f, boxes, widths, heights, gap, total_h = measure(lines, size)
-    lum = ImageStat.Stat(im.crop((x0, y0, x1, y1)).convert("L")).mean[0]
-    light_text = lum < 140
-    fill = (255, 255, 255) if light_text else (30, 30, 30)
-    stroke = (0, 0, 0) if light_text else (255, 255, 255)
-    sw = max(1, size // 28)
-    draw = ImageDraw.Draw(im)
-    y = y0 + (zh - total_h) // 2
-    for line, box, w, h in zip(lines, boxes, widths, heights):
-        x = x0 + (zw - w) // 2 - box[0]
-        draw.text((x, y - box[1]), line, font=f, fill=fill, stroke_width=sw, stroke_fill=stroke)
-        y += h + gap
-    buf = io.BytesIO()
-    if fmt == "JPEG":
-        im.save(buf, format="JPEG", quality=92)
-    else:
-        im.save(buf, format="PNG")
-    _info(f"标题已合成：{' / '.join(lines)}（{size}px，{'浅字' if light_text else '深字'}）")
-    return buf.getvalue()
-
-
-def _zone_edge_density(img_data: bytes, zone=None) -> float | None:
-    """标题区边缘密度（0~255）。留白应接近 0；主体被画进来会明显升高。无 Pillow 返回 None。"""
-    zone = zone or DEFAULT_TITLE_ZONE
-    try:
-        from PIL import Image, ImageFilter, ImageStat
-    except ImportError:
-        return None
-    try:
-        im = Image.open(io.BytesIO(img_data)).convert("L")
-    except Exception:  # noqa: BLE001
-        return None
-    W, H = im.size
-    crop = im.crop((int(W * zone[0]), int(H * zone[1]), int(W * zone[2]), int(H * zone[3])))
-    if crop.size[0] < 4 or crop.size[1] < 4:
-        return None
-    return ImageStat.Stat(crop.filter(ImageFilter.FIND_EDGES)).mean[0]
-
-
 def _image_stddev(img_data: bytes) -> float | None:
     try:
         from PIL import Image, ImageStat
@@ -1119,7 +941,7 @@ def _is_cover(stem: str, meta: dict | None = None) -> bool:
     return "cover" in stem.lower() or "封面" in stem
 
 
-def _cover_problems(img_data: bytes, zone=None, check_resolution: bool = True) -> list[str]:
+def _cover_problems(img_data: bytes, check_resolution: bool = True) -> list[str]:
     """出图后的纯代码检查（不需要任何模型），返回问题列表，空即通过。
 
     `check_resolution=False` 用于正文插图：它只在 375pt 宽的正文里显示，分辨率
@@ -1132,14 +954,10 @@ def _cover_problems(img_data: bytes, zone=None, check_resolution: bool = True) -
     sd = _image_stddev(img_data)
     if sd is not None and sd < MONO_STDDEV_THRESHOLD:
         problems.append(f"整图近单色（灰度标准差 {sd:.1f}），疑似生成失败")
-    if zone:
-        d = _zone_edge_density(img_data, zone)
-        if d is not None and d > ZONE_BUSY_THRESHOLD:
-            problems.append(f"标题区不干净（边缘密度 {d:.1f} > {ZONE_BUSY_THRESHOLD}），主体可能画进了标题位")
     return problems
 
 
-def _generate_with_checks(label: str, gen, zone=None, check_resolution: bool = True,
+def _generate_with_checks(label: str, gen, check_resolution: bool = True,
                           retries: int | None = None) -> bytes:
     """生成并做纯代码检查；按 retries 决定要不要重跑，所有结果里取最好的一张。
 
@@ -1153,7 +971,7 @@ def _generate_with_checks(label: str, gen, zone=None, check_resolution: bool = T
     retries = CHECK_RETRIES if retries is None else retries
 
     def score(data):
-        probs = _cover_problems(data, zone, check_resolution)
+        probs = _cover_problems(data, check_resolution)
         return (-len(probs), _image_long_edge(data) or 0), probs
 
     best = gen()
@@ -1175,7 +993,7 @@ def _generate_with_checks(label: str, gen, zone=None, check_resolution: bool = T
     return best
 
 
-def _write_if_not_worse(out_path: Path, img_data: bytes, zone=None,
+def _write_if_not_worse(out_path: Path, img_data: bytes,
                         check_resolution: bool = True) -> bool:
     """写出图片；若新图不合格而磁盘上已有一张合格的同名图，则保留旧图。
 
@@ -1183,12 +1001,12 @@ def _write_if_not_worse(out_path: Path, img_data: bytes, zone=None,
     整篇文章后补跑两张，其中一张把上一轮已经合格的图覆盖成了 683px——重跑只能
     让结果变好，不该让它变坏。
     """
-    new_probs = _cover_problems(img_data, zone, check_resolution)
+    new_probs = _cover_problems(img_data, check_resolution)
     if new_probs:
         for old in out_path.parent.glob(out_path.stem + ".*"):
             if old.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
                 continue
-            if not _cover_problems(old.read_bytes(), zone, check_resolution):
+            if not _cover_problems(old.read_bytes(), check_resolution):
                 print(f"[WARN] {out_path.stem} 新图不合格（{'；'.join(new_probs)}），"
                       f"磁盘上的 {old.name} 是合格的，保留旧图未覆盖。", file=sys.stderr)
                 return False
@@ -1277,17 +1095,6 @@ def _read_prompt_file(path: Path) -> tuple[str, dict]:
     return text.strip(), {}
 
 
-def _resolve_title(meta: dict, cli_title, cli_zone) -> tuple[str | None, tuple | None]:
-    """标题与标题区：CLI 优先，其次 frontmatter 的 title / title_zone。zone 非法直接报错。"""
-    raw_title = cli_title if cli_title is not None else meta.get("title")
-    title = str(raw_title).strip() if raw_title not in (None, "") else None
-    raw_zone = cli_zone if cli_zone else meta.get("title_zone")
-    zone = _parse_zone(raw_zone) if raw_zone else None
-    if raw_zone and zone is None:
-        _err(f"title_zone 须为归一化坐标 'x0,y0,x1,y1'（0~1，如 0.55,0.30,0.92,0.70），当前: {raw_zone!r}")
-    return title, zone
-
-
 # ── CLI ──────────────────────────────────────────────────────
 
 def main():
@@ -1303,9 +1110,6 @@ def main():
     p_gen.add_argument("-o", "--output", help="输出路径（默认同名 .png）")
     p_gen.add_argument("--size", help="尺寸（如 1024x1024）或比例（如 16:9）")
     p_gen.add_argument("--quality", help="质量（standard/hd）")
-    p_gen.add_argument("--title", help="合成到封面的标题文案（覆盖 frontmatter 的 title）")
-    p_gen.add_argument("--title-zone", help="标题区归一化坐标 x0,y0,x1,y1（覆盖 frontmatter 的 title_zone）")
-    p_gen.add_argument("--title-font", help="中文字体文件路径（默认自动搜索系统字体）")
     p_gen.add_argument("--retries", type=int, default=None, metavar="N",
                        help=f"检查不合格时自动重跑几次（默认 {CHECK_RETRIES}）。"
                             "每次重试都是一次付费生成，被丢弃的候选图不落盘")
@@ -1315,23 +1119,13 @@ def main():
     p_batch.add_argument("-o", "--output-dir", help="输出目录（默认同目录）")
     p_batch.add_argument("--size", help="统一尺寸")
     p_batch.add_argument("--quality", help="统一质量")
-    p_batch.add_argument("--title-font", help="中文字体文件路径（标题/标题区从各 prompt 的 frontmatter 读）")
     p_batch.add_argument("--retries", type=int, default=None, metavar="N",
                        help=f"检查不合格时自动重跑几次（默认 {CHECK_RETRIES}）")
     p_batch.add_argument("--skip-existing", action="store_true",
                        help="输出目录已有合格的同名图就跳过，不重复生成（重跑批量时用）")
 
-    p_comp = sub.add_parser("compose", help="把标题合成到已有图片的标题区（不调 API）")
-    p_comp.add_argument("image", help="图片路径")
-    p_comp.add_argument("--title", required=True, help="标题文案")
-    p_comp.add_argument("--title-zone", help="归一化 x0,y0,x1,y1，默认 0.55,0.30,0.92,0.70")
-    p_comp.add_argument("--title-font", help="中文字体文件路径")
-    p_comp.add_argument("-o", "--output", help="输出路径（默认覆盖原图）")
-
-    p_chk = sub.add_parser("check", help="出图后纯代码检查：尺寸 / 单色 / 标题区干净度（不调 API）")
+    p_chk = sub.add_parser("check", help="出图后纯代码检查：尺寸 / 单色（不调 API）")
     p_chk.add_argument("image", help="图片路径")
-    p_chk.add_argument("--title-zone", help="归一化 x0,y0,x1,y1；仅用于合成标题前确认该区域是空的。"
-                            "标题由模型直接画进图里时不要用——文字本身就是高边缘密度，会误判")
 
     p_test = sub.add_parser("test", help="测试 API 连通性")
 
@@ -1340,37 +1134,16 @@ def main():
         parser.print_help()
         sys.exit(0)
 
-    if args.command == "compose":
-        src = Path(args.image)
-        if not src.exists():
-            _err(f"文件不存在: {src}")
-        zone = _parse_zone(args.title_zone) if args.title_zone else None
-        if args.title_zone and zone is None:
-            _err(f"title_zone 非法: {args.title_zone!r}")
-        data = _compose_title(src.read_bytes(), args.title, zone=zone, font_path=args.title_font)
-        out = Path(args.output) if args.output else src
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_bytes(data)
-        _ok(f"已保存: {out}")
-        return
-
     if args.command == "check":
         src = Path(args.image)
         if not src.exists():
             _err(f"文件不存在: {src}")
-        # 标题区检查只在显式给 --title-zone 时做：默认路径标题由模型画在区内，查了就是误报
-        zone = _parse_zone(args.title_zone) if args.title_zone else None
-        if args.title_zone and zone is None:
-            _err(f"title_zone 非法: {args.title_zone!r}")
         data = src.read_bytes()
         edge = _image_long_edge(data); sd = _image_stddev(data)
         if edge is None:
             _err("无法读取图片（缺少 Pillow 或文件损坏）")
-        line = f"长边 {edge}px | 灰度标准差 {sd:.1f}"
-        if zone:
-            line += f" | 标题区边缘密度 {_zone_edge_density(data, zone):.1f}（阈值 {ZONE_BUSY_THRESHOLD}）"
-        _info(line)
-        problems = _cover_problems(data, zone)
+        _info(f"长边 {edge}px | 灰度标准差 {sd:.1f}")
+        problems = _cover_problems(data)
         if problems:
             for pr in problems:
                 print(f"[FAIL] {pr}", file=sys.stderr)
@@ -1404,8 +1177,6 @@ def main():
 
         size, crop_aspect = _resolve_size(args.size, meta)
         quality = args.quality or meta.get("quality")
-        title, zone = _resolve_title(meta, args.title, args.title_zone)
-        check_zone = zone or (DEFAULT_TITLE_ZONE if title else None)
         # 900px 那条线只卡封面；正文插图按它重生成，是为读者看不见的差别付费
         is_cover = _is_cover(prompt_path.stem, meta) or (
             bool(args.output) and _is_cover(Path(args.output).stem))
@@ -1416,10 +1187,8 @@ def main():
             # 端点已按比例出图时裁切是空操作（差异 <1% 直接返回原图）
             return _crop_to_aspect(data, crop_aspect) if crop_aspect else data
 
-        img_data = _generate_with_checks(prompt_path.name, gen, zone=check_zone,
+        img_data = _generate_with_checks(prompt_path.name, gen,
                                          check_resolution=is_cover, retries=args.retries)
-        if title:
-            img_data = _compose_title(img_data, title, zone=check_zone, font_path=args.title_font)
 
         ext = _detect_image_ext(img_data) or ".png"
         if args.output:
@@ -1428,8 +1197,7 @@ def main():
                 print(f"[WARN] 输出后缀 {output_path.suffix or '(无)'} 与实际图片格式 {ext} 不一致", file=sys.stderr)
         else:
             output_path = prompt_path.with_suffix(ext)
-        if _write_if_not_worse(output_path, img_data, zone=check_zone,
-                               check_resolution=is_cover):
+        if _write_if_not_worse(output_path, img_data, check_resolution=is_cover):
             _ok(f"已保存: {output_path} ({len(img_data)} 字节)")
         if _api_calls > 1:
             _info(f"本次调用生图 API {_api_calls} 次（按张计费）")
@@ -1462,8 +1230,7 @@ def main():
             if args.skip_existing:
                 done = next((p for p in output_dir.glob(pf.stem + ".*")
                              if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp", ".gif")
-                             and not _cover_problems(p.read_bytes(), None,
-                                                     _is_cover(pf.stem))), None)
+                             and not _cover_problems(p.read_bytes(), _is_cover(pf.stem))), None)
                 if done:
                     _info(f"[{i}/{len(prompt_files)}] {pf.name} 已有合格的 {done.name}，跳过")
                     skipped += 1
@@ -1475,8 +1242,6 @@ def main():
 
                 size, crop_aspect = _resolve_size(args.size, meta)
                 quality = args.quality or meta.get("quality")
-                title, zone = _resolve_title(meta, None, None)
-                check_zone = zone or (DEFAULT_TITLE_ZONE if title else None)
                 is_cover = _is_cover(pf.stem, meta)
 
                 def gen(p=prompt, sz=size, q=quality, ca=crop_aspect, m=meta):
@@ -1484,15 +1249,11 @@ def main():
                                           resolution=m.get("resolution"))
                     return _crop_to_aspect(data, ca) if ca else data
 
-                img_data = _generate_with_checks(pf.name, gen, zone=check_zone,
+                img_data = _generate_with_checks(pf.name, gen,
                                                  check_resolution=is_cover,
                                                  retries=args.retries)
-                if title:
-                    img_data = _compose_title(img_data, title, zone=check_zone,
-                                              font_path=args.title_font)
                 out_path = output_dir / (pf.stem + (_detect_image_ext(img_data) or ".png"))
-                if _write_if_not_worse(out_path, img_data, zone=check_zone,
-                                       check_resolution=is_cover):
+                if _write_if_not_worse(out_path, img_data, check_resolution=is_cover):
                     _ok(f"  → {out_path}")
             except SystemExit:
                 # _err 已打印原因；记下并继续下一条
