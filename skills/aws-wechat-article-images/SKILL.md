@@ -15,265 +15,132 @@ metadata:
 
 # 配图
 
-**公众号封面 & 配图 AI 生成** —— 按文章内容自动匹配画风，一稿多方案，风格体系可复用。
+**公众号封面 & 配图 AI 生成** —— 按文章内容自动匹配画风，风格体系可复用。
 
 > **套件说明** · 本 skill 属 `aws-wechat-article-*` 一条龙套件（共 9 个 slug，入口 `aws-wechat-article-main`）。跨 skill 的相对引用依赖同一 `skills/` 目录，建议一并 `clawhub install` 全套。源码：<https://github.com/aiworkskills/wechat-article-skills>
 
 ## 能力披露（Capabilities）
 
-本 skill 调 `image_create.py` **调外部图像 API** 生成封面与正文配图。**会把图片提示词（可能含文章主题片段）发给用户配置的图像生成端点。** 具体行为：
+本 skill 调 `image_create.py` **调外部图像 API** 生成封面与正文配图，**会把图片提示词（可能含文章主题片段）发给用户配置的图像生成端点**。
 
-- **凭证读取**：`aws.env` 的 `IMAGE_MODEL_API_KEY`
-- **凭证外发**：该 key 以 `Authorization: Bearer` 头发送到 `image_model.base_url` 指定端点（常见为 DALL-E、gpt-image 兼容 `/v1/images/generations`，或多模态模型 `/v1/chat/completions`，具体由用户配置）
-- **内容外发**：每张图片的 prompt（文本）作为 JSON POST body 发送；prompt 内容来自本篇 `imgs/prompts/*.md`（可能包含文章标题、章节摘要）
-- **下图 SSRF 防御**：若 API 响应返回图片 URL（而非 base64），脚本**仅允许下载 http/https 公网地址**；内网 / 环回 / 链路本地 / 保留地址全部拒绝（防止恶意或被劫持的模型端点把脚本当作 SSRF 跳板）
-- **文件读**：仓库内 `.aws-article/config.yaml`、本篇 `article.yaml`、`article.md`、`imgs/prompts/*.md`、`references/cover-method.md`、`references/image-method.md`、`references/cover-examples/*.md`、`.aws-article/products/{产品名}/images/*`（业务配图库，本篇涉及用户业务时优先复用）
-- **文件写**：本篇 `imgs/*.{png,webp}`、可选 `img_analysis.md`
-- **shell**：仅 `{python} {baseDir}/scripts/image_create.py`、`user_image_prepare.py`（`{python}` = 本机 Python 3 解释器，见 [main SKILL 第 0 步](../aws-wechat-article-main/SKILL.md)：Windows 用 `py -3 -X utf8`，macOS / Linux 用 `python3`）
+- **凭证**：读 `aws.env` 的 `IMAGE_MODEL_API_KEY`，以 `Authorization: Bearer` 发往 `image_model.base_url`
+- **内容外发**：每张图的 prompt 作为 JSON POST body 发送，来自本篇 `imgs/prompts/*.md`
+- **SSRF 防御**：API 返回图片 URL 时**仅允许下载 http/https 公网地址**，内网 / 环回 / 保留地址一律拒绝
+- **文件读**：`.aws-article/config.yaml`、本篇 `article.yaml` / `article.md` / `imgs/prompts/*.md`、本 skill 的 `references/*`、`.aws-article/products/{产品名}/images/*`
+- **文件写**：本篇 `imgs/**`、可选 `img_analysis.md`
+- **shell**：仅 `{python} {baseDir}/scripts/image_create.py`、`user_image_prepare.py`
 
-**建议**：用专用 key（最低权限、独立计费），避免使用 account 级 master key。
+**建议**用专用 key（最低权限、独立计费），不要用 account 级 master key。
 
-## 配套 skill（informational）
-
-本 skill 是 `aws-wechat-article-*` 一条龙公众号套件的**配图环节**（入口 `aws-wechat-article-main`）。工作流中的若干步骤会读取同级 `../aws-wechat-article-main/references/*.md` 等共享文档（首次引导、env/config 示例、articlescreening schema 等）。
-
-- **套件完整装齐到同一 `skills/` 根目录**时，跨 skill 引用都能读到。
-- **单独安装本 skill** 时，跨 skill 引用的步骤会在读取阶段遇到 `file not found`；本 skill 内的生图脚本仍可用。
-
-完整 9 slug 清单见 [源码仓库](https://github.com/aiworkskills/wechat-article-skills)。
+单独安装本 skill 时，跨 skill 的引用会 `file not found`，但生图脚本仍可用。完整 9 slug 见 [源码仓库](https://github.com/aiworkskills/wechat-article-skills)。
 
 ## 路由
 
-完整长文从选题到发布 → [aws-wechat-article-main](../aws-wechat-article-main/SKILL.md)；图片消息/九宫格等多图推送 → [aws-wechat-sticker](../aws-wechat-sticker/SKILL.md)。
+完整长文从选题到发布 → [main](../aws-wechat-article-main/SKILL.md)；图片消息 / 九宫格等多图推送 → [sticker](../aws-wechat-sticker/SKILL.md)。本 skill 专注**长文配图**。
 
-读取文章中的配图标记，按内容形态生成图片：封面 12 个形态、正文配图 8 个形态，均按内容判断而非账号审美。专注于**长文配图**，贴图请用 sticker。
-
-## 脚本目录
-
-**Agent 执行**：确定本 SKILL.md 所在目录为 `{baseDir}`。
+配置检查按 [首次引导](../aws-wechat-article-main/references/first-time-setup.md) 执行；`image_model` 在 `config.yaml`、`IMAGE_MODEL_API_KEY` 在 `aws.env`。端点差异与比例传法见 [branches.md 第六节](references/branches.md)。
 
 | 脚本 | 用途 |
 |------|------|
-| `scripts/image_create.py` | 专用生图 API：读 **`.aws-article/config.yaml`** 的 **`image_model`** + 仓库根 **`aws.env`** 的 **`IMAGE_MODEL_API_KEY`**|
-| `scripts/user_image_prepare.py` | 用户供图模式：确保本篇 `imgs/` 存在并生成 `img_analysis.md` 模板（封面仅 1 张） |
+| `scripts/image_create.py` | 调专用生图 API（`generate` / `batch` / `check` / `test`） |
+| `scripts/user_image_prepare.py` | 用户供图模式：建 `imgs/` 并生成 `img_analysis.md` 模板 |
 
-## 配置检查 ⛔
+## 五条硬规则 ⛔
 
-任何操作执行前，**必须**按 **[首次引导](../aws-wechat-article-main/references/first-time-setup.md)** 执行其中的 **「检测顺序」**。检测通过后才能进行以下操作（或用户明确书面确认「本次不检查」）：
-
-从选题到发布的**前置规则**见 [aws-wechat-article-main/SKILL.md](../aws-wechat-article-main/SKILL.md)；本 skill 只描述配图步骤。
-
-**图片模型**：**`image_model`**（`provider`、`base_url`、`model`、`default_size`、`default_quality` 等）在 **`config.yaml`**；**`IMAGE_MODEL_API_KEY`** 在 **`aws.env`**。键名对照 **`{baseDir}/../aws-wechat-article-main/references/env.example.yaml`**。
-
-**`base_url` 须为完整端点路径**，脚本根据路径判断调用模式：
-- `https://xxx.com/v1/images/generations` — DALL-E / gpt-image 等
-- `https://xxx.com/v1/chat/completions` — Gemini 等多模态模型（通过中转站生图）
-
-**比例怎么传（因端点而异）**：`/v1/images/generations` 用 `size` 像素串；Gemini 系模型走 `/v1/chat/completions` 时用 `extra_body.imageConfig`（比例 + 分辨率档位），这是 Gemini 特有结构，**只对识别为 Gemini 系的模型发送**（模型名含 gemini / nano-banana / imagen），其余模型保持「尺寸并入提示 + 生成后裁切」以免严格网关报 400。可用 **`image_model.aspect_mode`**（`auto` / `imageconfig` / `none`）显式覆盖。无论走哪条路径，最终都会按 `aspect` 校正到目标比例。
-
-**交互约定**：可提示用户上述项是否已填；**一条龙**下通常已通过 **`validate_env.py`**。须遵守 main 的**智能体行为约束**——未通过环境校验且未获用户明确「本次例外」时，不得假装已走专用生图 API。
-
-## 封面风格 + 正文配图
-
-- **封面**：按 [cover-method.md](references/cover-method.md) 七步推导——找张力、定关系、找隐喻、套视觉语言、2.35:1 布局、写成散文、回看。封面模板（[references/cover-styles/](references/cover-styles/)）提供第四步的内容形态与**文案规格**（字号/颜色/位置），共 12 个，默认全选为候选池，Agent 按文章内容挑一个。范例见 [cover-examples/](references/cover-examples/)。
-- **先分工再选形态** ⛔：排版侧的[版式组件](../aws-wechat-article-formatting/references/components/)和信息位配图干同一件事，同一份内容只能给其中一个。判据是**内容里有没有空间关系**（大小/流向/嵌套 → 图），但**只有标准 markdown 够得到的组件才算数**——`:::` 私有语法写作侧是禁止的，判给够不到的组件等于图和组件两头落空。实测归属见 [image-method.md 第一步半](references/image-method.md)：只有**金句卡片**归组件，对比两栏与清单要点一律出图。
-- **删图有上限** ⛔：每篇最多删 1 个图位并须写明理由；要删 2 个以上时不要自行删，把「本篇内容与 `image_density` 对不上」这个判断告诉用户。**把本篇 `image_density` 改小是同一件事**（实测出现过：配置写每节一图，本篇改成按需配图，5 小节只配 4 图），同样要先说。
-- **`imgs/` 的目录分工** ⛔：根目录**只放正文引用的最终图**；生图 prompt 放 `imgs/prompts/`，实证图的来源说明放 `imgs/sources/`，截图/裁切的中间产物放 `imgs/raw/`。实测一篇文章的 `imgs/` 根留了 6 张没被引用的废片（约 1MB），重跑时容易拿错文件，`--skip-existing` 也会被它们干扰。
-- **正文配图**：8 个内容形态，见 [references/image-styles/](references/image-styles/)。判断只有一条——删掉这张图，读者会**看不懂**（信息位，必须带文章真实内容）还是**读不下去**（节奏位，不加字）？都不影响就不要这张图。
-
-### 封面 vs 正文（资源策略）⛔
-
-| 类型 | 要求 |
-|------|------|
-| **封面** | **必须**通过 **`image_create.py`** 生成（`generate` 或 `batch` 读 `imgs/prompts/*.md`），产出并保存为文章目录下的 **`cover.png`**（或 `cover.jpg` / `cover.jpeg` / `cover.webp`）。**禁止**将 `.aws-article/products/{产品名}/images/`（或其它素材库文件）**直接复制**为 `cover.*` 充当封面。**例外**：用户**明确上传**封面文件并声明「封面只用这一张」时，可跳过脚本，须在 **`img_analysis.md`** 与审稿记录中注明「用户指定封面」。 |
-| **正文** | **优先使用业务配图库**：`.aws-article/products/{相关产品}/images/`（先读同名 `.md` 再复制到本篇 `imgs/` 或引用路径），见下文「正文配图来源优先级」。缺图时再走 **`image_create.py`** 或 Agent 降级生图。 |
-
-> 说明：全局 `config.yaml` 的 **`image_source: user`** 表示「正文以用户/素材引用为主」；**不豁免**上述「封面须脚本生成」规则，除非用户同时提供了封面文件并声明仅用该封面。
+1. **封面必须脚本生成**，产出为文章目录下的 `cover.png`（或 `.jpg` / `.jpeg` / `.webp`）。**禁止**把素材库文件直接复制成 `cover.*`。例外：用户明确上传封面并声明「只用这一张」，须在结果中注明「用户指定封面」。
+2. **正文优先用业务配图库**，缺图才生成。判断顺序见 [branches.md 第一节](references/branches.md)。
+3. **删图有上限**：每篇最多删 1 个图位并写明理由。要删 2 个以上、**或把本篇 `image_density` 改小**（效果相同），都要先把「本篇内容与密度对不上」这个判断告诉用户。
+4. **`imgs/` 目录分工**：根目录只放正文引用的最终图；`prompts/` 放生图 prompt，`sources/` 放实证图的来源说明，`raw/` 放截图与裁切的中间产物。
+5. **先分工再选形态**：排版组件和信息位配图干同一件事，同一份内容只给其中一个。但**只有标准 markdown 够得到的组件才算数**——判给够不到的组件等于图和组件两头落空。实测归属见 [image-method 第一步半](references/image-method.md)：只有**金句卡片**归组件，对比两栏与清单要点一律出图。
 
 ## 工作流
 
 ```
 配图进度：
-- [ ] 第1步：环境检查 + 本篇约束与文章
+- [ ] 第1步：读配置与文章
 - [ ] 第2步：解析配图标记
 - [ ] 第3步：确定风格
-- [ ] 第4步：生成配图方案
+- [ ] 第4步：写 prompt
 - [ ] 第5步：展示方案并等待确认 ⛔
-- [ ] 第6步：生成图片（**脚本失败时**见同节「调用失败」分支，勿静默吞掉报错）
-- [ ] 第7步：插入文章
+- [ ] 第6步：生成图片
+- [ ] 第7步：插入文章 + 收尾自检 ⛔
 ```
 
-### 正文配图来源优先级（Agent）⛔
+### 第1步：读配置与文章
 
-**仅适用于正文插图**（不含封面；封面见上文「封面 vs 正文」）。**在**为正文 `placeholder` 调用 `image_create.py`、写入 `imgs/prompts/` **之前**，须先判断是否可用**本地业务配图库**，避免**业务相关文章**（教程 / 产品介绍 / 案例 / 自家界面截图）「有现成业务配图却重新生成」：
-
-1. **仓库业务配图库**：若本篇涉及用户业务，先 `ls .aws-article/products/`，进入相关产品的 **`images/`** 子目录，列出并阅读 **同名 `.md`**（含路径与画面说明），按主题匹配后，在 `article.md` 中直接引用对应 **`.png` / `.webp`**（或复制到本篇 `imgs/` 再引用）。**与正文严格相关才用**，避免硬凑。
-2. **用户上传 / 本篇 `image_source: user`**：用户提供的图或上述引用策略，走「用户供图模式」与 `img_analysis.md`（正文部分）。
-3. **仍缺图或须原创插画**：再按 [image-method.md](references/image-method.md) 选形态、写 `imgs/prompts/`、执行 **`image_create.py`**（或 Agent 降级生图）。
-
-> 说明：业务配图库属「仓库内业务资源」，**不必**等用户手动上传才查；与「用户供图模式」并列，而非仅附属于后者。
-
-### 第1步：环境检查 + 本篇约束与文章
-
-- **全局**：读 **`.aws-article/config.yaml`** — `cover_aspect`、`cover_style`、`image_density`、`caption_style`、`multi_image_count`、`tone` 等以之为准（完整字段见 [articlescreening-schema.md](../aws-wechat-article-main/references/articlescreening-schema.md) 与 **`config.example.yaml`**）。
-- **本篇**：若同目录有 **`article.yaml`**，读取 **`default_cover_image_style`**（单元素列表，本篇已选的封面形态）与 **`default_article_image_style`**（**多元素候选池**，正文形态逐个图位选，不收敛成单选——收敛等于让整篇所有配图用同一种形态）及 `cover_image` 等字段。
-- 读取 **`article.md`**（或当前流程规定的正文来源）。
-- 当 `image_source: user`（全局或本篇）时，进入「用户供图模式」：先创建本篇 `imgs/` 并生成/更新 `img_analysis.md`，记录每张图的内容分析、建议章节与推荐用途。
+- **全局** `.aws-article/config.yaml`：`cover_aspect`、`image_density`、`caption_style`、`tone` 等以它为准（字段见 [articlescreening-schema.md](../aws-wechat-article-main/references/articlescreening-schema.md)）。
+- **本篇** `article.yaml`：`default_cover_image_style`（单元素，本篇已选的封面形态）、`default_article_image_style`（**多元素候选池**，正文形态逐个图位选，**不收敛成单选**——收敛等于整篇配图用同一种形态）。
+- 读 `article.md`。
+- `image_source: user` 时改走[用户供图模式](references/branches.md)。
 
 ### 第2步：解析配图标记
 
-提取所有 `![类型：描述](placeholder)`。`实证` 类型提示用户提供素材或从 `.aws-article/products/{相关产品}/images/` 搜索（业务配图库）。
+提取所有 `![类型：描述](placeholder)`。写手只用四个类型，它们定的是**图位**不是形态：
 
-### 用户供图模式（新增分支）
+| 类型 | 含义 | 本 skill 做什么 |
+|---|---|---|
+| `封面` | 文章封面 | 走 [cover-method.md](references/cover-method.md) |
+| `实证` | 官方原帖截图、界面实拍 | **真实素材，不生成**；来源说明写进 `imgs/sources/` |
+| `信息图` | 信息位，解释内容 | 按内容选形态，内容必须取自文章 |
+| `氛围` | 节奏位，只为换口气 | 概念隐喻 / 场景还原，不放具体信息 |
 
-当用户上传图片并指定主题时，按以下顺序执行：
-
-1. 立即确保 `{article_dir}/imgs/` 存在，并将用户图片放入该目录。
-2. 生成/维护 `{article_dir}/img_analysis.md`（每图至少包含：文件名、图片内容、建议章节、推荐用途、图注建议）。
-3. **硬性约束**：`img_analysis.md` 中“推荐用途：封面”**必须且只能出现 1 次**；其余图片用途应为“正文”。
-4. 同步更新本篇 `article.yaml`：`image_source: user`（从模型生图切换到用户供图状态）。
-   - 字段取值只允许 `generated` / `user`。
-5. 写稿阶段直接使用用户图片路径（如 `imgs/淘米.png`），**不再使用 placeholder**。
-
-**顺序说明**：`imgs/` 落图 → 分析并写好 `img_analysis.md` → 再跑 `write.py`；写稿时以 `img_analysis.md` 为准，把图片插到与内容匹配的章节位置。
-
-### 发布后换图重发（新增分支）
-
-当用户明确说「这篇文章配图不满意，换成我上传的新图并重新发草稿箱」时，按以下流程：
-
-1. 用户指定目标文章目录（`drafts/YYYYMMDD-slug/`）。
-2. 将新图放入该目录 `imgs/`，并更新 `img_analysis.md`（仍需满足“封面仅 1 张”）。
-   - 同步把本篇 `article.yaml.image_source` 更新为 `user`。
-3. 按 `img_analysis.md` 重新映射图片到 `article.md` 对应章节（允许重排章节以匹配图序）。
-4. 运行 `format.py` 重新生成 `article.html`（不要只改旧 html 局部）。
-5. 进入终审：确认 `article.md` / `article.html` 无 `placeholder`，且引用图片文件均存在。
-6. 回到发布步骤执行 `publish.py full`（`publish_method: draft` 时写入草稿箱）。
-
-**可用素材库**（与上文「配图来源优先级」一致）：
-
-- `.aws-article/products/{产品名}/images/`：业务配图库（产品截图、品牌素材等）；本篇涉及用户业务时**优先读同名 `.md` 再选图**。若已用业务配图满足正文，可不再走生图 API。
+存量草稿里的旧类型名（`流程图` / `对比`）按 `信息图` 处理。
 
 ### 第3步：确定风格
 
-封面与正文配图**分别**确定风格，走各自的预设目录。
+封面与正文**分别**定，各走各的预设目录。两者的加载优先级相同：用户当次指定 > 本篇 `article.yaml` > `custom_*` 候选池（为空即全选）。
 
-#### 封面风格
+- **封面**：内置 12 个形态于 `references/cover-styles/`（`<名>.example.md`），用户自定义放 `.aws-article/presets/cover-styles/`，同名覆盖。每个模板含**用于 / 主体 / 影调 / 文案 / 版式**五个字段，**「文案」不可缺省**——缺了产出的是背景图不是封面。挑选判据只有一条：主体在 345px 缩略图里能否一眼认出。
+- **正文**：内置 8 个形态于 `references/image-styles/`。判据只有一条：删掉这张图读者会**看不懂**（信息位）还是**读不下去**（节奏位）？都不影响就删掉该图位。
 
-**预设发现**：Agent 扫描两个目录合并可用封面预设列表：
-1. **内置**：`{baseDir}/references/cover-styles/`（随 skill 安装；文件名形如 `简约.example.md`，预设名取 `.example.md` 之前的部分即 `简约`，可直接引用无需复制）
-2. **用户自定义**：`.aws-article/presets/cover-styles/`（用户创建或预设包导入）
+### 第4步：写 prompt
 
-**加载优先级**：
-1. 用户当次指定（如「封面要简约风」）
-2. **本篇 `article.yaml.default_cover_image_style`**（单元素列表）→ 从内置或 **`.aws-article/presets/cover-styles/<名>.md`** 加载（用户文件同名优先于内置）
-3. **fallback**：`custom_cover_image_style` 为空即全选，Agent 按 [cover-method.md](references/cover-method.md) 第四步从 12 个形态里挑——判断只有一条：主体在 345px 缩略图里能否被一眼认出。
-
-每个封面模板 `.md` 含五个字段：用于 / 主体 / 影调 / **文案** / 版式。「文案」不可缺省——缺了产出的是背景图而不是成品封面。画什么由 [cover-method.md](references/cover-method.md) 从文章推导。Schema 见 [cover-styles/README.md](references/cover-styles/README.md)。
-
-#### 正文配图风格
-
-**预设发现**：内置 8 个于 `{baseDir}/references/image-styles/`（`<名>.example.md`，预设名取 `.example.md` 之前的部分），用户自定义放 `.aws-article/presets/image-styles/<名>.md`，同名覆盖。默认全选为候选池，Agent 按每个图位的作用挑形态。schema 与判断标准见 [image-styles/README.md](references/image-styles/README.md)。
-
-**加载优先级**：
-1. 用户当次指定（如「正文要扁平插画」）
-2. **本篇 `article.yaml.default_article_image_style`**（候选池，可多元素）→ 逐个图位从中挑一个形态，各自加载 **`.aws-article/presets/image-styles/<名>.md`**
-3. **fallback**：`custom_article_image_style` 为空即全选，Agent 按 [image-method.md](references/image-method.md) 逐个图位判断——删掉它读者会看不懂（信息位）还是读不下去（节奏位）？都不影响就删掉该图位。
-
-### 第4步：生成配图方案
-
-**封面**：按 [cover-method.md](references/cover-method.md) 走完前六步，产出一个 prompt 文件：frontmatter 含 `aspect`，正文是 150–300 字的散文，标题文案（4–7 字，从文章标题提炼钩子；字高占画面 25–35%，是画面第一元素）连同位置、字体感、颜色、大小一起写在里面。不要关键词清单，不要写「不要 X」，不要照抄预设或范例里的场景。
-
-**正文配图**：按 [image-method.md](references/image-method.md) 六步逐个图位处理。信息位的内容**必须从文章里取**，不能让模型自由发挥——实测会生成无关鸡汤并自带 emoji。
-
-**封面 prompt frontmatter 必须包含 `aspect`**：从 `config.yaml` 的 `cover_aspect` 读取（如 `2.35:1`），写入 YAML frontmatter。`image_create.py` 据此映射到 API 支持的最接近尺寸生成，装有 Pillow 时再居中裁切到该比例（如 2.35:1 → 1792x763）。**值须加引号**（`aspect: "2.35:1"`），未加引号的 `16:9` 会被 YAML 解析成整数。缺少 aspect 时退回 `config.yaml` 的 `image_model.default_size`（默认 1024x1024）。
-
-**图片内文字**：画面中出现的文字必须为中文。在 prompt 里**直接写出要显示的中文文案**（如「传统对话AI」「OpenClaw」），禁止只写 “labels in Chinese” 或 “Chinese or English OK”，否则模型会生成英文。
-
-Prompt 构建：封面见 [cover-method.md](references/cover-method.md)，正文配图见 [image-method.md](references/image-method.md)；通用规则（图中文字、构图要求、高级布局）见 [prompt-construction.md](references/image-styles/prompt-construction.md)
+- **封面**：按 [cover-method.md](references/cover-method.md) 走完前六步，产出一个 prompt 文件——frontmatter 含 `aspect`（取自 `cover_aspect`，**值须加引号**，未加引号的 `16:9` 会被 YAML 解析成整数），正文是 150–300 字散文，标题文案（4–7 字，字高占画面 25–35%）连同位置、字体感、颜色一起写在里面。不要关键词清单，不要写「不要 X」，不要照抄范例场景。
+- **正文**：按 [image-method.md](references/image-method.md) 六步逐个图位处理。**信息位的内容必须从文章里取**——让模型自由发挥会生成无关鸡汤并自带 emoji。
+- **图中文字必须为中文**，且在 prompt 里**直接写出要显示的那几个字**，不要写 "labels in Chinese"。
+- 通用规则（媒介优先、构图要求、禁用绘图库重画）见 [prompt-construction.md](references/image-styles/prompt-construction.md)。
 
 ### 第5步：展示方案并等待确认 ⛔
 
-- **一条龙流程**且用户对风格无特殊要求：与 main 约定一致，按默认预设自动执行，**不单独确认**，但须在结果里列出每张图的类型、风格与 prompt 文件路径。
-- **单独触发本 skill**、用户明确提出风格要求、或方案涉及用业务配图库替换正文图位：先展示方案（每图：位置、Type、Style、prompt 要点、来源），**等待用户确认后**再进入第 6 步。
+- **一条龙**且用户对风格无特殊要求：按默认预设自动执行**不单独确认**，但结果里要列出每张图的类型、风格与 prompt 路径。
+- **单独触发本 skill**、用户提了风格要求、或方案涉及用业务配图库替换图位：先展示方案（位置 / 类型 / 风格 / prompt 要点 / 来源），**等用户确认**再进第 6 步。
 
 ### 第6步：生成图片
 
-**封面**：见「封面 vs 正文」— **默认必须先**写好 **`imgs/prompts/`** 中封面 prompt（含 `aspect` 与 `config.yaml` 的 **`cover_aspect`** 一致），再执行 **`image_create.py generate … -o ../cover.png`**（或等价输出路径）。
-
-**⛔ 先看一眼生成日志里有没有「腰斩」告警**：端点会间歇性忽略 `aspectRatio`，返回 1024x1024 方图，脚本再把它居中裁成 1024x436。**模型是按方画布构图的**（「左侧四成…右侧六成…字高 28%」），上下砍掉 58% 之后主体偏位、标题错位，出来就是一张废封面——实测四张里三张如此。这时 `[WARN] … 只剩 43%……腰斩` 会出现在 stderr，**这一条值得重跑**（`--retries 1`），和分辨率略低不一样：那个读者看不出，这个一眼就看得出。
-
-**封面回看（必做）**：`cover.*` 生成后打开图片，按 [cover-method.md 第七步](references/cover-method.md) 对四条：主体位置与标题区、元素 ≤3、缩略图可读、与文章相关。不过关**回到出问题的那一步改 prompt** 再生成——主体乱跑改布局描述，与文章无关是张力没找准；不要不改 prompt 盲目重跑。当前环境看不了图时，退而运行 `{python} {baseDir}/scripts/image_create.py check cover.png` 做纯代码检查——**只有尺寸与近单色两项**。
-
-**生成方式（优先级，正文）**：
-
-0. **已在「正文配图来源优先级」中用尽素材库 / 用户图**：本节不再对**该图位**重复生图（封面仍须单独按上款处理）。
-1. **缺图时优先：调用专用生图 API**（`scripts/image_create.py`）— 依赖 **`config.yaml` 的 `image_model` + `aws.env` 的 `IMAGE_MODEL_API_KEY`**
-2. **自动降级：模型未配置**（退出码 2、stderr 含 `[NO_MODEL]`）且当前 Agent 支持图片生成、并已获用户明确同意代生图 → Agent 读取 `imgs/prompts/*.md` 中的 prompt + frontmatter（size/quality），用自身多模态能力按**相同 prompt** 生图 → 告知用户 `ℹ️ 图片模型未配置，本次由当前对话模型直接生图（使用相同配图方案）` → 生成后**正常执行第 7 步**（插入文章）
-3. **故障降级**（退出码 1）→ 按本节下方「调用失败」表格分类处理
-4. **用户供图：跳过生图** — 当 `image_source=user` 或用户明确”使用我上传的图片”时，不调用 `image_create.py`，改为”读图分析 + 写稿引用 + 重排版”
-
-**必须告知用户当前使用的方式**：
-
-- 已配置且调用脚本 → `ℹ️ 使用 image_create.py 调用专用生图模型（{model}）`
-- Agent 降级生图（退出码 2）→ `ℹ️ 图片模型未配置，本次由当前对话模型直接生图（使用相同配图方案）`
-- 故障降级 / 仅 prompts → `ℹ️ 本次未走 image_create.py（原因：…）`
-
-**⛔ 故障降级（退出码 1）时的终点**：只做到第 4 步（或第 5 步）。产出 `imgs/prompts/*.md` 与方案；**不执行**「替换 article 中的 placeholder」或「修复 HTML」。若 `imgs/README.md` 尚不存在或需补充当前方案的说明，可创建/更新（如何配置 **`aws.env` / `config.yaml`**、如何跑 `image_create.py batch`、如何在 `article.html` 中替换）；若已存在且已涵盖当前方案，**不必重写**。
-
-**注意**：退出码 2（模型未配置）且 Agent 支持图片生成、并已获用户明确同意代生图时，**不受上述终点限制**——Agent 降级生图后继续执行第 7 步。
-
-**调用专用 API 时**（在**仓库根**执行，`{baseDir}` 按上表解析；路径按本篇 `imgs/` 调整）：
+在**仓库根**执行，**stdout 与 stderr 一起落盘**：
 
 ```bash
-{python} {baseDir}/scripts/image_create.py batch drafts/YYYYMMDD-slug/imgs/prompts/ -o drafts/YYYYMMDD-slug/imgs/
+{python} {baseDir}/scripts/image_create.py batch drafts/YYYYMMDD-slug/imgs/prompts/ \
+  -o drafts/YYYYMMDD-slug/imgs/ > drafts/YYYYMMDD-slug/image-generation.log 2>&1
 ```
 
-单张：`{python} {baseDir}/scripts/image_create.py generate imgs/prompts/01-cover.md -o imgs/01-cover.png`
+单张用 `generate <prompt.md> -o <out.png>`；重跑批量时加 `--skip-existing`，已生成合格的不重复付费。图片规格见 [specs.md](references/specs.md)。
 
-连通性自检：`{python} {baseDir}/scripts/image_create.py test`（失败时退出码 1 并打印分类提示，可按下方表格处理）
+**⛔ 先看日志里有没有「腰斩」告警。** 端点会间歇性忽略 `aspectRatio` 返回方图，脚本再把它居中裁到目标比例——而模型是**按方画布构图**的（「左侧四成…右侧六成…字高 28%」），砍掉一大半之后主体偏位、标题错位。实测四张封面里三张如此。看到 `[WARN] … 只剩 43%……腰斩` 就重跑这一张（`--retries 1`）：这和分辨率略低不同，那个读者看不出，这个一眼就看得出。
 
-图片规格：[references/specs.md](references/specs.md)
+**⛔ 出字问题先改 prompt，不要换工具。** 不许因为「API 出来的字有裁切」就改用 matplotlib / PIL 重画——那样媒介和形态整套方法论被绕开，钱还付两遍。理由见 [prompt-construction.md](references/image-styles/prompt-construction.md)。
 
-#### `image_create.py` 调用失败时（智能体必选分支）
+**封面回看（必做）**：打开图片对四条——主体位置与标题区、元素 ≤3、缩略图可读、与文章相关。不过关**回到出问题的那一步改 prompt** 再生成，不要不改 prompt 盲目重跑。看不了图时退而用 `image_create.py check cover.png`（**只有尺寸与近单色两项**）。
 
-只要执行了 `image_create.py` 且**非零退出或 stderr 有 API/网络错误**，就必须走本节，**不得**只说「生图失败」而不分类、不摘要报错。
+脚本非零退出或 stderr 有 API / 网络错误 → 走 [branches.md 第四节](references/branches.md)，**必须分类并摘要报错**，不得只说「生图失败」。
 
-运行脚本后**须把终端 stderr 中的具体报错摘要给用户**（含 `❌`、HTTP 状态码、`【配置/认证】`、`网络错误（可重试）`、`[NO_MODEL]` 等关键行），勿只说「失败」。
+### 第7步：插入文章 + 收尾自检
 
-| 类型 | 判断线索 | 智能体动作 |
-|------|----------|------------|
-| **未配置** | 退出码 2、`[NO_MODEL]` | Agent 支持图片生成且用户明确同意代生图 → 读取 `imgs/prompts/*.md` 中的 prompt + frontmatter（size/quality），用自身多模态能力按相同 prompt 生图并继续第 7 步。Agent 不支持图片生成，或 Agent 代生图失败 → 明确告知“我当前不能完成生图”，给用户二选一：**配置图片模型后重试**，或**本篇不配图继续**（保留 prompts 并在结果中标注无配图）。 |
-| **网络类** | `URLError`、`网络错误（可重试）`、超时、临时 502/503 | **必须自动再试 1 次**（可短暂等待后重跑同一命令）。**第二次仍为网络类** → 可降级为 **Agent 多模态生图** 或仅保留 prompts；**须明确告知**用户本次未走专用 API。 |
-| **配置/凭证类** | 401/403、图片模型配置不完整、`【配置/认证】` | **不要**静默降级。**列出须检查项**（**`config.yaml` 的 `image_model`**、**`aws.env` 的 `IMAGE_MODEL_API_KEY`**、端点、权限），请用户改正后重跑。用户**明确打字**接受本次仅用 Agent/仅 prompts 时，再按 main「本次例外」处理。 |
-| **业务/参数类** | `【请求参数】`、400、返回体提示 model/size 不支持 | 将响应摘要给用户；可改 **`config.yaml` 或 env** 中的 model/尺寸后再试；仍失败则与用户商定是否 Agent 生图。 |
+替换 placeholder 为实际图片路径。**封面不进正文**：`![封面：…]` 仅用于微信封面上传，替换时跳过或删除该行，封面单独存为文章根目录的 `cover.{ext}`。
 
-**禁止**：配置明显错误时静默改用 Agent 却不说明；网络降级后不告知「本次未走专用生图」。
+仅当 `article.html` 里**确实存在** `href="placeholder"` 或 placeholder 被渲染成链接时，才去修 HTML；不要默认每次都执行「修复 HTML」。
 
-### 第7步：插入文章
+**⛔ 收尾自检（六条，缺一不可）**
 
-仅当**已生成图片**时执行：替换 placeholder 为实际图片路径，输出到 `imgs/`。
+1. **每张正文图各有一个 `imgs/prompts/*.md`**，文件名主干与图片一致。**先落 prompt 再生成，不许反过来**——否则出了问题没法复现，想只重跑一张也做不到，只能整批重来（按张计费）。Agent 自己生图时同样要落盘。
+2. **实证图的说明放 `imgs/sources/`，不许放 `prompts/`**。`batch` 是整目录 glob 的，混在里面会照着「来源：https://x.com/…」生成一张**伪造的原帖截图**覆盖掉真的那张——而文章正拿它当证据。脚本已有防线（首行「来源：」或 frontmatter `type: source` 会跳过并告警），但目录放对才是根本。
+3. **`article.yaml` 的 `image_medium` 非空**，且等于第四步实际用的媒介。它是下一篇「平手时避开上一篇」的唯一依据。
+4. **正文图数量与 `image_density` 对得上**。删过图位要写明删了哪个、为什么。
+5. **生成日志已落盘**且看过有没有腰斩告警。封面为什么难看，正是靠日志里「已按 2.35:1 居中裁切: 1024x1024 → 1024x436」定位到的——屏幕上滚过去就没了。
+6. **`imgs/` 根目录只剩正文引用的图**，中间产物已归入 `raw/`；**本篇所有信息位配图共用同一个媒介**，而每个图位的形态各自按内容选。
 
-**封面排除**：封面图（`![封面：...]`）**仅用于微信文章封面上传**，**禁止**作为 `<img>` 嵌入 HTML 正文。替换 placeholder 时**跳过封面标记行**（或直接删除该行），封面图单独复制到文章根目录 `cover.{ext}`。`publish.py` 也支持从 `imgs/` 目录自动发现封面图（`cover.*` 或 `*-cover.*`）。
+重跑生图后**必须复核引用**——返回格式会变（这次 PNG 下次 JPEG），引用会断且不报错。细则见 [branches.md 第五节](references/branches.md)。
 
-**修复 HTML 的触发条件**：仅当在 `article.html` 中**确实存在** `href="placeholder"` 或 placeholder 被渲染成可点击链接时，才将误转的 `<a>` 改为 `<img>` 或占位说明；**不要**默认每次都执行「修复流程图占位」或「修复 HTML」。
+## 分支与异常
 
-**⛔ 收尾自检（四条，缺一不可）**：
-
-1. **`imgs/prompts/` 里每张正文图各有一个 `.md`**，文件名主干与图片一致（`02-cost.md` ↔ `02-cost.png`）。**先落 prompt 再生成，不许反过来。** 实测三篇只留了 `00-cover.md`，三张正文图全是无据可查的——出了问题没法复现，想只重跑其中一张也做不到，只能整批重来（而生图是按张计费的）。Agent 自己用多模态能力生图时同样要落盘，那条降级路径读的就是这些文件。
-
-   ⛔ **实证类图位（官方原帖截图、界面实拍）的说明文件不要放进 `prompts/`，放 `imgs/sources/`。** 它记的是来源 URL 与截图要求，不是生图指令。`batch` 是整目录 glob 的，混在里面会照着「来源：https://x.com/… 保留作者、完整正文和日期」生成出一张**伪造的原帖截图**，还会覆盖掉真的那张——而文章里正好拿它当证据。脚本已加防线：frontmatter 带 `type: source` / `source:`，或正文首行以「来源：」开头的一律跳过并告警，但目录放对才是根本。
-2. **`article.yaml` 的 `image_medium` 非空**，且等于第四步实际用的那个媒介。它是下一篇「平手时避开上一篇」的唯一依据；实测 45 份 `article.yaml` 里 44 份是空的，等于这条依据一直查不到东西。
-3. **正文图数量与 `image_density` 对得上**（每节一图 = 每个 `##` 各一张）。删过图位的话，在结果里写明删了哪个、为什么——上限是每篇 1 个。
-4. **生成日志已落盘**（`cover-generation.log` / `image-generation.log`），且看过里面有没有
-   `腰斩` 告警。日志是出问题时唯一的凭据——封面为什么难看，正是靠日志里那行
-   「已按 2.35:1 居中裁切: 1024x1024 → 1024x436」才定位到的。
-5. **`imgs/` 根目录只剩正文引用的图**，中间产物已归入 `imgs/raw/`。
-6. **本篇所有信息位配图用的是同一个媒介**，且每个图位的**形态各自按内容选**（`default_article_image_style` 是候选池不是单选，见 [image-method 第二步](references/image-method.md)）。
-
-**⛔ 插图入正文之后又重跑生图时，必须复核引用。** 端点返回的格式会变（同一 prompt 这次 PNG 下次 JPEG），脚本会删掉同名旧后缀的图并打 `[WARN]`，`article.md` / `article.html` 里的 `imgs/xxx.png` 就指向了不存在的文件。实测踩过：补跑两张分辨率不达标的图，其中一张换成了 `.jpg`，正文引用当场断掉且不报错。重跑后按文件名主干（`05-金句卡片`）重新匹配实际存在的文件，两个文件一起改。
-
-## 过程文件
-
-| 读取 | 产出 |
-|------|------|
-| **`article.md`**、**`.aws-article/config.yaml`**、本篇可选 **`article.yaml`** 中的标记与配图约束 | `imgs/`（outline + prompts + 图片；未走 API 时为 prompts + 可选 imgs/README.md） |
+不在主路径上的情况全部写在 [references/branches.md](references/branches.md)：正文配图来源优先级、用户供图模式、发布后换图重发、调用失败四分类、故障降级终点、重跑复核、端点差异与比例传法。
