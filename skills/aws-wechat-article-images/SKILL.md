@@ -38,6 +38,8 @@ metadata:
 
 完整长文从选题到发布 → [main](../aws-wechat-article-main/SKILL.md)；图片消息 / 九宫格等多图推送 → [sticker](../aws-wechat-sticker/SKILL.md)。本 skill 专注**长文配图**。
 
+用户说「这篇配图不满意，换成我上传的新图重发草稿箱」→ 不走下面的工作流，改走 [branches.md 第三节「发布后换图重发」](references/branches.md)。
+
 配置检查按 [首次引导](../aws-wechat-article-main/references/first-time-setup.md) 执行；`image_model` 在 `config.yaml`、`IMAGE_MODEL_API_KEY` 在 `aws.env`。端点差异与比例传法见 [branches.md 第六节](references/branches.md)。
 
 | 脚本 | 用途 |
@@ -71,7 +73,7 @@ metadata:
 - **全局** `.aws-article/config.yaml`：`cover_aspect`、`image_density`、`caption_style`、`tone` 等以它为准（字段见 [articlescreening-schema.md](../aws-wechat-article-main/references/articlescreening-schema.md)）。
 - **本篇** `article.yaml`：`default_cover_image_style`（单元素，本篇已选的封面形态）、`default_article_image_style`（**多元素候选池**，正文形态逐个图位选，**不收敛成单选**——收敛等于整篇配图用同一种形态）。
 - 读 `article.md`。
-- `image_source: user` 时改走[用户供图模式](references/branches.md)。
+- `image_source: user` 时改走 [branches.md 第二节「用户供图模式」](references/branches.md)。
 
 ### 第2步：解析配图标记
 
