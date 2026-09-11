@@ -452,6 +452,21 @@ def main() -> None:
         if n:
             _ok(f"{name}: {n} 个文件")
 
+    # 包里有目录但不在白名单时，之前是**一声不吭地丢掉**：整包导入照样报成功，
+    # 用户以为那套东西已经落地。白名单是有意的（只认这几类预设），但丢什么
+    # 得说出来。典型的是 components/ —— 排版侧读 .aws-article/presets/components/，
+    # 但它不由 .aws 管理，只能本地放。
+    for probe in (root, root / "presets"):
+        if not probe.is_dir():
+            continue
+        for child in sorted(probe.iterdir()):
+            if not child.is_dir() or child.name in PRESET_SUBDIRS:
+                continue
+            if child.name in SKIP_NAMES or child.name == "presets":
+                continue
+            _info(f"【跳过】包内 {child.name}/ 不在预设白名单，未导入"
+                  f"（白名单：{' / '.join(PRESET_SUBDIRS)}）")
+
     cfg = root / "config.yaml"
     if cfg.is_file():
         new_map = _load_yaml_mapping(cfg, "包内 config.yaml")
