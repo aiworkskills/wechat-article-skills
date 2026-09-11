@@ -218,7 +218,22 @@ if ((Test-Path -LiteralPath ".aws-article\config.yaml") -and (Test-Path -Literal
      ```bash
      grep -h "^default_format_preset:" -A1 $(ls -d drafts/*/ | sort -r | head -3 | sed 's#$#article.yaml#') 2>/dev/null
      ```**续写/重入**时若本篇 `article.yaml` 对应字段已为单元素列表，视为本篇已选并优先保留，不重选不覆盖。若 `config.yaml` 不存在或候选为空，可保持 `[]`。
-5. 至此才进入 **第 4 步内容流水线**。
+5. **脚本输出一律落盘 ⛔**：调本套件任何脚本时，把 stdout 与 stderr 一起重定向到本篇目录下的
+   `<环节>.log`，不要只看屏幕。
+
+   ```bash
+   {python} {baseDir}/../aws-wechat-article-images/scripts/image_create.py generate … \
+     > drafts/YYYYMMDD-slug/cover-generation.log 2>&1
+   ```
+
+   约定文件名：`cover-generation.log`、`image-generation.log`、`format.log`、`publish.log`。
+
+   这些日志是出问题时唯一的凭据，而且**关键信息只在里面**：端点忽略比例把封面腰斩、
+   模版从哪个文件加载、配色有没有应用、正文图上传成了哪个 URL——屏幕上滚过去就没了。
+   实测靠 `cover-generation.log` 里那行「已按 2.35:1 居中裁切: 1024x1024 → 1024x436」
+   才定位到封面为什么难看；而最近一篇没留日志，同类问题就只能靠猜。
+
+6. 至此才进入 **第 4 步内容流水线**。
 
 #### B. 我已有目录
 

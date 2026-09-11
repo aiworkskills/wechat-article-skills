@@ -77,7 +77,8 @@ metadata:
 
 - **封面**：按 [cover-method.md](references/cover-method.md) 七步推导——找张力、定关系、找隐喻、套视觉语言、2.35:1 布局、写成散文、回看。封面模板（[references/cover-styles/](references/cover-styles/)）提供第四步的内容形态与**文案规格**（字号/颜色/位置），共 12 个，默认全选为候选池，Agent 按文章内容挑一个。范例见 [cover-examples/](references/cover-examples/)。
 - **先分工再选形态** ⛔：排版侧的[版式组件](../aws-wechat-article-formatting/references/components/)和信息位配图干同一件事，同一份内容只能给其中一个。判据是**内容里有没有空间关系**（大小/流向/嵌套 → 图），但**只有标准 markdown 够得到的组件才算数**——`:::` 私有语法写作侧是禁止的，判给够不到的组件等于图和组件两头落空。实测归属见 [image-method.md 第一步半](references/image-method.md)：只有**金句卡片**归组件，对比两栏与清单要点一律出图。
-- **删图有上限** ⛔：每篇最多删 1 个图位并须写明理由；要删 2 个以上时不要自行删，把「本篇内容与 `image_density` 对不上」这个判断告诉用户。
+- **删图有上限** ⛔：每篇最多删 1 个图位并须写明理由；要删 2 个以上时不要自行删，把「本篇内容与 `image_density` 对不上」这个判断告诉用户。**把本篇 `image_density` 改小是同一件事**（实测出现过：配置写每节一图，本篇改成按需配图，5 小节只配 4 图），同样要先说。
+- **`imgs/` 的目录分工** ⛔：根目录**只放正文引用的最终图**；生图 prompt 放 `imgs/prompts/`，实证图的来源说明放 `imgs/sources/`，截图/裁切的中间产物放 `imgs/raw/`。实测一篇文章的 `imgs/` 根留了 6 张没被引用的废片（约 1MB），重跑时容易拿错文件，`--skip-existing` 也会被它们干扰。
 - **正文配图**：8 个内容形态，见 [references/image-styles/](references/image-styles/)。判断只有一条——删掉这张图，读者会**看不懂**（信息位，必须带文章真实内容）还是**读不下去**（节奏位，不加字）？都不影响就不要这张图。
 
 ### 封面 vs 正文（资源策略）⛔
@@ -263,7 +264,11 @@ Prompt 构建：封面见 [cover-method.md](references/cover-method.md)，正文
    ⛔ **实证类图位（官方原帖截图、界面实拍）的说明文件不要放进 `prompts/`，放 `imgs/sources/`。** 它记的是来源 URL 与截图要求，不是生图指令。`batch` 是整目录 glob 的，混在里面会照着「来源：https://x.com/… 保留作者、完整正文和日期」生成出一张**伪造的原帖截图**，还会覆盖掉真的那张——而文章里正好拿它当证据。脚本已加防线：frontmatter 带 `type: source` / `source:`，或正文首行以「来源：」开头的一律跳过并告警，但目录放对才是根本。
 2. **`article.yaml` 的 `image_medium` 非空**，且等于第四步实际用的那个媒介。它是下一篇「平手时避开上一篇」的唯一依据；实测 45 份 `article.yaml` 里 44 份是空的，等于这条依据一直查不到东西。
 3. **正文图数量与 `image_density` 对得上**（每节一图 = 每个 `##` 各一张）。删过图位的话，在结果里写明删了哪个、为什么——上限是每篇 1 个。
-4. **本篇所有信息位配图用的是同一个媒介**，且每个图位的**形态各自按内容选**（`default_article_image_style` 是候选池不是单选，见 [image-method 第二步](references/image-method.md)）。
+4. **生成日志已落盘**（`cover-generation.log` / `image-generation.log`），且看过里面有没有
+   `腰斩` 告警。日志是出问题时唯一的凭据——封面为什么难看，正是靠日志里那行
+   「已按 2.35:1 居中裁切: 1024x1024 → 1024x436」才定位到的。
+5. **`imgs/` 根目录只剩正文引用的图**，中间产物已归入 `imgs/raw/`。
+6. **本篇所有信息位配图用的是同一个媒介**，且每个图位的**形态各自按内容选**（`default_article_image_style` 是候选池不是单选，见 [image-method 第二步](references/image-method.md)）。
 
 **⛔ 插图入正文之后又重跑生图时，必须复核引用。** 端点返回的格式会变（同一 prompt 这次 PNG 下次 JPEG），脚本会删掉同名旧后缀的图并打 `[WARN]`，`article.md` / `article.html` 里的 `imgs/xxx.png` 就指向了不存在的文件。实测踩过：补跑两张分辨率不达标的图，其中一张换成了 `.jpg`，正文引用当场断掉且不报错。重跑后按文件名主干（`05-金句卡片`）重新匹配实际存在的文件，两个文件一起改。
 
