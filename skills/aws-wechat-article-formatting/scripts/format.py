@@ -9,9 +9,9 @@
 2. skill 内置 references/presets/themes/<主题名>.yaml
 
 用法：
-    python format.py <article.md>                      主题：仅读取本篇 article.yaml 的 default_format_preset（须为 YAML 列表），否则 default
-    python format.py <article.md> --theme 报            显式指定主题（覆盖配置）
-    python format.py <article.md> --theme 块 --scheme 松绿   指定模版的配色方案（见 --list-themes）
+    python format.py <article.md>                      主题：仅读取本篇 article.yaml 的 default_format_preset（须为 YAML 列表），否则 亲和
+    python format.py <article.md> --theme 资讯          显式指定主题（覆盖配置）
+    python format.py <article.md> --theme 亲和 --scheme 松绿  指定模版的配色方案（见 --list-themes）
     python format.py <article.md> --theme my-brand      使用自定义主题
     python format.py <article.md> --color "#0F4C81"     覆盖主色
     python format.py <article.md> --font-size 16px
@@ -1263,11 +1263,12 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
                 if lines[look].strip() == ":::":
                     end = look
                     break
-            # highlight 是主题里定义的样式键，不是组件文件。16 套主题全都给它写了样式、
-            # 门户预览也一直在渲染它，但此前**没有任何语法能产出它**——预览里那个提示框
-            # 真实文章根本做不出来，和当初 formatDecorations 是同一类问题：预览承诺了
-            # 交付不了的东西。这里给它接上 :::highlight（别名 :::note），沿用主题样式。
-            # 真有骨架想给它做结构，放一个同名组件文件即可覆盖这条兜底。
+            # highlight 是主题里的样式键，不是组件文件。门户预览一直在渲染这个提示框，
+            # 但此前**没有任何语法能产出它**——预览承诺了交付不了的东西，和当初
+            # formatDecorations 是同一类问题。这里给它接上 :::highlight（别名 :::note）。
+            # 注意现有四套内置模版都没写 highlight 样式键，下面会退回 blockquote，
+            # 所以此刻它和普通引用块长得一样。要有自己的长相：模版 YAML 里加 highlight:，
+            # 或放一个同名组件文件覆盖这条兜底。
             if not spec and name in ("highlight", "note") and end is not None:
                 flush_paragraph()
                 close_list()
@@ -1839,7 +1840,7 @@ def main():
     parser.add_argument(
         "--theme",
         default=None,
-        help="主题名；省略则仅读取本篇 article.yaml 的 default_format_preset，再无则内置默认模版 块",
+        help=f"主题名；省略则仅读取本篇 article.yaml 的 default_format_preset，再无则内置默认模版 {DEFAULT_THEME}",
     )
     parser.add_argument("--scheme", help="配色方案名（主题 schemes 里的 name）；省略则读本篇 article.yaml 的 default_format_scheme，再无则用主题默认色")
     parser.add_argument("--color", help="覆盖主色（如 #0F4C81）")
