@@ -110,12 +110,18 @@ def _write_closing_md(article_dir: Path, links: list[tuple[str, str]], overwrite
 
 # 这些字段即使 config.yaml 里没有也要建出来。
 #
-# `default_format_scheme` 是**本篇从所选模版的 schemes 里挑一档**，不是账号级候选池——
-# 网站导出时刻意不写进 config.yaml（选了多套模版时它没有唯一解）。而本函数原本要求
-# 「config 里有这个键才补」，于是它永远不会出现在 article.yaml 里，main 第 4 步却要求
-# 本篇必须落盘。实测：跑 article_init 建出来的 article.yaml 缺这一项，只能靠 Agent
-# 自己想起来补——而「必须用 article_init 初始化」这条规则正是为了不依赖 Agent 记性。
-ALWAYS_PRESET_FIELDS = frozenset({"default_format_scheme"})
+# 排版那两项（模版 + 配色）都是**本篇的选择**，不是账号级候选池，网站导出的
+# config.yaml 里可以整个没有这两个键。而本函数原本要求「config 里有这个键才补」，
+# 于是它们永远不会出现在 article.yaml 里，main 第 4 步却要求本篇必须落盘。
+#
+# 后果是静默的：format.py 读不到 default_format_preset 就退回内置默认模版 亲和，
+# 不报错也不提醒——一篇本该用「资讯」的稿子会长成「亲和」的样子，而日志里只有
+# 一行「主题来自内置默认」。实测 2026-09-11 跑全流程时就是这样：config 里两个键
+# 都没有，article_init 建出来的 article.yaml 也就两个都缺。
+#
+# 「必须用 article_init 初始化」这条规则正是为了不依赖 Agent 记性，所以补在这里，
+# 而不是指望每次都有人想起来手加。
+ALWAYS_PRESET_FIELDS = frozenset({"default_format_preset", "default_format_scheme"})
 
 PRESET_FIELDS = [
     "default_structure",

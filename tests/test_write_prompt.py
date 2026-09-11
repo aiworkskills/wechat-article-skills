@@ -6,6 +6,7 @@ markdown 语法不是用户偏好——用户不会写、也不该知道要写�
 """
 
 import importlib.util
+import re
 import pathlib
 import unittest
 
@@ -316,3 +317,42 @@ class OutputQuotaCheckTest(unittest.TestCase):
         self.assertTrue(w._is_bare_noun("透明度"))
         self.assertFalse(w._is_bare_noun("省 88% Token"))
         self.assertFalse(w._is_bare_noun("按问题找证据"))
+
+
+class QuoteCardParityTest(unittest.TestCase):
+    """write.py check 与 format.py 对「什么算金句卡」必须判得一样。
+
+    2026-09-11 全流程实测：出处写成论文全名（68 字符），check 报「金句 ✓」放行，
+    format.py 的锚定匹配失配，渲出来是普通引用块——作者拿到绿灯，文章静悄悄少了
+    一张可截图转发的卡。工具之间判据不一致比没有工具更糟，它给的是假绿灯。
+    """
+
+    # 与 format.py 里那条逐字相同；两边一分叉这个测试就会红
+    FMT_RE = re.compile(r"^(.*?)\s*(?:——|—|--)\s*([^\s—][^—]{0,24})$")
+    LONG = "决定你的不是你的头衔，是你的节奏。 —— Murphy-Hill 等，《Adoption and Impact of Command-Line AI Coding Agents》"
+    SHORT = "决定你的不是你的头衔，是你的节奏。 —— Murphy-Hill 等"
+
+    def setUp(self):
+        self.w = _load()
+
+    def test_format_py_still_uses_this_regex(self):
+        """把 format.py 里那条正则抠出来比对，防止只改了一边。"""
+        src = pathlib.Path("skills/aws-wechat-article-formatting/scripts/format.py").read_text(encoding="utf-8")
+        self.assertIn(r'^(.*?)\s*(?:——|—|--)\s*([^\s—][^—]{0,24})$', src,
+                      "format.py 的金句卡判据变了，write.py 的 QUOTE_CARD_RE 要同步")
+
+    def test_same_verdict_on_both_sides(self):
+        for q in (self.LONG, self.SHORT):
+            self.assertEqual(bool(self.w.QUOTE_CARD_RE.match(q)), bool(self.FMT_RE.match(q)),
+                             f"两边判据不一致：{q[:40]}")
+
+    def test_long_source_is_rejected_at_write_time(self):
+        md = f"# T\n\n> 导语。\n\n## 一\n\n正文**重点**一段。\n\n> {self.LONG}\n"
+        bad, _warn, _ = self.w.check_output(md)
+        self.assertTrue(any("出处太长" in b for b in bad),
+                        f"出处 68 字符应被拦下，实际 bad={bad}")
+
+    def test_short_source_passes(self):
+        md = f"# T\n\n> 导语。\n\n## 一\n\n正文**重点**一段。\n\n> {self.SHORT}\n"
+        bad, _warn, _ = self.w.check_output(md)
+        self.assertFalse(any("金句" in b or "出处" in b for b in bad), bad)

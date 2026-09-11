@@ -740,7 +740,11 @@ def build_system_prompt(
         "那管的是叙述段，枚举仍然用列表\n",
         "- 全文**恰好写一处**金句：最值得截图转发的那一句，写成 `> 金句。 —— 出处` —— "
         "带破折号出处的引用会排成金句卡。写两处以上，卡片就退化成装饰条，一处都不会被转；"
-        "不写出处就是普通引用",
+        "不写出处就是普通引用。"
+        # 卡片那一行放不下长出处。实测把出处写成论文全名（68 字符）时，排版侧的
+        # 锚定匹配直接失配，静悄悄退回普通引用块——作者是看不出来的。
+        "**出处不超过 25 个字符**（写人名或机构，如「张三」「微软研究院」；"
+        "别把论文全名、书名副标题塞进去，超了排版就不成卡）",
     ]
     if ref_block:
         out_lines.append(
@@ -906,6 +910,11 @@ def _strip_citations(text: str) -> str:
 
 _CJK = r"一-鿿　-〿＀-￯"
 
+# 金句卡的判据，与 format.py 里那条**逐字相同**。改一处必须同改两处，否则
+# 「写的时候说合格、排的时候不成卡」会再来一次。出处上限 25 字符是卡片版式
+# 决定的：再长就撑破那一行。
+QUOTE_CARD_RE = re.compile(r"^(.*?)\s*(?:——|—|--)\s*([^\s—][^—]{0,24})$")
+
 
 def _emph_units(s: str) -> int:
     """加粗的「长度」按显示单位算：一个汉字 1 个，一串连续的数字/英文也算 1 个。
@@ -980,13 +989,35 @@ def check_output(text: str) -> tuple[list[str], list[str], str]:
         if heads > len(bolds) * 0.6:
             warn.append(f"{heads}/{len(bolds)} 处加粗都落在段落首句，位置要有变化")
 
-    quotes = " ".join(l.strip()[1:].strip() for l in lines[first_h2:]
-                      if l.strip().startswith(">"))
-    n_card = len(re.findall(r"(?:——|—|--)\s*[^\s—][^—]{0,24}(?:\s|$)", quotes))
-    if n_card == 0:
-        bad.append("没有带出处的金句（`> 金句。 —— 出处`）—— 少一块可截图转发的内容")
-    elif n_card > 1:
-        warn.append(f"有 {n_card} 处带出处的引用，金句卡应恰好一处，多了就退化成装饰条")
+    # 判据必须和 format.py 里那条**逐字一致**（QUOTE_CARD_RE）：它是**整段锚定**的，
+    # 出处上限 25 字符。这里原先用的是无锚 finditer，两边于是各说各话——
+    # 实测 2026-09-11：出处写成「Murphy-Hill 等，《Adoption and Impact of Command-Line
+    # AI Coding Agents》」（68 字符），check 报「金句 ✓」放行，format.py 的锚定匹配失败，
+    # 渲出来是个普通引用块。作者拿到绿灯，文章静悄悄少了一张可截图转发的卡。
+    #
+    # 工具之间判据不一致比没有工具更糟：它给的是假绿灯。
+    quote_blocks: list[str] = []
+    cur: list[str] = []
+    for l in lines[first_h2:]:
+        if l.strip().startswith(">"):
+            cur.append(l.strip()[1:].strip())
+        elif cur:
+            quote_blocks.append(" ".join(x for x in cur if x))
+            cur = []
+    if cur:
+        quote_blocks.append(" ".join(x for x in cur if x))
+
+    cards = [q for q in quote_blocks if QUOTE_CARD_RE.match(q)]
+    if not cards:
+        near = [q for q in quote_blocks if re.search(r"(?:——|—|--)", q)]
+        if near:
+            src = re.split(r"(?:——|—|--)", near[0])[-1].strip()
+            bad.append(f"金句的出处太长（{len(src)} 字符，上限 25），排版时会退回普通引用块、"
+                       f"出不了金句卡：「{src[:30]}…」")
+        else:
+            bad.append("没有带出处的金句（`> 金句。 —— 出处`）—— 少一块可截图转发的内容")
+    elif len(cards) > 1:
+        warn.append(f"有 {len(cards)} 处带出处的引用，金句卡应恰好一处，多了就退化成装饰条")
 
     if not any(re.match(r"^\s*[-*+]\s+\*\*", l) for l in lines):
         warn.append("全文没有 `- **标签**：说明` 列表 —— 若文中有三项以上并列，"

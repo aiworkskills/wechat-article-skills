@@ -1453,6 +1453,10 @@ def _md_to_html(md_text: str, styles: dict, skip_first_h1: bool = True,
             # 排版层只是把这个明确信号接住。所以不需要扩展 markdown 标记。
             #
             # 破折号收三种写法：中文正规的 `——`、单个 `—`、以及英文习惯的 `--`。
+            #
+            # ⚠️ 出处上限 25 字符（`[^—]{0,24}`），是卡片版式撑得下的长度。这条判据
+            # 与 write.py 的 QUOTE_CARD_RE **逐字相同**，改一处必须同改两处——两边一
+            # 分叉就会出现「写的时候报合格、排的时候不成卡」，而作者看不出来。
             if not in_blockquote and (components or {}).get("quote-card", {}).get("template"):
                 buf, j = [], line_idx
                 while j < len(lines) and lines[j].strip().startswith(">"):
