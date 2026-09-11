@@ -279,6 +279,11 @@ DEFAULT_IMAGE_SIZE = "2K"
 # 比不发还差。2K 对公众号封面已绰绰有余。
 MIN_LONG_EDGE = 900
 
+# 居中裁切后至少要保住原图这么大的面积。低于它说明端点没按 aspectRatio 出图，
+# 拿到的是按别的比例构好图的画面，裁切等于腰斩——2.35:1 封面若收到 1:1 方图，
+# 只能留下 43%。取 0.60：21:9 → 2.35:1 这类正常的就近映射只会裁掉几个百分点。
+CROP_KEEP_MIN = 0.60
+
 # 自动重试次数。**默认 0——每一次重试都是一次付费调用，而被丢弃的那几张不落盘，
 # 账单之外看不见。** 曾经默认 3（每张图最多 4 次调用），按端点约五成的小图率算，
 # 一篇五图的文章期望烧掉十次生成、最坏二十次，换来的只是正文图从 683px 变成 1376px。
@@ -907,7 +912,19 @@ def _crop_to_aspect(img_data: bytes, aspect: str) -> bytes:
         cropped = cropped.convert("RGB")
     buf = io.BytesIO()
     cropped.save(buf, format=fmt)
-    _info(f"已按 {aspect} 居中裁切: {w}x{h} -> {cropped.size[0]}x{cropped.size[1]}")
+    # 裁掉一小条是正常的（端点按 21:9 出图、我们要 2.35:1）。裁掉一大半就不是裁切，
+    # 是端点根本没理 aspectRatio——实测四张封面里三张返回 1024x1024 方图，被裁成
+    # 1024x436。**模型是按方画布构图的**（「左侧四成…右侧六成…字高 28%」），
+    # 上下砍掉 58% 等于把构图腰斩，主体偏位、标题错位，出来就是一张废封面。
+    # 这一步此前只打一行 INFO，看着像正常流程，没人知道封面为什么难看。
+    kept = (cropped.size[0] * cropped.size[1]) / (w * h)
+    if kept < CROP_KEEP_MIN:
+        print(f"[WARN] {w}x{h} 裁成 {cropped.size[0]}x{cropped.size[1]}，只剩 {kept:.0%}——"
+              f"端点没有按 {aspect} 出图，这张是按原比例构图后被腰斩的，构图多半已经废了。\n"
+              f"       这种情况值得重跑（--retries 1），和分辨率略低不一样：那个读者看不出，"
+              f"这个一眼就看得出。", file=sys.stderr)
+    else:
+        _info(f"已按 {aspect} 居中裁切: {w}x{h} -> {cropped.size[0]}x{cropped.size[1]}")
     return buf.getvalue()
 
 

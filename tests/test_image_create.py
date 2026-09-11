@@ -390,3 +390,45 @@ class StaleSiblingTest(unittest.TestCase):
             ic._clear_stale_siblings(keep)
             self.assertTrue(other.exists())
             self.assertTrue(md.exists(), "同名 .md 是 prompt 源文件，不能删")
+
+
+@unittest.skipIf(Image is None, "Pillow 未安装")
+class CropGuillotineTest(unittest.TestCase):
+    """裁掉一小条是正常的，裁掉一大半说明端点根本没理 aspectRatio。
+
+    实测四张封面里三张返回 1024x1024 方图，被裁成 1024x436。模型是**按方画布构图**
+    的（「左侧四成…右侧六成…字高 28%」），上下砍掉 58% 等于把构图腰斩。这一步此前
+    只打一行 INFO，看着像正常流程，没人知道封面为什么难看。
+    """
+
+    def _png(self, w, h):
+        buf = io.BytesIO()
+        Image.effect_noise((w, h), 64).convert("RGB").save(buf, "PNG")
+        return buf.getvalue()
+
+    def _crop(self, w, h, aspect="2.35:1"):
+        import contextlib
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            data = ic._crop_to_aspect(self._png(w, h), aspect)
+        return Image.open(io.BytesIO(data)).size, err.getvalue()
+
+    def test_square_from_endpoint_is_warned(self):
+        size, err = self._crop(1024, 1024)
+        self.assertEqual(size, (1024, 436))
+        self.assertIn("WARN", err)
+        self.assertIn("腰斩", err)
+        self.assertIn("--retries", err, "要告诉用户这种情况值得重跑")
+
+    def test_normal_nearest_ratio_crop_is_silent(self):
+        """21:9 → 2.35:1 这类就近映射只裁掉几个百分点，不该报警。"""
+        _, err = self._crop(1584, 672)
+        self.assertEqual(err, "")
+
+    def test_moderate_crop_is_silent(self):
+        _, err = self._crop(1600, 900)
+        self.assertNotIn("WARN", err)
+
+    def test_threshold_leaves_room_for_real_ratio_mapping(self):
+        self.assertLess(ic.CROP_KEEP_MIN, 16 / 9 / (2.35) + 0.01)
+        self.assertGreater(ic.CROP_KEEP_MIN, 1 / 2.35, "方图裁 2.35:1 只剩 43%，必须被拦住")
