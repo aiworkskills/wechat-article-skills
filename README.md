@@ -49,20 +49,19 @@ AI 依次交付，**每一步都停下来等你确认**，可以打断、修改�
 
 两条实操视频，按基础配置、进阶配置顺序观看：
 
-| 教程 | 内容 | 观看 |
-| --- | --- | --- |
-| 基础配置 | 账号定位、写作规范、模板选择、配置包导出与导入 | [B站 · 基础篇](https://www.bilibili.com/video/BV1W3ej6zELZ/) |
-| 进阶配置 | 从对标文章提炼配置建议，分别设置写作模型和生图模型 | [B站 · 进阶篇](https://www.bilibili.com/video/BV1Pgej6gENq/) |
-
 #### 基础篇：从账号定位到配置导入
 
 账号定位、写作规范、模板选择，以及配置包导出与导入。
+
+https://github.com/user-attachments/assets/54a07e52-0db7-465f-b164-992d9b3a90da
 
 [B站观看基础篇](https://www.bilibili.com/video/BV1W3ej6zELZ/)
 
 #### 进阶篇：对标提炼与模型配置
 
 用文章提炼配置建议，分别配置写作模型与生图模型。
+
+https://github.com/user-attachments/assets/fa89f62d-3c24-4356-85ce-df80241f4eca
 
 [B站观看进阶篇](https://www.bilibili.com/video/BV1Pgej6gENq/)
 
